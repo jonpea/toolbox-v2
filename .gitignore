@@ -1,0 +1,33 @@
+# MATLAB
+*.asv
+*.fig
+*.m~
+*.mat
+*.mexa64
+*.mexw64
+
+# Images
+*.png
+*.pdf
+
+# Published 
+*.html
+html/*
+examples/html/*
+
+# LaTeX files
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.synctex.gz
+
+# Miscallaneous
+*.restart
+
+# Visual C++ build files
+*.pdb
+
+# Windows thumbnail cache files
+Thumbs.db
