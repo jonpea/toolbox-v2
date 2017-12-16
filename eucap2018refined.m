@@ -13,16 +13,38 @@ settings = parse(varargin{:});
 %%
 dbtype panel
 
+%% Scene geometry and material properties
+facets = datatypes.cell2table({
+    'Material'           'Gain'   'FaceColor'   'LineWidth'
+    panel.SteelDoor      -3        'black'        2
+    panel.WoodenDoor     -3        'blue'         2
+    panel.ConcreteWall   -20       'red'          5
+    panel.GibWall        -3        'magenta'      2
+    panel.GlassWindow    -3        'cyan'         2
+    panel.Ceiling        -3        'blue'         1
+    panel.Floor          -3        'green'        1
+    });
+facets.EdgeColor = facets.FaceColor;
+
 %%
-glass = panel.GlassWindow;
-concrete = panel.ConcreteWall;
-gib = panel.GibWall;
-wood = panel.WoodenDoor;
+height.Floor = 0.0;
+height.Stud = 3.0;
+height.Door = 2.0;
+faceData2D = datatypes.cell2table({
+    'ID'  'VertexIndices'           'ZSpan'             'Material'      
+    1          [1 2]     [height.Floor height.Stud]  panel.GlassWindow   
+    2          [2 3]     [height.Floor height.Stud]  panel.ConcreteWall  
+    3          [4 5]     [height.Floor height.Stud]  panel.GibWall       
+    4          [5 6]     [height.Floor height.Stud]  panel.GibWall       
+    5          [1 4]     [height.Floor height.Stud]  panel.GibWall       
+    6          [3 6]     [height.Floor height.Stud]  panel.GibWall       
+    7          [2 7]     [height.Floor height.Stud]  panel.ConcreteWall  
+    8          [5 8]     [height.Floor height.Stud]  panel.ConcreteWall  
+    9          [7 8]     [height.Floor height.Door]  panel.WoodenDoor    
+    10         [7 8]     [height.Door  height.Stud]  panel.GibWall       
+    });
 
-floor = 0.0;
-stud = 3.0;
-door = 2.0;
-
+%%
 vertices2D = [
     0     0
     0     2
@@ -33,22 +55,9 @@ vertices2D = [
     1     2
     2     2
     ];
-faceData2D = datatypes.cell2table({
-    'ID'  'VertexIndices' 'Material'  'ZSpan'
-    1          [1  2]        glass    [floor   stud]
-    2          [2  3]      concrete   [floor   stud]
-    3          [4  5]         gib     [floor   stud]
-    4          [5  6]         gib     [floor   stud]
-    5          [1  4]         gib     [floor   stud]
-    6          [3  6]         gib     [floor   stud]
-    7          [2  7]      concrete   [floor   stud]
-    8          [5  8]      concrete   [floor   stud]
-    9          [7  8]        wood     [floor   door]
-   10          [7  8]         gib     [door    stud]
-    });
 
+%% View 2-D plan
 scene2D = facevertex.fv(faceData2D.VertexIndices, vertices2D);
-scene3D = facevertex.extrude(scene2D, faceData2D.ZSpan);
 
 ax = settings.Axes('2D Scene');
 patch(ax, 'Faces', scene2D.Faces, 'Vertices', scene2D.Vertices)
@@ -56,6 +65,9 @@ graphics.text(ax, scene2D.Vertices, 'Color', 'blue')
 graphics.text(ax, facevertex.reduce(@mean, scene2D), 'Color', 'red')
 axis(ax, bbox(scene2D.Vertices, 0.1))
 axis(ax, 'equal')
+
+%% Generate 3-D model
+scene3D = facevertex.extrude(scene2D, faceData2D.ZSpan);
 
 ax = settings.Axes('3D Scene');
 hold on
@@ -67,26 +79,10 @@ graphics.text(ax, facevertex.reduce(@mean, scene3D), 'Color', 'red')
 axis(ax, bbox(scene3D.Vertices, 0.1))
 axis(ax, 'equal')
 view(ax, 3)
+rotate3d(ax, 'on')
 
 return
-
-%% Scene geometry and material properties
-[onelevel.Faces, onelevel.Vertices, onelevel.Material] = engineeringtower8data3dnew;
-nominalgain = -3;
-largegain = -20;
-nominalthickness = 2;
-largethickness = 5;
-facets = celltotabular({
-    'Material',         'Gain'        'FaceColor'  'LineWidth';
-    panel.SteelDoor,    nominalgain,  'black',     nominalthickness;
-    panel.WoodenDoor,   nominalgain,  'blue',      nominalthickness;
-    panel.ConcreteWall, largegain,    'red',       largethickness;
-    panel.GibWall,      nominalgain,  'magenta',   nominalthickness;
-    panel.GlassWindow,  nominalgain,  'cyan',      nominalthickness;
-    panel.Ceiling,      nominalgain,  'blue',      1;
-    panel.Floor',       nominalgain,  'green',     1;
-    });
-facets.EdgeColor = facets.FaceColor;
+%[onelevel.Faces, onelevel.Vertices, onelevel.Material] = engineeringtower8data3dnew;
 onelevel.Gain = arrayfun(finitefunction(facets.Material, facets.Gain), onelevel.Material);
 
 offsets = settings.StudHeight*(0 : settings.NumFloors - 1);

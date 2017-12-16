@@ -1,4 +1,4 @@
-function varargout = labelpoints(varargin)
+function varargout = text(varargin)
 
 import graphics.isaxes
 import graphics.labelshift
@@ -30,4 +30,5 @@ extents = max(points) - min(points);
 points = points + labelshift(ax, extents); % implicit expansion
 
 points = num2cell(points, 1);
-[varargout{1 : nargout}] = text(ax, points{:}, labels(:), varargin{:});
+[varargout{1 : nargout}] = builtin( ...
+    'text', ax, points{:}, labels(:), varargin{:});
