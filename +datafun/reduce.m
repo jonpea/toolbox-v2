@@ -14,7 +14,7 @@ function result = reduce(op, result, varargin)
 %
 % See also CUMREDUCE.
 
-import functional.reduce % for recursive call
+import datafun.reduce % for recursive call
 
 narginchk(2, nargin)
 assert(isa(op, 'function_handle'))

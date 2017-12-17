@@ -1,9 +1,9 @@
 function varargout = extrude(varargin)
 
 import contracts.unreachable
+import datafun.reduce
 import facevertex.cat
 import facevertex.fv
-import functional.reduce
 
 narginchk(2, 3)
 
@@ -44,6 +44,7 @@ varargout = {
 
 end
 
+% -------------------------------------------------------------------------
 function [faces, vertices] = extrudeOnce(faces, vertices, lower, upper)
 %EXTRUDEPLAN Extruison of a 2D plan in face-vertex repsentation.
 % [FF,VV]=EXTRUDEPLAN(F,V,LOWER,UPPER) extrudes a set of 2D line segments

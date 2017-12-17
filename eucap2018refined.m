@@ -1,11 +1,13 @@
 function eucap2018refined(varargin)
 
-import graphics.bbox
-import graphics.text
-import graphics.plotpoints
 import datatypes.cell2table
 import facevertex.extrude
+import facevertex.faces
 import facevertex.fv
+import facevertex.vertices
+import scattered.bbox
+import scattered.text
+import scattered.plot
 
 %%
 settings = parse(varargin{:});
@@ -60,41 +62,57 @@ vertices2D = [
 scene2D = facevertex.fv(faceData2D.VertexIndices, vertices2D);
 
 ax = settings.Axes('2D Scene');
-patch(ax, 'Faces', scene2D.Faces, 'Vertices', scene2D.Vertices)
-graphics.text(ax, scene2D.Vertices, 'Color', 'blue')
-graphics.text(ax, facevertex.reduce(@mean, scene2D), 'Color', 'red')
-axis(ax, bbox(scene2D.Vertices, 0.1))
+patch(ax, 'Faces', faces(scene2D), 'Vertices', vertices(scene2D))
+scattered.text(ax, vertices(scene2D), 'Color', 'blue')
+scattered.text(ax, facevertex.reduce(@mean, scene2D), 'Color', 'red')
+axis(ax, scattered.bbox(vertices(scene2D), 0.1))
 axis(ax, 'equal')
 
 %% Generate 3-D model
 scene3D = facevertex.extrude(scene2D, faceData2D.ZSpan);
+scene3D = facevertex.compress(scene3D);
 
 ax = settings.Axes('3D Scene');
 hold on
-patch(ax, ...
-    'Faces', scene3D.Faces, ...
-    'Vertices', scene3D.Vertices, ...
+facevertex.multipatch(ax, ...
+    faceData2D.Material, ... % 2D & 3D are currently identical
+    facets, ...
+    'Faces', faces(scene3D), ...
+    'Vertices', vertices(scene3D), ...
     'FaceAlpha', 0.1, 'FaceColor', 'blue')
-graphics.text(ax, facevertex.reduce(@mean, scene3D), 'Color', 'red')
-axis(ax, bbox(scene3D.Vertices, 0.1))
+scattered.plot(ax, vertices(scene3D), 'Marker', '.', 'MarkerSize', 3)
+scattered.text(ax, vertices(scene3D), 'Color', 'black')
+scattered.text(ax, facevertex.reduce(@mean, scene3D), 'Color', 'red')
+axis(ax, scattered.bbox(vertices(scene3D), 0.1))
 axis(ax, 'equal')
 view(ax, 3)
 rotate3d(ax, 'on')
 
+floorface = facevertex.cap(@min, 3, scene3D)
+ceilingface = facevertex.cap(@max, 3, scene3D)
+
+% fun = @max;
+% dim = 3;
+% xfaces = facevertex.extreme(@max, 3, scene3D)
+% assert(numel(xfaces) == 4)
+
 return
-%[onelevel.Faces, onelevel.Vertices, onelevel.Material] = engineeringtower8data3dnew;
-onelevel.Gain = arrayfun(finitefunction(facets.Material, facets.Gain), onelevel.Material);
+
+%[scene2D.Faces, scene2D.Vertices, scene2D.Material] = engineeringtower8data3dnew;
+scene3D.Material = arrayfun(finitefunction(facets.Material), scene2D.Material);
 
 offsets = settings.StudHeight*(0 : settings.NumFloors - 1);
-alllevels = facevertextranslate(onelevel, offsets(:)*[0 0 1]);
+alllevels = facevertextranslate(scene2D, offsets(:)*[0 0 1]);
 alllevels.Vertices(abs(alllevels.Vertices) < 1e-12) = 0; % threshold on miniscule values
     function stack(field)
-        alllevels.(field) = repmat(onelevel.(field), settings.NumFloors, 1);
+        alllevels.(field) = repmat(scene2D.(field), settings.NumFloors, 1);
     end
 stack('Material')
 stack('Gain')
 
 scene = settings.Scene(alllevels.Faces, alllevels.Vertices);
+
+return
 
 %% Configure access points
 data2d = celltotabular({

@@ -1,8 +1,8 @@
 function rowaggregate = reduce(fun, varargin)
 %REDUCE Cell rowaggregate of face-vertex representation.
 
-import contracts.isfunction
 import contracts.ndebug
+import datatypes.isfunction
 
 narginchk(2, 3)
 assert(isfunction(fun))

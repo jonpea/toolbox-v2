@@ -9,9 +9,9 @@ function varargout = cat(varargin)
 %
 %   See also FACEVERTEX.COMPRESS, CAT, VERTCAT, PATCH.
 
+import datafun.reduce
 import facevertex.fv
 import facevertex.isfv
-import functional.reduce
 
 narginchk(2, nargin)
 

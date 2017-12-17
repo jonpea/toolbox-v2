@@ -1,7 +1,6 @@
 function varargout = text(varargin)
 
-import graphics.isaxes
-import graphics.labelshift
+import datatypes.isaxes
 import helpers.parsefirst
 
 narginchk(1, nargin)

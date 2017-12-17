@@ -1,6 +1,9 @@
-function varargout = plotpoints(varargin)
+function varargout = plot(varargin)
 
-[ax, points, varargin] = axisforplot(1, varargin{:});
+import graphics.isaxes
+import helpers.parsefirst
+
+[ax, points, varargin] = parsefirst(@isaxes, gca, 1, varargin{:});
 
 assert(ismember(size(points, 2), 2 : 3))
 assert(ismatrix(points))

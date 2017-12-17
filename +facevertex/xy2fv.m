@@ -18,7 +18,7 @@ function varargout = xy2fv(varargin)
 %
 %   See also PATCH, FV2XY.
 
-import contracts.hassame
+import contracts.issame
 import contracts.ndebug
 import functional.reduce
 import facevertex.fv
@@ -30,8 +30,8 @@ if ischar(varargin{end})
 else
     mask = 'duplicate';
 end
-assert(ndebug || hassame(@size, varargin{:}))
-assert(ndebug || hassame(@isnan, varargin{:}))
+assert(ndebug || issame(@size, varargin{:}))
+assert(ndebug || issame(@isnan, varargin{:}))
 
 mask = validatestring(mask, {'duplicate', 'nan'}, mfilename, 'mask');
 

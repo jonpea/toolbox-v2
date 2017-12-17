@@ -15,7 +15,7 @@ tabs = [];
 
     function tab = maketab(title, select)
         
-        import contracts.isfunction
+        import datatypes.isfunction
 
         narginchk(0, 2)
         

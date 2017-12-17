@@ -1,5 +1,5 @@
-function tf = hassame(fun, varargin)
-%HASSAME True where arguments have identical image.
+function tf = issame(fun, varargin)
+%ISSAME True where arguments have identical image.
 %   HASSAME(@FUN, A1, A2, ..., AN) returns true if
 %     FUN(A1), FUN(A2)), FUN(A3), ... FUN(AN) are identically equal.
 %
