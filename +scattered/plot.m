@@ -1,7 +1,7 @@
 function varargout = plot(varargin)
 
-import graphics.isaxes
-import helpers.parsefirst
+import arguments.parsefirst
+import datatypes.isaxes
 
 [ax, points, varargin] = parsefirst(@isaxes, gca, 1, varargin{:});
 

@@ -6,11 +6,11 @@ function s = getstruct(s, varargin)
 %
 %   See also SETFIELD, GETFIELD, STRUCT.
 
-import contracts.ndebug
+narginchk(1, nargin)
+assert(iscellstr(varargin))
 
-assert(ndebug || iscellstr(varargin))
+% This arrangement accommodates struct arrays as well as scalars
+s = rmfield(s, setdiff(fieldnames(s), varargin));
 
-values = cellfun(@(name) s.(name), varargin, 'UniformOutput', false);
-s = cell2struct(values, varargin, 2);
-
-
+% Ensure that fields appear in the order specified by client
+s = orderfields(s, varargin);

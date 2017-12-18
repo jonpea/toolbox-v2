@@ -12,7 +12,7 @@ function varargin = cumreduce(op, varargin)
 %
 % See also CUMSUM, REDUCE, NUM2CELL.
 
-import helpers.cumreduce % for recursive call
+import datafun.cumreduce % for recursive call
 
 narginchk(2, nargin)
 assert(isa(op, 'function_handle'))

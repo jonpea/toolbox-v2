@@ -1,7 +1,7 @@
 function varargout = text(varargin)
 
+import arguments.parsefirst
 import datatypes.isaxes
-import helpers.parsefirst
 
 narginchk(1, nargin)
 

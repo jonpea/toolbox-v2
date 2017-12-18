@@ -1,8 +1,8 @@
 function varargout = labelfacets(varargin)
 
+import arguments.parsefirst
 import facevertex.fv
 import graphics.isaxes
-import helpers.parsefirst
 
 [ax, varargin] = parsefirst(@isaxes, gca, 0, varargin{:});
 [faces, vertices, varargin] = parseFaceVertexPair(varargin);

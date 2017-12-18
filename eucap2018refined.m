@@ -160,7 +160,7 @@ accesspoints = struct( ...
     'Channel', data3d.Channel, ...
     'Gain', data3d.Power);
 %%
-tabulardisp(accesspoints)
+disp(struct2table(accesspoints))
 
 %% Configure field points
 lower = min(alllevels.Vertices, [], 1);
@@ -179,7 +179,7 @@ mobiles = struct( ...
     'Index', vec(1 : size(rxgridpoints, 1)), ...
     'Position', rxgridpoints);
 %%
-tabulardisp(tabularhead(mobiles))
+disp(struct2table(tabularhead(mobiles)))
 
 %% Visualize configuration
     function varargout = showscene(title)
