@@ -37,14 +37,14 @@ varargin(issingleton) = cellfun( ...
     tocell{:});
 
 % Ensure all data arrays have uniform (e.g. vertical) orientation
-varargin = cellfun(@normalize, varargin, tocell{:});
+varargin = cellfun(@cellColumn, varargin, tocell{:});
 
 result = cellfun( ...
     @(varargin) sprintf(format, varargin{:}), ...
     varargin{:}, ...
     tocell{:});
 
-function x = normalize(x)
+function x = cellColumn(x)
 % Presents the input as a cell array in column order
 x = x(:);
 if ~iscell(x)

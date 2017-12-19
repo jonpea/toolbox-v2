@@ -1,13 +1,17 @@
 function eucap2018refined(varargin)
 
 import datatypes.cell2table
+%
+import facevertex.clone
 import facevertex.extrude
 import facevertex.faces
 import facevertex.fv
 import facevertex.vertices
-import scattered.bbox
-import scattered.text
-import scattered.plot
+%
+import points.bbox
+import points.text
+import points.unary
+import points.binary
 
 %%
 settings = parse(varargin{:});
@@ -60,81 +64,108 @@ vertices2D = [
 
 %% View 2-D plan
 scene2D = facevertex.fv(faceData2D.VertexIndices, vertices2D);
+scene2D.Material = faceData2D.Material;
 
-ax = settings.Axes('2D Scene');
+ax = settings.Axes('2-D Scene');
 patch(ax, 'Faces', faces(scene2D), 'Vertices', vertices(scene2D))
-scattered.text(ax, vertices(scene2D), 'Color', 'blue')
-scattered.text(ax, facevertex.reduce(@mean, scene2D), 'Color', 'red')
-axis(ax, scattered.bbox(vertices(scene2D), 0.1))
+points.text(ax, vertices(scene2D), 'Color', 'blue')
+points.text(ax, facevertex.reduce(@mean, scene2D), 'Color', 'red')
+axis(ax, bbox(vertices(scene2D), 0.1))
 axis(ax, 'equal')
 
 %% Generate 3-D model
 scene3D = facevertex.extrude(scene2D, faceData2D.ZSpan);
 scene3D = facevertex.compress(scene3D);
+scene3D.Material = scene2D.Material;
 
-ax = settings.Axes('3D Scene');
-hold on
-facevertex.multipatch(ax, ...
-    faceData2D.Material, ... % 2D & 3D are currently identical
-    facets, ...
-    'Faces', faces(scene3D), ...
-    'Vertices', vertices(scene3D), ...
-    'FaceAlpha', 0.1, 'FaceColor', 'blue')
-scattered.plot(ax, vertices(scene3D), 'Marker', '.', 'MarkerSize', 3)
-scattered.text(ax, vertices(scene3D), 'Color', 'black')
-scattered.text(ax, facevertex.reduce(@mean, scene3D), 'Color', 'red')
-axis(ax, scattered.bbox(vertices(scene3D), 0.1))
-axis(ax, 'equal')
-view(ax, 3)
-rotate3d(ax, 'on')
-
-floorface = facevertex.cap(@min, 3, scene3D)
-ceilingface = facevertex.cap(@max, 3, scene3D)
-
-% fun = @max;
-% dim = 3;
-% xfaces = facevertex.extreme(@max, 3, scene3D)
-% assert(numel(xfaces) == 4)
-
-return
-
-%[scene2D.Faces, scene2D.Vertices, scene2D.Material] = engineeringtower8data3dnew;
-scene3D.Material = arrayfun(finitefunction(facets.Material), scene2D.Material);
-
-offsets = settings.StudHeight*(0 : settings.NumFloors - 1);
-alllevels = facevertextranslate(scene2D, offsets(:)*[0 0 1]);
-alllevels.Vertices(abs(alllevels.Vertices) < 1e-12) = 0; % threshold on miniscule values
-    function stack(field)
-        alllevels.(field) = repmat(scene2D.(field), settings.NumFloors, 1);
+%%
+    function draw(ax, scene)
+        import facevertex.faces
+        import facevertex.vertices
+        hold(ax, 'on')
+        facevertex.multipatch(ax, ...
+            scene.Material, ... % 2D & 3D are currently identical
+            facets, ...
+            'Faces', faces(scene), ...
+            'Vertices', vertices(scene), ...
+            'FaceAlpha', 0.1, 'FaceColor', 'blue')
+        points.unary(@plot3, ax, vertices(scene), 'Marker', '.', 'MarkerSize', 3)
+        points.text(ax, vertices(scene), 'Color', 'black')
+        points.text(ax, facevertex.reduce(@mean, scene), 'Color', 'red')
+        graphics.axislabels('x', 'y', 'z')
+        axis(ax, points.bbox(vertices(scene), 0.1))
+        axis(ax, 'equal')
+        view(ax, 3)
+        rotate3d(ax, 'on')
     end
-stack('Material')
-stack('Gain')
 
-scene = settings.Scene(alllevels.Faces, alllevels.Vertices);
+ax = settings.Axes('Extruded 2-D Scene');
+draw(ax, scene3D)
+
+%%
+floorface = facevertex.cap(@min, 3, scene3D) %#ok<NOPRT>
+ceilingface = facevertex.cap(@max, 3, scene3D) %#ok<NASGU,NOPRT>
+
+scene3D.Faces(end + 1, :) = floorface;
+scene3D.Material(end + 1, :) = panel.Floor;
+
+ax = settings.Axes('3-D Scene');
+draw(ax, scene3D)
+
+%%
+elevate = @(x, level) x + level*[0, 0, settings.StudHeight];
+allFloors = arrayfun( ...
+    clone(elevate, scene3D), 0 : settings.NumFloors - 1, ...
+    'UniformOutput', false);
+
+ax = settings.Axes('Multistorey');
+cellfun(@(scene) draw(ax, scene), allFloors)
+
+%%
+quarterTurn = @(x, n) (x + [3, 0, 0])*points.rotor3([0 0 1], n*pi/2); 
+allBuildings = arrayfun( ...
+    clone(quarterTurn, scene3D), 0 : 3, ...
+    'UniformOutput', false);
+
+ax = settings.Axes('Multiblock');
+cellfun(@(scene) draw(ax, scene), allBuildings)
+grid(ax, 'on')
+
+%
+%     function stack(field)
+%         alllevels.(field) = repmat(scene2D.(field), settings.NumFloors, 1);
+%     end
+% stack('Material')
+% stack('Gain')
+% 
+% scene = settings.Scene(alllevels.Faces, alllevels.Vertices);
+%
+
+disp('Jon: Consider how to handle material properties of cloned object')
 
 return
 
 %% Configure access points
 data2d = celltotabular({
-    'ID'  'X'     'Y'  'Power'  'Channel';
-    1      2.3       2    0        1;
-    2      2.3       6    0        1;
-    3      2.3       9    0        1;
-    4      2.3      13    0        1;
-    5      2.3      17    0        1;
-    6      6.8      17    0        1;
-    7      9.8      17    0        1;
-    8     13.3      17    0        1;
-    9     17.3      17    0        1;
-    10    17.3      11    0        1;
-    11    17.3       7    0        1;
-    12    17.3       2    0        1;
-    13    12.3       2    0        1;
-    14     6.8       2    0        1;
-    15       5       5    0        2;
-    16    13.5    13.5    0        2;
-    17    13.5       5    0        3;
-    18       5    13.5    0        3;
+    'ID'   'X'     'Y'  'Power'  'Channel'
+    1      2.3       2     0        1
+    2      2.3       6     0        1
+    3      2.3       9     0        1
+    4      2.3      13     0        1
+    5      2.3      17     0        1
+    6      6.8      17     0        1
+    7      9.8      17     0        1
+    8     13.3      17     0        1
+    9     17.3      17     0        1
+    10    17.3      11     0        1
+    11    17.3       7     0        1
+    12    17.3       2     0        1
+    13    12.3       2     0        1
+    14     6.8       2     0        1
+    15       5       5     0        2
+    16    13.5    13.5     0        2
+    17    13.5       5     0        3
+    18       5    13.5     0        3
     });
 if isstruct(settings.AccessPoints)
     % Client has provided own table of access points
@@ -186,9 +217,9 @@ disp(struct2table(tabularhead(mobiles)))
         ax = settings.Axes(title);
         hold(ax, 'on')
         multipatch(ax, ...
-            alllevels.Material, facets, ...
-            'Faces', alllevels.Faces, ...
-            'Vertices', alllevels.Vertices, ...
+            allFloors.Material, facets, ...
+            'Faces', allFloors.Faces, ...
+            'Vertices', allFloors.Vertices, ...
             'FaceAlpha', 0.05)
         plotpoints(ax, accesspoints.Position, '.', 'MarkerSize', 30, 'Color', 'red')
         labelpoints(ax, accesspoints.Position + 0.2, ...
@@ -326,7 +357,7 @@ import parallel.numworkers
 parser = inputParser;
 
 % Transmitter/receiver configuration
-parser.addParameter('NumFloors', 1, @(n) isscalar(n) && 0 < n)
+parser.addParameter('NumFloors', 3, @(n) isscalar(n) && 0 < n)
 parser.addParameter('NumPointsPerFloor', 5, @(n) isscalar(n) && 0 < n)
 parser.addParameter('AccessPoints', 17:18, @(indices) all(iswithin(indices, 1, 18)))
 parser.addParameter('SINRThreshold', 10, @(x) isscalar(x) && 0 < x)

@@ -5,6 +5,6 @@ function t = columns(t, varargin)
 %
 %   See also TABULARROWS.
 
-import structs.getstruct
+import datatypes.struct.getstruct
 
 t = getstruct(t, varargin{:});

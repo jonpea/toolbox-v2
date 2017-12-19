@@ -6,7 +6,8 @@ function t = rows(t, rows)
 assert(isstruct(t))
 
     function a = select(a)
-        assert(ndims(a) <= 7)
+        assert(ndims(a) <= 7, ...
+            'At least one variable has too many dimensions.')
         a = a(rows, :, :, :, :, :, :);
     end
 t = structfun(@select, t, 'UniformOutput', false);

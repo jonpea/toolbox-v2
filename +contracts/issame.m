@@ -5,6 +5,10 @@ function tf = issame(fun, varargin)
 %
 %   Typical values for FUN are CLASS, SIZE, ISNAN, & NUMEL.
 %
+%   Example:
+%   >> [x, y, z] = meshgrid(1 : 3);
+%   >> assert(issame(@size, x, y, z))
+%
 %   This function is not intended for large values of N.
 %
 %   See also ISEQUAL, ISEQUALN, CLASS, NUMEL, SIZE.

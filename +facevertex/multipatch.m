@@ -3,7 +3,7 @@ function varargout = multipatch(varargin)
 import arguments.parsefirst
 import contracts.unreachable
 import datatypes.isaxes
-import structs.merge
+import datatypes.struct.merge
 
 [ax, labels, table, varargin] = parsefirst(@isaxes, gca, 2, varargin{:});
 
@@ -14,9 +14,9 @@ switch class(table)
         columnNames = table.Properties.VariableNames;
         tableRow = @(index) table2struct(table(index, :));
     case 'struct'
-        numRows = structs.tabular.height(table);
+        numRows = datatypes.struct.tabular.height(table);
         columnNames = fieldnames(table);
-        tableRow = @(index) structs.tabular.rows(table, index);
+        tableRow = @(index) datatypes.struct.tabular.rows(table, index);
     otherwise
         assert(false, unreachable)
 end
