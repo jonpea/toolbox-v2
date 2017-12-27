@@ -8,6 +8,11 @@ narginchk(1, 2)
 % Parse argument list
 [faces, vertices] = fv(varargin{:});
 
+% Drop unused vertices
+[select, ~, map] = unique(faces(:));
+faces(:) = map(:);
+vertices = vertices(select, :);
+
 % Re-map vertex indices
 [vertices, ~, map] = unique(vertices, 'rows');
 faces(:) = map(faces(:));

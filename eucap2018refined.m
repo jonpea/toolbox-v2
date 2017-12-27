@@ -21,14 +21,14 @@ dbtype panel
 
 %% Scene geometry and material properties
 facets = datatypes.cell2table({
-    'Material'           'Gain'   'FaceColor'   'LineWidth'
-    panel.SteelDoor      -3        'black'        2
-    panel.WoodenDoor     -3        'blue'         2
-    panel.ConcreteWall   -20       'red'          5
-    panel.GibWall        -3        'magenta'      2
-    panel.GlassWindow    -3        'cyan'         2
-    panel.Ceiling        -3        'blue'         1
-    panel.Floor          -3        'green'        1
+    'Material'     'Gain'   'FaceAlpha'   'FaceColor'   'LineWidth'
+    panel.Steel     -3       0.1           rgb.black     2
+    panel.Wood      -3       0.1           rgb.salmon    2
+    panel.Concrete  -20      0.1           rgb.red       5
+    panel.Gib       -3       0.1           rgb.magenta   2
+    panel.Glass     -3       0.1           rgb.cyan      2
+    panel.Ceiling   -3       0.5           rgb.blue      1
+    panel.Floor     -3       0.1           rgb.green     1
     });
 facets.EdgeColor = facets.FaceColor;
 
@@ -37,17 +37,17 @@ height.Floor = 0.0;
 height.Stud = 3.0;
 height.Door = 2.0;
 faceData2D = datatypes.cell2table({
-    'ID'  'VertexIndices'           'ZSpan'             'Material'      
-    1          [1 2]     [height.Floor height.Stud]  panel.GlassWindow   
-    2          [2 3]     [height.Floor height.Stud]  panel.ConcreteWall  
-    3          [4 5]     [height.Floor height.Stud]  panel.GibWall       
-    4          [5 6]     [height.Floor height.Stud]  panel.GibWall       
-    5          [1 4]     [height.Floor height.Stud]  panel.GibWall       
-    6          [3 6]     [height.Floor height.Stud]  panel.GibWall       
-    7          [2 7]     [height.Floor height.Stud]  panel.ConcreteWall  
-    8          [5 8]     [height.Floor height.Stud]  panel.ConcreteWall  
-    9          [7 8]     [height.Floor height.Door]  panel.WoodenDoor    
-    10         [7 8]     [height.Door  height.Stud]  panel.GibWall       
+    'ID'  'VertexIndices'           'ZSpan'          'Material'      
+    1          [1 2]     [height.Floor height.Stud]  panel.Gib
+    2          [2 3]     [height.Floor height.Stud]  panel.Concrete
+    3          [4 5]     [height.Floor height.Stud]  panel.Gib
+    4          [5 6]     [height.Floor height.Stud]  panel.Concrete
+    5          [1 4]     [height.Floor height.Stud]  panel.Gib
+    6          [3 6]     [height.Floor height.Stud]  panel.Concrete       
+    7          [2 7]     [height.Floor height.Stud]  panel.Concrete
+    8          [5 8]     [height.Floor height.Stud]  panel.Concrete
+    9          [7 8]     [height.Floor height.Door]  panel.Wood
+    10         [7 8]     [height.Door  height.Stud]  panel.Glass
     });
 
 %%
@@ -67,16 +67,14 @@ scene2D = facevertex.fv(faceData2D.VertexIndices, vertices2D);
 scene2D.Material = faceData2D.Material;
 
 ax = settings.Axes('2-D Scene');
-patch(ax, 'Faces', faces(scene2D), 'Vertices', vertices(scene2D))
+facevertex.multipatch(ax, ...
+    scene2D.Material, facets, ...
+    'Faces', faces(scene2D), ...
+    'Vertices', vertices(scene2D))
 points.text(ax, vertices(scene2D), 'Color', 'blue')
 points.text(ax, facevertex.reduce(@mean, scene2D), 'Color', 'red')
 axis(ax, bbox(vertices(scene2D), 0.1))
 axis(ax, 'equal')
-
-%% Generate 3-D model
-scene3D = facevertex.extrude(scene2D, faceData2D.ZSpan);
-scene3D = facevertex.compress(scene3D);
-scene3D.Material = scene2D.Material;
 
 %%
     function draw(ax, scene)
@@ -84,30 +82,42 @@ scene3D.Material = scene2D.Material;
         import facevertex.vertices
         hold(ax, 'on')
         facevertex.multipatch(ax, ...
-            scene.Material, ... % 2D & 3D are currently identical
-            facets, ...
+            scene.Material, facets, ...% 2D & 3D are currently identical
             'Faces', faces(scene), ...
-            'Vertices', vertices(scene), ...
-            'FaceAlpha', 0.1, 'FaceColor', 'blue')
-        points.unary(@plot3, ax, vertices(scene), 'Marker', '.', 'MarkerSize', 3)
+            'Vertices', vertices(scene))
+        points.unary(@plot3, ax, vertices(scene), '.', 'MarkerSize', 15)
         points.text(ax, vertices(scene), 'Color', 'black')
         points.text(ax, facevertex.reduce(@mean, scene), 'Color', 'red')
         graphics.axislabels('x', 'y', 'z')
         axis(ax, points.bbox(vertices(scene), 0.1))
         axis(ax, 'equal')
         view(ax, 3)
-        rotate3d(ax, 'on')
+        %rotate3d(ax, 'on')
     end
 
+%% Generate 3-D model
+[scene2DExtruded, facemap] = facevertex.extrude(scene2D, faceData2D.ZSpan);
+scene2DExtruded.Material = scene2D.Material(facemap, :);
+
 ax = settings.Axes('Extruded 2-D Scene');
+title('Note the duplicate vertices')
+draw(ax, scene2DExtruded)
+
+%%
+scene3D = facevertex.compress(scene2DExtruded);
+scene3D.Material = scene2DExtruded.Material;
+
+ax = settings.Axes('Compressed 3-D Scene');
 draw(ax, scene3D)
 
 %%
 floorface = facevertex.cap(@min, 3, scene3D) %#ok<NOPRT>
-ceilingface = facevertex.cap(@max, 3, scene3D) %#ok<NASGU,NOPRT>
-
 scene3D.Faces(end + 1, :) = floorface;
 scene3D.Material(end + 1, :) = panel.Floor;
+
+ceilingface = facevertex.cap(@max, 3, scene3D) %#ok<NOPRT>
+scene3D.Faces(end + 1, :) = ceilingface;
+scene3D.Material(end + 1, :) = panel.Ceiling;
 
 ax = settings.Axes('3-D Scene');
 draw(ax, scene3D)
@@ -115,7 +125,7 @@ draw(ax, scene3D)
 %%
 elevate = @(x, level) x + level*[0, 0, settings.StudHeight];
 allFloors = arrayfun( ...
-    clone(elevate, scene3D), 0 : settings.NumFloors - 1, ...
+    facevertex.clone(elevate, scene3D), 0 : settings.NumFloors - 1, ...
     'UniformOutput', false);
 
 ax = settings.Axes('Multistorey');
@@ -124,7 +134,7 @@ cellfun(@(scene) draw(ax, scene), allFloors)
 %%
 quarterTurn = @(x, n) (x + [3, 0, 0])*points.rotor3([0 0 1], n*pi/2); 
 allBuildings = arrayfun( ...
-    clone(quarterTurn, scene3D), 0 : 3, ...
+    facevertex.clone(quarterTurn, scene3D), 0 : 3, ...
     'UniformOutput', false);
 
 ax = settings.Axes('Multiblock');

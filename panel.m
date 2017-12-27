@@ -7,17 +7,12 @@ classdef panel < double
         Floor(2)
         
         % 3D door
-        SteelDoor(3)
-        WoodenDoor(4) 
-        
-        % 2D door types
-        DoorInConcrete(5) 
-        DoorInGibCavity(6)
-        DoorToLift(7)
-        
-        ConcreteWall(8)
-        GibWall(9)
-        GlassWindow(10)
+        Steel(3)
+        Wood(4) 
+                
+        Concrete(5)
+        Gib(6)
+        Glass(7)
        
         Unknown(nan)
         

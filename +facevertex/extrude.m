@@ -28,18 +28,20 @@ if isrow(span)
 end
 
 [uniqueSpan, ~, uniqueIndex] = unique(span, 'rows');
-    function [model, map] = process(index)
-        map = find(uniqueIndex == index);
+    function [model, faceMap, vertexMap] = process(index)
+        vertexMap = (1 : size(vertices, 1))'; % simple replication
+        faceMap = find(uniqueIndex == index);
         model = extrudeOnce( ...
-            faces(map, :), vertices, ...
+            faces(faceMap, :), vertices, ...
             uniqueSpan(index, 1), uniqueSpan(index, 2));
     end
-[models, maps] = arrayfun( ...
+[models, faceMaps, vertexMaps] = arrayfun( ...
     @process, 1 : size(uniqueSpan, 1), 'UniformOutput', false);
 
 varargout = {
     cat(models{:}) ...
-    vertcat(maps{:}) ...
+    vertcat(faceMaps{:}) ...
+    vertcat(vertexMaps{:}) ...
     };
 
 end
@@ -57,11 +59,11 @@ function [faces, vertices] = extrudeOnce(faces, vertices, lower, upper)
 
 narginchk(2, 4)
 
-switch nargin
-    case 2 % default span
+switch nargin - 2
+    case 0 % default span
         lower = 0.0;
         upper = 1.0;
-    case 3 % given height
+    case 1 % given height
         assert(lower ~= 0)
         upper = lower;
         lower = 0.0;
