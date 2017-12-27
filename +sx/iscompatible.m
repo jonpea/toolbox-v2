@@ -24,7 +24,7 @@ if nargin == 2
 end
 
 
-import singletonexpansion.sizetable
+import sx.sizetable
 
 % Form table of sizes and drop singleton entries
 nonsingleton = sizetable(varargin{:});

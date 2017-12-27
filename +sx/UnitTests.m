@@ -14,7 +14,7 @@ classdef UnitTests < matlab.unittest.TestCase
             
             function testFor(numSingletons, expectedLeadDim)
                 
-                import singletonexpansion.leaddim
+                import sx.leaddim
                 
                 % Test search for leading non-singleton dimension
                 nonOnes = @(n) repmat(nonsingletonValue, 1, n);
@@ -41,7 +41,7 @@ classdef UnitTests < matlab.unittest.TestCase
         function iscompatibleTest(testCase)
                         
             function testFor(shape1, shape2, expected)
-                import singletonexpansion.iscompatible
+                import sx.iscompatible
                 testCase.verifyEqual( ...
                     iscompatible(someArray(shape1), someArray(shape2)), ...
                     expected)
