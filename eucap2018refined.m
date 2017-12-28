@@ -8,13 +8,26 @@ import facevertex.faces
 import facevertex.fv
 import facevertex.vertices
 %
+import ops.vec
+%
 import points.bbox
+import points.binary
+import points.meshpoints
 import points.text
 import points.unary
-import points.binary
 
 %%
 settings = parse(varargin{:});
+
+%% Important note
+% NB: Use of the median as opposed to e.g. the mean of vertex coordinates
+% for ray origins result in many intersections at facet boundaries. This
+% is because the median be identically equal to vertex coordinates and
+% because the scene is an extrusion of a planar model. Generically, a
+% small perturbation to ray origin positions will destroy most of these
+% "spurious" intersections, where Embree disagrees with complete
+% enumeration.
+perturb = @(a) a + 1e-3*(rand(size(a)) - 0.5);
 
 %%
 dbtype panel
@@ -37,13 +50,13 @@ height.Floor = 0.0;
 height.Stud = 3.0;
 height.Door = 2.0;
 faceData2D = datatypes.cell2table({
-    'ID'  'VertexIndices'           'ZSpan'          'Material'      
+    'ID'  'VertexIndices'           'ZSpan'          'Material'
     1          [1 2]     [height.Floor height.Stud]  panel.Gib
     2          [2 3]     [height.Floor height.Stud]  panel.Concrete
     3          [4 5]     [height.Floor height.Stud]  panel.Gib
     4          [5 6]     [height.Floor height.Stud]  panel.Concrete
     5          [1 4]     [height.Floor height.Stud]  panel.Gib
-    6          [3 6]     [height.Floor height.Stud]  panel.Concrete       
+    6          [3 6]     [height.Floor height.Stud]  panel.Concrete
     7          [2 7]     [height.Floor height.Stud]  panel.Concrete
     8          [5 8]     [height.Floor height.Stud]  panel.Concrete
     9          [7 8]     [height.Floor height.Door]  panel.Wood
@@ -124,6 +137,16 @@ ax = settings.Axes('3-D Scene');
 draw(ax, scene3D)
 
 %%
+quarterTurn = @(x, n) (x + [3, 0, 0])*points.rotor3([0 0 1], n*pi/2);
+allBuildings = arrayfun( ...
+    facevertex.clone(quarterTurn, scene3D), 0 : 3, ...
+    'UniformOutput', false);
+allBuildings = facevertex.cat(allBuildings{:});
+
+ax = settings.Axes('Multiblock');
+draw(ax, allBuildings)
+
+%%
 elevate = @(x, level) x + level*[0, 0, settings.StudHeight];
 allFloors = arrayfun( ...
     facevertex.clone(elevate, scene3D), 0 : settings.NumFloors - 1, ...
@@ -133,70 +156,48 @@ allFloors = facevertex.cat(allFloors{:});
 ax = settings.Axes('Multistorey');
 draw(ax, allFloors)
 
-%%
-quarterTurn = @(x, n) (x + [3, 0, 0])*points.rotor3([0 0 1], n*pi/2); 
-allBuildings = arrayfun( ...
-    facevertex.clone(quarterTurn, scene3D), 0 : 3, ...
-    'UniformOutput', false);
-allBuildings = facevertex.cat(allBuildings{:});
-
-ax = settings.Axes('Multiblock');
-draw(ax, allBuildings)
-
-%
-%     function stack(field)
-%         alllevels.(field) = repmat(scene2D.(field), settings.NumFloors, 1);
-%     end
-% stack('Material')
-% stack('Gain')
-% 
-% scene = settings.Scene(alllevels.Faces, alllevels.Vertices);
-%
-
-disp('** Jon: Consider how to reduce vertically per floor and per room **')
-
-return
-
 %% Configure access points
-data2d = celltotabular({
-    'ID'   'X'     'Y'  'Power'  'Channel'
-    1      2.3       2     0        1
-    2      2.3       6     0        1
-    3      2.3       9     0        1
-    4      2.3      13     0        1
-    5      2.3      17     0        1
-    6      6.8      17     0        1
-    7      9.8      17     0        1
-    8     13.3      17     0        1
-    9     17.3      17     0        1
-    10    17.3      11     0        1
-    11    17.3       7     0        1
-    12    17.3       2     0        1
-    13    12.3       2     0        1
-    14     6.8       2     0        1
-    15       5       5     0        2
-    16    13.5    13.5     0        2
-    17    13.5       5     0        3
-    18       5    13.5     0        3
-    });
 if isstruct(settings.AccessPoints)
     % Client has provided own table of access points
     data2d = settings.AccessPoints;
 else
     % Client has selected from default list
-    data2d = tabularrows(data2d, settings.AccessPoints);
+    data2d = datatypes.cell2table({
+        'ID'   'Power'  'Channel'   'X'      'Y'
+        1      0        1           2.3       2
+        2      0        1           2.3       6
+        3      0        1           2.3       9
+        4      0        1           2.3      13
+        5      0        1           2.3      17
+        6      0        1           6.8      17
+        7      0        1           9.8      17
+        8      0        1          13.3      17
+        9      0        1          17.3      17
+        10     0        1          17.3      11
+        11     0        1          17.3       7
+        12     0        1          17.3       2
+        13     0        1          12.3       2
+        14     0        1           6.8       2
+        15     0        2             5       5
+        16     0        2          13.5    13.5
+        17     0        3          13.5       5
+        18     0        3             5    13.5
+        });
+    data2d = data2d(settings.AccessPoints, :);
 end
-data3d = tabularvertcat(arrayfun(@embedinfloor, 1 : settings.NumFloors));
-    function data = embedinfloor(floorindex, locals)
-        locals.height = ...
+
+    function data = embedinfloor(floorindex, local)
+        local.Height = ...
             settings.StudHeight*(floorindex - 1) + ...
             settings.AccessPointHeight;
-        data = setfield(data2d, ...
-            'Z', repmat(locals.height, size(data2d.X))); %#ok<SFLD>
-        data.ID = data.ID + (floorindex - 1)*100;
-        data = orderfields(data, ...
-            {'ID', 'X', 'Y', 'Z', 'Power', 'Channel'});
+        local.Heights = repmat(local.Height, size(data2d.X));
+        data = setfield(data2d, 'Z', local.Heights); %#ok<SFLD>
+        data.ID = data.ID + floorindex*1000;
+        return
     end
+temp = arrayfun(@embedinfloor, 1 : settings.NumFloors, 'UniformOutput', false);
+data3d = vertcat(temp{:});
+
 accesspoints = struct( ...
     'Index', data3d.ID, ...
     'Position', perturb([data3d.X, data3d.Y, data3d.Z]), ...
@@ -206,23 +207,26 @@ accesspoints = struct( ...
 disp(struct2table(accesspoints))
 
 %% Configure field points
-lower = min(alllevels.Vertices, [], 1);
-upper = max(alllevels.Vertices, [], 1);
+lower = min(allFloors.Vertices, [], 1);
+upper = max(allFloors.Vertices, [], 1);
 numverticalpoints = settings.NumPointsPerFloor * settings.NumFloors;
 widths = upper - lower;
 delta = settings.StudHeight / (settings.NumPointsPerFloor + 1);
 lower = lower + delta;
 upper = upper - delta;
 numpoints = ceil(widths./min(widths)*numverticalpoints);
-rxxticks = linspace(lower(1), upper(1), numpoints(1));
-rxyticks = linspace(lower(2), upper(2), numpoints(2));
-rxzticks = linspace(lower(3), upper(3), numpoints(3));
-rxgridpoints = gridpoints(rxxticks, rxyticks, rxzticks);
+rxGrid = arrayfun(@linspace, lower, upper, numpoints, 'UniformOutput', false);
+[rxGrid{:}] = meshgrid(rxGrid{:});
+[rxGridPoints, rxGrid{:}] = points.meshpoints(rxGrid{:});
 mobiles = struct( ...
-    'Index', vec(1 : size(rxgridpoints, 1)), ...
-    'Position', rxgridpoints);
+    'Index', ops.vec(1 : size(rxGridPoints, 1)), ...
+    'Position', rxGridPoints);
 %%
-disp(struct2table(tabularhead(mobiles)))
+disp(head(struct2table(mobiles)))
+
+disp('** Jon: Consider how to reduce vertically per floor and per room **')
+rotate3d(gca, 'on')
+return
 
 %% Visualize configuration
     function varargout = showscene(title)
@@ -271,10 +275,10 @@ downlinks = analyze( ...
     accesspoints.Position, mobiles.Position, scene, ...
     'NumWorkers', settings.NumWorkers, ...
     'ReflectionArities', settings.Arities, ...
-    'ReflectionGain', isofunction(alllevels.Gain), ...
+    'ReflectionGain', isofunction(allFloors.Gain), ...
     'Reporting', settings.Reporting, ...
     'SPMD', settings.SPMD, ...
-    'TransmissionGain', isofunction(alllevels.Gain), ...
+    'TransmissionGain', isofunction(allFloors.Gain), ...
     'Verbosity', settings.Verbosity);
 toc(starttime)
 
@@ -369,7 +373,7 @@ import parallel.numworkers
 parser = inputParser;
 
 % Transmitter/receiver configuration
-parser.addParameter('NumFloors', 3, @(n) isscalar(n) && 0 < n)
+parser.addParameter('NumFloors', 2, @(n) isscalar(n) && 0 < n)
 parser.addParameter('NumPointsPerFloor', 5, @(n) isscalar(n) && 0 < n)
 parser.addParameter('AccessPoints', 17:18, @(indices) all(iswithin(indices, 1, 18)))
 parser.addParameter('SINRThreshold', 10, @(x) isscalar(x) && 0 < x)

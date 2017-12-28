@@ -1,6 +1,6 @@
 function h = height(t)
 %HEIGHT Number of rows in a table.
-%   H = STRUCTS.HEIGHT(T) returns the number of rows in the table T.
+%   H = HEIGHT(T) returns the number of rows in the table T.
 %   If T is a structure array, compute the height of each element using
 %   e.g. 
 %   >> heights = arrayfun(@height, t)

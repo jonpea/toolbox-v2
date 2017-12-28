@@ -1,11 +1,12 @@
 function t = head(t, k)
-%TABULARHEAD Return the first few rows of a tabular struct.
-% head(T) returns the first eight rows of tabular struct T.
-% head(T,K) returns the first K rows of tabular struct T.
-% See also TABULAR/TAIL, TALL/HEAD.
+%HEAD Return the first few rows of a tabular struct.
+%   HEAD(T) returns the first eight rows of tabular struct T.
+%   HEAD(T,K) returns the first K rows of tabular struct T.
+%
+%   See also TAIL, TABULAR/TAIL, TALL/HEAD.
 
-import datatypes.struct.height
-import datatypes.struct.rows
+import datatypes.struct.tabular.height
+import datatypes.struct.tabular.rows
 
 if nargin == 1
     k = 8; % consistent with table/head

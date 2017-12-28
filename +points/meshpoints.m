@@ -1,5 +1,5 @@
 function [points, varargout] = meshpoints(varargin)
-%SCATTEREd.MESHPOINTS Mesh as scattered points.
+%MESHPOINTS Mesh as scattered points.
 % See also MESHGRID, NDGRID.
 
 import contracts.issame
