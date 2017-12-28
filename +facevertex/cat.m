@@ -13,8 +13,6 @@ import datafun.reduce
 import facevertex.fv
 import facevertex.isfv
 
-narginchk(2, nargin)
-
 % Parse optional argument
 if ischar(varargin{end})
     padding = varargin{end};
@@ -59,14 +57,20 @@ end
 % -------------------------------------------------------------------------
 function c = catPair(a, b)
 %CATPAIR Concatenate a single pair of polygon complexes.
+
 import facevertex.fv
-c = fv([
+import datatypes.struct.structsfun
+
+% Vertical concatenation of *all* fields i.e. including any 
+% user-specified fields, in addition to 'Faces', and 'Vertices'. 
+c = structsfun(@vertcat, a, b, 'UniformOutput', false);
+
+% Indices into rows of Vertices must be offset appropriately
+c.Faces = [
     a.Faces;
     b.Faces + size(a.Vertices, 1);
-    ], [
-    a.Vertices;
-    b.Vertices;
-    ]);
+    ];
+
 end
 
 % -------------------------------------------------------------------------

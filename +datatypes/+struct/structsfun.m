@@ -12,6 +12,8 @@ function varargout = structsfun(fun, varargin)
 %   See also STRUCTFUN, ARRAYFUN, CELLFUN, GETSTRUCT, SETSTRUCT.
 
 import arguments.nargoutfor
+import datafun.reduce
+import datatypes.isfunction
 
 narginchk(2, nargin)
 

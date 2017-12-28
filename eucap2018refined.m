@@ -27,7 +27,7 @@ facets = datatypes.cell2table({
     panel.Concrete  -20      0.1           rgb.red       5
     panel.Gib       -3       0.1           rgb.magenta   2
     panel.Glass     -3       0.1           rgb.cyan      2
-    panel.Ceiling   -3       0.5           rgb.blue      1
+    panel.Ceiling   -3       0.05          rgb.blue      1
     panel.Floor     -3       0.1           rgb.green     1
     });
 facets.EdgeColor = facets.FaceColor;
@@ -81,6 +81,7 @@ axis(ax, 'equal')
         import facevertex.faces
         import facevertex.vertices
         hold(ax, 'on')
+        grid(ax, 'on')
         facevertex.multipatch(ax, ...
             scene.Material, facets, ...% 2D & 3D are currently identical
             'Faces', faces(scene), ...
@@ -127,19 +128,20 @@ elevate = @(x, level) x + level*[0, 0, settings.StudHeight];
 allFloors = arrayfun( ...
     facevertex.clone(elevate, scene3D), 0 : settings.NumFloors - 1, ...
     'UniformOutput', false);
+allFloors = facevertex.cat(allFloors{:});
 
 ax = settings.Axes('Multistorey');
-cellfun(@(scene) draw(ax, scene), allFloors)
+draw(ax, allFloors)
 
 %%
 quarterTurn = @(x, n) (x + [3, 0, 0])*points.rotor3([0 0 1], n*pi/2); 
 allBuildings = arrayfun( ...
     facevertex.clone(quarterTurn, scene3D), 0 : 3, ...
     'UniformOutput', false);
+allBuildings = facevertex.cat(allBuildings{:});
 
 ax = settings.Axes('Multiblock');
-cellfun(@(scene) draw(ax, scene), allBuildings)
-grid(ax, 'on')
+draw(ax, allBuildings)
 
 %
 %     function stack(field)
@@ -151,7 +153,7 @@ grid(ax, 'on')
 % scene = settings.Scene(alllevels.Faces, alllevels.Vertices);
 %
 
-disp('Jon: Consider how to handle material properties of cloned object')
+disp('** Jon: Consider how to reduce vertically per floor and per room **')
 
 return
 

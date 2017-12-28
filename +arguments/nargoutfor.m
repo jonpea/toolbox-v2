@@ -25,6 +25,8 @@ function nout = nargoutfor(fun, nout)
 %
 %   See also NARGOUT, VARARGOUT, VARARGIN.
 
+import datatypes.isfunction
+
 narginchk(2, 2)
 assert(isfunction(fun))
 assert(isscalar(nout) && 0 <= nout, ...
