@@ -1,7 +1,6 @@
 Profiling
 * Calculation of transmission points with Embree
 
-
 Geometry
 * Slicing a grid e.g. vertically
 * Partitioning a plan by room
