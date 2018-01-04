@@ -14,6 +14,11 @@ default = cellstr(num2str(index(xyz{1})));
 
 [txt, varargin] = parsefirst(@iscellstr, default, 0, varargin{:});
 
-assert(iscellstr(txt))
+if mod(numel(varargin), 2) == 1
+   error( ...
+       contracts.msgid(mfilename, 'BadOptionalPairs'), ...
+       ['Options do not appear in key-value pairs:' ...
+       ' Ensure that labels are provided in a cellstr.'])       
+end
 
 [varargout{1 : nargout}] = text(ax, xyz{:}, txt, varargin{:});

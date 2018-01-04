@@ -2,6 +2,8 @@ function eucap2018refined(varargin)
 
 import datatypes.cell2table
 %
+import graphics.*
+%
 import facevertex.clone
 import facevertex.extrude
 import facevertex.faces
