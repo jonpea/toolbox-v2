@@ -13,7 +13,8 @@ if isnumeric(varargin{1})
     indices = 1 : 2*n;
     pairs = cellfun(@fv, ...
         varargin(indices(1 : 2 : end)), ...
-        varargin(indices(2 : 2 : end)));
+        varargin(indices(2 : 2 : end)), ...
+        'UniformOutput', false);
 else
     % Struct or patch object
     assert(n <= numArguments)

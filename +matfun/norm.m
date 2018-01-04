@@ -25,7 +25,6 @@ function norms = norm(a, p, varargin)
 %  See also NORM.
 
 import contracts.ndebug
-import contracts.msgid
 
 narginchk(1, 3)
 
@@ -37,20 +36,24 @@ assert(ndebug || isscalar(p) && isnumeric(p))
 
 if isinf(p)
     
-%     error( ...
-%         msgid(mfilename, 'UnsupportedNorm'), ...
-%         'Infinity (min/max) norms are not currently supported.')
-    
     if isempty(a)
+        %
         % Special cases 1.1: The norm of an empty vector is (correctly)
         % zero, whereas min/max applied to an empty array is empty.
-        leaddim = sx.leaddim(a, varargin{:});
+        %
         shape = size(a);
-        shape(end + 1 : leaddim) = 1; % NB: do *not* add trailing zeros!
-        shape(leaddim) = 1;
+        dim = sx.leaddim(a, varargin{:});
+        
+        % NB: Do *not* add trailing zeros; MATLAB drops trailing
+        % ones (in dimensions >2) but retains all zero dimensions
+        shape(end + 1 : dim) = 1;
+        
+        shape(dim) = 1;
         norms = zeros(shape, 'like', a);
     else
+        %
         % Special cases 1.2: min/max norm
+        %
         if p < 0
             reduce = @min;
         else

@@ -21,7 +21,7 @@ classdef UnitTests < matlab.unittest.TestCase
         
         function normTest(testCase, p, sz1, sz2, sz3, sz4, dim)
             a = data(sz1, sz2, sz3, sz4);
-            actual = sx.matfun.norm(a, p, dim);
+            actual = matfun.norm(a, p, dim);
             expected = cellfun(@(v) norm(squeeze(v), p), num2cell(a, dim));
             if 1e-6 < norm(actual(:) - expected(:))
                []; 
@@ -32,7 +32,7 @@ classdef UnitTests < matlab.unittest.TestCase
         
         function unitTest(testCase, sz1, sz2, sz3, sz4, dim)
             a = data(sz1, sz2, sz3, sz4);
-            actual = sx.matfun.unit(a, dim);
+            actual = matfun.unit(a, dim);
             norms = cellfun(@(v) norm(squeeze(v)), num2cell(a, dim));
             expected = a./norms;
             testCase.verifyEqual(actual, expected, 'AbsTol', 1e-10)

@@ -1,7 +1,23 @@
-Profiling
-* Calculation of transmission points with Embree
+TODO
+====
+- Decompose tracescenenew2.m and provide a detailed supporting document.
 
-
+Utilities
+=========
 Geometry
-* Slicing a grid e.g. vertically
-* Partitioning a plan by room
+- Slicing a grid e.g. vertically
+- Partitioning a plan by room
+- 3D interactive capabilities
+
+Testing
+=======
+* Enumeration of facet combinations 
+
+Profiling
+=========
+- Calculation of transmission points with Embree
+
+
+Repositories
+============
+- nlelib Fortran code with makefile

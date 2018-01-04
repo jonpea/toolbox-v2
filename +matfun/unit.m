@@ -15,13 +15,10 @@ function [a, r] = unit(a, varargin)
 %
 %   See also NORM.
 
-import sx.leaddim
-import sx.matfun.norm
-
 narginchk(1, 2)
 
-dim = leaddim(size(a), varargin{:});
-r = sx.matfun.norm(a, 2, dim);
+dim = sx.leaddim(a, varargin{:});
+r = matfun.norm(a, 2, dim);
 
 a = bsxfun(@rdivide, a, r); % Suitable since R2007a
 %a = a./r; % Suitable since R2017a

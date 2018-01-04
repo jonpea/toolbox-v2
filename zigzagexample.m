@@ -2,9 +2,15 @@
 
 %%
 clear
+import embree.embreescene
 import facevertex.gridplan
 import points.text
-import scene.*
+import rayoptics.imagemethod
+import scene.completescene
+
+%%
+scenefactory = @embreescene;
+% scenefactory = @completescene;
 
 %%
 numsegments = 6;
@@ -34,7 +40,7 @@ faceindices = zeros(1, numsegments);
 faceindices(1 : 2 : end) = top;
 faceindices(2 : 2 : end) = bottom;
 
-scene = completescene(faces, vertices);
+scene = scenefactory(faces, vertices);
 [pairindices, pathpoints] = imagemethod( ...
     scene.IntersectFacet, ...
     scene.Mirror, ...
@@ -44,7 +50,7 @@ scene = completescene(faces, vertices);
 
 %%
 arrayfun( ...
-    @(i) plotpoints(stack(pathpoints(i, :, :)), '-'), ...
+    @(i) points.unary(@plot, ax, stack(pathpoints(i, :, :)), '-'), ...
     1 : size(pathpoints, 1), ...
     'UniformOutput', false)
 
