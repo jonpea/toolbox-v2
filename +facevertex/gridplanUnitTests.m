@@ -12,17 +12,13 @@ classdef gridplanUnitTests < matlab.unittest.TestCase
         
         function basicTest(testCase, numXTicks, numYTicks, showPlot)
             
-            import facevertex.gridplan
-            
             % Arbitrary - but distinct - arrays of axis ticks
             xticks = 1 + (0 : numXTicks);
             yticks = 10 + (0 : numYTicks);
             
-            [faces, vertices] = gridplan(xticks, yticks);
+            [faces, vertices] = facevertex.gridplan(xticks, yticks);
             
             if showPlot
-                import points.unary
-                import facevertex.reduce
                 ax = axes(figure(1));
                 clf(ax, 'reset')
                 hold(ax, 'on')

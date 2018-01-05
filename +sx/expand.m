@@ -11,7 +11,7 @@ function varargout = expand(varargin)
 %
 %   See also SIZESX, BSXFUN.
 
-import singletonexpansion.sizesx
+import sx.sizesx
 
 commonshape = sizesx(varargin{:});
 numdims = numel(commonshape);
@@ -32,7 +32,7 @@ varargout = cellfun(@inflateArray, varargin, 'UniformOutput', false);
 end
 
 function checkcompatibility(shape1, shape2)
-assert(ndebug || ...
+assert(contracts.ndebug || ...
     isSingletonExpansionCompatible(shape1, shape2), ...
     'Shapes are incompatible with singleton expansion')
 end

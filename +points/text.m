@@ -22,3 +22,9 @@ if mod(numel(varargin), 2) == 1
 end
 
 [varargout{1 : nargout}] = text(ax, xyz{:}, txt, varargin{:});
+
+% -------------------------------------------------------------------------
+function idx = index(x, varargin)
+%INDEX Indices for first non-singleton array dimension.
+dim = sx.leaddim(x);
+idx = (1 : size(x, dim))';

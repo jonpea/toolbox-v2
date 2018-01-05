@@ -10,10 +10,7 @@ function result = sizesx(varargin)
 %
 %   See also SIZE.
 
-import singletonexpansion.iscompatible
-import singletonexpansion.sizetable
-
 narginchk(1, nargin)
-assert(ndebug || iscompatible(varargin{:}))
-sizes = sizetable(varargin{:}); % sizes along each row
+assert(contracts.ndebug || sx.iscompatible(varargin{:}))
+sizes = sx.sizetable(varargin{:}); % sizes along each row
 result = max(sizes, [], 1); % maximum in each column

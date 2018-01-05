@@ -29,8 +29,8 @@ axis(ax, 'equal'), axis(ax, 'off')
 patch(ax, 'Faces', faces, 'Vertices', vertices);
 points.text(ax, vertices, 'Color', 'blue')
 points.text(ax, facevertex.reduce(@mean, faces, vertices), 'Color', 'red')
-points.unary(@plot, ax, sourcepoints, 'rs')
-points.unary(@plot, ax, sinkpoints, 'ro')
+points.plot(ax, sourcepoints, 'rs')
+points.plot(ax, sinkpoints, 'ro')
 
 %%
 numfaces = size(faces, 1);
@@ -50,12 +50,13 @@ scene = scenefactory(faces, vertices);
 
 %%
 arrayfun( ...
-    @(i) points.unary(@plot, ax, stack(pathpoints(i, :, :)), '-'), ...
+    @(i) points.plot(ax, stack(pathpoints(i, :, :)), '-'), ...
     1 : size(pathpoints, 1), ...
     'UniformOutput', false)
 
 assert(numel(pairindices) == size(sourcepoints, 1))
 
+% -------------------------------------------------------------------------
 function x = stack(x)
 %STACK Stacks the layers of a 3D array.
 % STACK(CAT(3,A,B,C,...)) returns [A; B; C; ...] if A, B, C are matrices.

@@ -8,9 +8,7 @@ import points.components;
 narginchk(2, nargin)
 assert(isfunction(fun))
 
-[ax, xyz, varargin] = parsefirst(@isaxes, gca, 1, varargin{:});
-
-assert(isgraphics(ax))
+[ax, xyz, varargin] = parsefirst(@datatypes.isaxes, gca, 1, varargin{:});
 
 xyz = components(xyz);
 [varargout{1 : nargout}] = feval(fun, ax, xyz{:}, varargin{:});

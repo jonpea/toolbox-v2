@@ -1,5 +1,5 @@
 function result = dot(a, b, varargin)
-%DOT  Vector dot product (singleton expansion compatible).
+%DOT  Vector dot product (with singleton expansion).
 %   DOT(A,B), for N-D arrays A and B, returns the scalar product
 %   along the first non-singleton dimension of A and B. 
 %

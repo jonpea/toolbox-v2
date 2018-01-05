@@ -226,7 +226,7 @@ mobiles = struct( ...
 %%
 disp(head(struct2table(mobiles)))
 
-disp('** Jon: Consider how to reduce vertically per floor and per room **')
+disp('** TODO: Continue below and consider how to reduce vertically per floor and per room **')
 rotate3d(gca, 'on')
 return
 
@@ -241,7 +241,7 @@ return
             'FaceAlpha', 0.05)
         plotpoints(ax, accesspoints.Position, '.', 'MarkerSize', 30, 'Color', 'red')
         labelpoints(ax, accesspoints.Position + 0.2, ...
-            csprintf('%u(%u)', accesspoints.Index, accesspoints.Channel), ...
+            compose('%u(%u)', accesspoints.Index, accesspoints.Channel), ...
             'FontSize', settings.FontSize)
         set(ax, 'FontSize', settings.FontSize)
         labelaxes(ax, 'x', 'y', 'z', 'FontSize', settings.FontSize)

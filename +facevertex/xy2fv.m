@@ -4,7 +4,7 @@ function varargout = xy2fv(varargin)
 %   of a polygon complex given as vertex lists:
 %   [X(i,j),Y(i,j)] are the coordinate of vertex i of polygon j;
 %   FACES(j,:) is the connectivity list for polygon j; and
-%   VERTICES(i,1:2) are the coordinate of vertex i.
+%   VERTICES(i,1:2) are the coordinates of vertex i.
 %
 %   [FACES,VERTICES] = FC2XY(X,Y,Z) applies to a 3-D complex.
 %
@@ -20,7 +20,7 @@ function varargout = xy2fv(varargin)
 
 import contracts.issame
 import contracts.ndebug
-import functional.reduce
+import datafun.reduce
 import facevertex.fv
 
 narginchk(2, 4)

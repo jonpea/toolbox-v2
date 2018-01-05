@@ -2,6 +2,11 @@ TODO
 ====
 - Decompose tracescenenew2.m and provide a detailed supporting document.
 
+Key Modules to Document
+=======================
+- Antenna patterns: isofunction, sphericalpattern
+- Both work (deliberately) in cartesian coordinates native to tracescene
+
 Utilities
 =========
 Geometry

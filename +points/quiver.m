@@ -13,4 +13,4 @@ switch size(xyz, 2)
         plotter = @quiver3;
 end
 
-[varargout{1 : nargout}] = points.binary(plotter, varargin{:});
+[varargout{1 : nargout}] = binary(plotter, varargin{:});
