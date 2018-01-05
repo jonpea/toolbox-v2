@@ -1,0 +1,6 @@
+name   height   active
+(char) (double) (logical)
+-------------------------
+Alice   1.65     1
+Belinda 1.72     0
+Carey   1.81     1
