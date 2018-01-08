@@ -6,10 +6,10 @@ narginchk(2, nargin)
 assert(ismatrix(origins) && ismember(size(origins, 2), [2, 3]))
 assert(ismatrix(targets) && ismember(size(targets, 2), [2, 3]))
 
-settings = tracesceneargumentsnew(varargin{:});
+settings = imagemethod.tracesceneargumentsnew(varargin{:});
 
 % Disable reporting if results are not actually used
-settings.Reporting = settings.Reporting && nargout == 3;
+settings.Reporting = settings.Reporting && 3 <= nargout;
 
 % Disable SPMD operation if a pool of workers is not available
 if settings.SPMD && isempty(currentpool)
@@ -40,8 +40,8 @@ function [downlinkpower, uplinkpower, interactions, elapsed] = ...
     findinteractions(arities, origins, targets, settings)
 
 % Prepare to restore ndebug after aplying NDEBUG option (see [*])
-state = ndebug;
-cleaner = onCleanup(@() ndebug(state));
+state = contracts.ndebug;
+cleaner = onCleanup(@() contracts.ndebug(state));
 
 % Key dimensions
 numarities = numel(arities);
@@ -62,7 +62,7 @@ spmd
 end
 
     function [sourceindices, sinkindices, pathpoints] = reflectionpoints(faceindices)
-        [pairindices, pathpoints] = imagemethod( ...
+        [pairindices, pathpoints] = rayoptics.imagemethod( ...
             settings.Scene.IntersectFacet, ...
             settings.Scene.Mirror, ...
             faceindices, ...
@@ -81,11 +81,11 @@ end
     end
 
 import parallel.parreduce
-import sequence.IndexSequence
+% import sequence.IndexSequence
 
 tasks = sequence.NestedSequence( ...
     sequence.ArraySequence(arities), ...
-    @(arity) FacetSequence(settings.Scene.NumFacets, arity), ...
+    @(arity) imagemethod.FacetSequence(settings.Scene.NumFacets, arity), ...
     @(globalindex, ~, facetindices) {globalindex, facetindices});
     function [hasnext, next] = getnext()
         hasnext = tasks.hasnext();
@@ -103,8 +103,8 @@ tasks = sequence.NestedSequence( ...
     'Finalize', @toc);
 
 if true
-    downlinkpower = reduce(@plus, downlinkpower{:});
-    uplinkpower = reduce(@plus, uplinkpower{:});    
+    downlinkpower = datafun.reduce(@plus, downlinkpower{:});
+    uplinkpower = datafun.reduce(@plus, uplinkpower{:});    
 else
     masterindex = 1;
     
@@ -127,9 +127,10 @@ else
 end
 
 if settings.Reporting   
-    interactions = tabularvertcat(interactions);
+    interactions = datatypes.struct.structfun( ...
+        @vertcat, interactions, 'UniformOutput', false);
     % Remap sequence index so values start at 1 and are contiguous
-    pathlabels = tabulartomatrix(interactions, 'SequenceIndex', 'Identifier');
+    pathlabels = [interactions.SequenceIndex, interactions.Identifier];
     [~, ~, identifiers] = unique(pathlabels, 'rows');
     interactions.Identifier = identifiers;
     interactions = rmfield(interactions, 'SequenceIndex');
@@ -145,7 +146,7 @@ function hits = sorthits(hits)
     hits.SegmentIndex, ... % previously 'RayIndex'
     hits.Parameter  % previously 'RayParameter'
     ]);
-hits = tabularrows(hits, permutation);
+hits = datatypes.struct.tabular.rows(hits, permutation);
 end
 
 % -------------------------------------------------------------------------
@@ -154,6 +155,8 @@ function [downlinkpower, uplinkpower, nodetables] = spmdbody( ...
     downlinkpower, uplinkpower, nodetables, ...
     reflectionpoints, transmissionpoints, settings)
 
+import contracts.ndebug
+import datatypes.isfunction
 assert(iscell(task) && numel(task) == 2)
 assert(ndebug || isequal(size(downlinkpower), size(uplinkpower)))
 assert(ndebug || iscell(nodetables))
@@ -163,7 +166,7 @@ assert(ndebug || isstruct(settings))
 
     function result = evaluatechecked(fun, varargin)
         result = feval(fun, varargin{:});
-        if not(ndebug || all(isfinite(result)))
+        if not(contracts.ndebug || all(isfinite(result)))
             error([mfilename ':NaNInfGainFunction'], ...
                 'Gain function %s returns nan or inf', func2str(fun))
         end
@@ -201,7 +204,7 @@ transmission = transmissionpoints( ...
     candidatefaceindices);
 
 % Friis free-space gain (all negative) for each path
-segmentlengths = twonorm(directions, 2);
+segmentlengths = matfun.norm(directions, 2, 2);
 segments.PathLength = sum(segmentlengths, 3);
 gain.Free = evaluatechecked( ...
     settings.FreeGain, ...
@@ -230,8 +233,8 @@ reflectiongainonpaths = evaluatechecked( ...
     segments.FaceIndex(:), ...
     stack(directions(:, :, 1 : end - 1))); % "incoming"
 gain.Reflection = accumarray( ...
-    vec(rayid(:, 2 : end)), ...
-    vec(reflectiongainonpaths), ...
+    ops.vec(rayid(:, 2 : end)), ...
+    ops.vec(reflectiongainonpaths), ...
     [numpaths, 1]);
 
 % Gain (all negative) for each transmission node (see Note above)
@@ -242,8 +245,8 @@ transmission.GainOnPath = evaluatechecked( ...
     transmission.FaceIndex(:), ...
     transmission.Direction); % "incoming"
 gain.Transmission = accumarray( ...
-    vec(rayid(transmission.RayIndex)), ...
-    vec(transmission.GainOnPath), ...
+    ops.vec(rayid(transmission.RayIndex)), ...
+    ops.vec(transmission.GainOnPath), ...
     [numpaths, 1]);
 
 % Path gain in dBW
@@ -256,7 +259,7 @@ gain.Path = gain.Free + gain.Reflection + gain.Transmission;
         inout(:, :, index) = inout(:, :, index) + ...
             accumarray( ...
             [segments.SinkIndex(:), segments.SourceIndex(:)], ...
-            fromdb(gaindb), ... % NB: Convert dB to watts
+            elfun.fromdb(gaindb), ... % NB: Convert dB to watts
             [numsources, numsinks]);
     end
 downlinkpower = accumulate(downlinkpower, gain.Source + gain.Path);
@@ -264,6 +267,7 @@ uplinkpower = accumulate(uplinkpower, gain.Sink + gain.Path);
 
 if settings.Reporting
     
+    import imagemethod.interaction
     numtransmissions = numel(transmission.FaceIndex);
     segments.SourceType = repmat(interaction.Source, numpaths, 1);
     segments.SinkType = repmat(interaction.Sink, numpaths, 1);
@@ -271,6 +275,7 @@ if settings.Reporting
     transmission.Type = repmat(interaction.Transmission, numtransmissions, 1);
     transmission.Blank = blank(transmission.FaceIndex);
     
+    import datatypes.struct.tabular.istabular
     assert(istabular(segments))
     assert(istabular(transmission))
     assert(istabular(gain))
@@ -288,6 +293,7 @@ if settings.Reporting
     %    as opposed to
     %    "[source(:); reflection(:)]" <-- incorrect
     %
+    import ops.vec
     nodetable = struct( ...
         'SequenceIndex', [
         vec(repmat(globalstep, numpaths*numraysperpath, 1));
@@ -361,7 +367,8 @@ if settings.Reporting
         ]);
     
     % Store for aggregation
-    nodetables{end + 1} = tabularrows(nodetable, permutation);
+    import datatypes.struct.tabular.rows
+    nodetables{end + 1} = rows(nodetable, permutation);
     
 end
 

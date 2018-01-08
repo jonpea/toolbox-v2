@@ -7,8 +7,6 @@
 #include <cstddef> // for std::size_t
 #include <functional> // for std::minus
 #include <numeric> // for std::inner_product
-#include <stdexcept> // for std::length_error
-#include <utility> // for std::pair
 
 namespace ray_tracing {
     
@@ -62,7 +60,7 @@ template<size_type NumDims>
 using vector = ::std::array<real_type, NumDims>;
 
 template<size_type N> inline
-/*size_type*/ bool intersect(
+bool intersect(
         // Inputs
         vector<N> const* face_origins,
         vector<N> const* face_normals,
@@ -87,42 +85,32 @@ template<size_type N> inline
         size_type & ray_id, 
         size_type & num_hits)
 {
-    /*size_type num_hits = 0u;*/
+    // Work storage
     vector<N> intersection, offset, offset_direction;
     vector<N - 1> face_coordinates;
     
-    bool success = true;
-    
-    for (/*size_type face_id = 0*/; face_id < num_faces; ++face_id)
+    for (/*face_id = "resume"*/; face_id < num_faces; ++face_id)
     {
         if (!face_masks[face_id]) 
             continue; // no hits to compute at masked face
-        
+                
         auto const& face_origin = face_origins[face_id];
         auto const& face_normal = face_normals[face_id];
         auto const& face_offset = face_offsets[face_id];
         auto const& face_map = offset_to_local_map[face_id];
        
-        for (/*size_type ray_id = 0*/; ray_id < num_rays; ++ray_id)
+        for (/* ray_id = "resume" */; ray_id < num_rays; ++ray_id)
         {
             auto const& ray_origin = ray_origins[ray_id];
             auto const& ray_direction = ray_directions[ray_id];
             
-            //difference(face_origin, ray_origin, offset_direction);
             const auto
-                    //numerator = dot_product(face_normal, offset_direction),
                     numerator = face_offset - dot_product(face_normal, ray_origin),
                     denominator = dot_product(face_normal, ray_direction);
             const auto 
                     t = numerator / denominator;
             
-            // if (::std::isnan(t))
-            //     mexPrintf(
-            //             "\n***** [%g / %g = %g] *****\n\n",
-            //             numerator, denominator, t);
-            
-            if (excludes(t_near, t_far, t) || ::std::isnan(t)) 
-                continue;
+            if (excludes(t_near, t_far, t) || ::std::isnan(t)) continue;
             
             // Cartesian coordinates of intersection points
             add_scaled(ray_origin, ray_direction, t, intersection);
@@ -141,12 +129,8 @@ template<size_type N> inline
                     unit_excludes))
                 continue;
 
-            if (num_hits == hit_capacity)
-            {
-                /*throw std::length_error("Output buffer has insufficient capacity");*/
-                success = false;
-                break;
-            }
+            if (num_hits == hit_capacity) 
+                return false; // "not success: buffer overflow"
                            
             face_index_buffer[num_hits] = static_cast<index_type>(face_id);
             ray_index_buffer[num_hits] = static_cast<index_type>(ray_id);
@@ -158,12 +142,12 @@ template<size_type N> inline
                     begin(face_coordinates_buffer[num_hits]));            
             ++num_hits;
         }
-        
-        if (!success) break;
+
+        // Reset for next trip through inner loop
+        ray_id = 0;
     }
     
-    /*return size_type(num_hits);*/
-    return success;
+    return true; // "success"
 }
 
 template<size_type N> inline

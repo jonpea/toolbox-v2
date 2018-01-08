@@ -25,10 +25,12 @@ assert(ndebug || all(ismember(unique(facetofunction), 1 : numel(functions))))
         assert(ndebug || isvector(faceindices))
         assert(ndebug || ismatrix(directions))
                 
-        % Transform global Cartesian coordinates
-        % to those relative to faces' local frames
-        localdirections = squeeze(matfun.dot( ...
-            frames(faceindices, :, :), directions, 2));
+        % Transform global Cartesian coordinates to local 
+        % Cartesian coordinates relative to faces' local frames 
+        % via "local(i, j) = dot(map(face(i), :, j), global(:))".
+        localdirections = reshape( ...
+            matfun.dot(frames(faceindices, :, :), directions, 2), ...
+            numel(faceindices), []);
         
         % Angles relative to local frame
         angles = cartesiantoangularnew(localdirections);

@@ -6,10 +6,10 @@ if nargin == 1
     interactions = gainfunctions.Data;
     gainfunctions = gainfunctions.Functions;
 end
-assert(istabular(interactions))
+assert(datatypes.struct.tabular.istabular(interactions))
 assert(isstruct(gainfunctions))
 
-numinteractiontypes = numel(enumeration('interaction'));
+numinteractiontypes = numel(enumeration('imagemethod.interaction'));
 
 % Partition interactions by type
 % e.g. interactionrows{double(transmission)} returns
@@ -22,7 +22,7 @@ interactionrows = accumarray( ...
 
     function result = evaluate(type)
         % Computes gains for each type of interaction
-        index = interaction(type);
+        index = imagemethod.interaction(type);
         result = feval( ...
             gainfunctions.(type), ... % function/head
             interactions.ObjectIndex(interactionrows{index}, :), ... % interaction object
@@ -34,16 +34,16 @@ interactionrows = accumarray( ...
         % vector with as many rows as there are interactions of all types;
         % rows corresponding to other types of intereactions contain zeros
         result = accumarray( ...
-            interactionrows{interaction(type)}(:), ...
+            interactionrows{imagemethod.interaction(type)}(:), ...
             transform(evaluate(type)), ...
             size(interactions.SegmentIndex)); % previously 'RayIndex'
     end
 
 % Compute gain associated with individual interactions
 timer = starttimer('evaluating interaction gain functions...');
-sourcegain = accululatefor('Source', @identity); % @todb in old version
-reflectiongain = accululatefor('Reflection', @identity);
-transmissiongain = accululatefor('Transmission', @identity);
+sourcegain = accululatefor('Source', @elfun.identity); % @todb in old version
+reflectiongain = accululatefor('Reflection', @elfun.identity);
+transmissiongain = accululatefor('Transmission', @elfun.identity);
 
 % Aggregate sparse (with dense storage) vectors into a single column
 interactions.InteractionGain = ...
@@ -51,8 +51,8 @@ interactions.InteractionGain = ...
 stoptimer(timer)
 
 % Extracts source wavelength for each reflected path
-issource = interactions.InteractionType == interaction.Source;
-issink = interactions.InteractionType == interaction.Sink;
+issource = interactions.InteractionType == imagemethod.interaction.Source;
+issink = interactions.InteractionType == imagemethod.interaction.Sink;
 numpaths = numel(unique(interactions.Identifier));
 assert(sum(issource) == numpaths)
 assert(sum(issink) == numpaths)
@@ -71,13 +71,13 @@ timer = starttimer('        accumulating gains over paths...');
 interactiongain = accumarray( ...
     interactions.Identifier, interactions.InteractionGain);
 totalgain = freegain + interactiongain;
-power = fromdb(totalgain);
+power = elfun.fromdb(totalgain);
 stoptimer(timer)
 
 timer = starttimer('       assigning sink-specific fields...');
 % This function assigns given values to the rows of an array (whose rows
 % are assocated with interactions) corresponding to sink nodes
-selectsink = interactions.InteractionType == interaction.Sink;
+selectsink = interactions.InteractionType == imagemethod.interaction.Sink;
     function result = assignsinks(values)
         result = zeros(size(interactions.FreeDistance));
         result(selectsink) = values;
@@ -92,10 +92,11 @@ stoptimer(timer)
 
 % tabulardisp(tabularhead( ...
 %     tabularcolumns(interactions, 'FinalDistance', 'TotalDistance'), 10))
+import contracts.ndebug
 assert(ndebug || all(isfinite(interactions.FinalDistance)))
 assert(ndebug || all(isfinite(interactions.TotalDistance)))
 assert(ndebug || isequal(size(interactions.FinalDistance), size(interactions.TotalDistance)))
-assert(ndebug || isequalfp(interactions.FinalDistance, interactions.TotalDistance))
+assert(ndebug || norm(interactions.FinalDistance - interactions.TotalDistance, inf) < 1e-10)
 
 timer = starttimer('                   re-ordering fields...');
 result = orderfields(interactions, { ...

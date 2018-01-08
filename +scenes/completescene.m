@@ -106,9 +106,10 @@ classdef completescene < handle
         function hits = intersectpaths(obj, origins, directions, faceindices)
             narginchk(4, 4)
             nargoutchk(1, 1)
+            import contracts.ndebug
             assert(ndebug || isequal(size(origins), size(directions)))
             assert(ndebug || size(origins, 3) == numel(faceindices) + 1)
-            faceidtoignore = reflectionsegments(faceindices);
+            faceidtoignore = imagemethod.reflectionsegments(faceindices);
             for i = 1 : size(origins, 3)
                 obj.intersectSegments( ...
                     origins(:, :, i), ...
@@ -149,7 +150,7 @@ classdef completescene < handle
             % When only a few (one or two) faces are to be discarded,
             % apply the filter via face masks, since indexing with ':'
             % is minimally inexpensive.
-            assert(ndebug || all(obj.FaceMasksTransposed))
+            assert(contracts.ndebug || all(obj.FaceMasksTransposed))
             obj.FaceMasksTransposed(ignore) = false;
             obj.intersectionDispatch(origins, directions, ':')
             obj.FaceMasksTransposed(ignore) = true;
@@ -201,16 +202,24 @@ classdef completescene < handle
             assert(ndebug || ismember(size(origins, 2), 2 : 3))
             assert(ndebug || isequal(size(origins), size(directions)))
             assert(ndebug || isscalar(faceid)) % "either ':' or one facet"
+            if ~(sum(obj.Chunks) == obj.Offset)
+                [];
+            end
             assert(ndebug || sum(obj.Chunks) == obj.Offset)
             
             [tnear, tfar] = imagemethod.raylimits(class(origins));
             
-            [face_loop_id, ray_loop_id, numhits] = deal(mex.mexindex(0));
+            % State variables are loop indices
+            % NB: These C/C++ indices start at zero
+            [face_loop_id, ray_loop_id] = deal(mex.mexindex(0));            
+            
+            % To calculate number of hits from offsets
+            oldoffset = obj.Offset;
             
             while true
                 
                 [success, face_loop_id, ray_loop_id, obj.Offset] = ...
-                    scene.planarintersectionmex( ...
+                    scenes.planarintersectionmex( ...
                     ... % Inputs: Scene
                     obj.FaceOriginsTransposed(:, faceid), ...
                     obj.FaceNormalsTransposed(:, faceid), ...
@@ -244,6 +253,7 @@ classdef completescene < handle
             end
             
             % Prepare for next batch of hits
+            numhits = obj.Offset - oldoffset;
             obj.Chunks(end + 1) = numhits;
             
         end

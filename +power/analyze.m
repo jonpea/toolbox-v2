@@ -1,6 +1,6 @@
 function [dlinks, ulinks, interactions] = analyze(origins, targets, varargin)
 
-[traceoptions, unmatched] = tracesceneargumentsnew(varargin{:});
+[traceoptions, unmatched] = imagemethod.tracesceneargumentsnew(varargin{:});
 
 parser = inputParser;
 parser.addParameter( ...
@@ -14,49 +14,21 @@ parser.addParameter( ...
 parser.parse(unmatched)
 linkoptions = parser.Results;
 
-compareversions = true;
-if compareversions
-    % Gain components (in watts) for each reflection arity
-    ttemp = tic; %#ok<UNRCH>
-    [downlinkgainswatts2, uplinkgainswatts2, interactions2] = ...
-        tracescenenew(origins, targets, traceoptions);
-    toc(ttemp)
-end
 % ===>>>
 fprintf('\n')
 fprintf('####### Re-running with tracescene2... #######\n')
 ttemp = tic;
 [downlinkgainswatts, uplinkgainswatts, interactions, durations] = ...
-    tracescenenew2(origins, targets, traceoptions); %#ok<ASGLU>
+    imagemethod.tracescenenew2(origins, targets, traceoptions); %#ok<ASGLU>
 totalelapsed = toc(ttemp);
 fprintf('Elapsed time is %.5f seconds.\n', totalelapsed)
-if compareversions
-    compare(downlinkgainswatts, downlinkgainswatts2)
-    compare(uplinkgainswatts, uplinkgainswatts2)
-    save analyzedata interactions interactions2
-    structsfun(@compare, [interactions.Data, interactions2.Data])
-    assert(all(structsfun(@isequal, [interactions.Functions, interactions2.Functions])))
-    labindices = (1 : numworkers)';
-    durations = vertcat(durations{:}); % transfer from workers to client
-    minduration = min(durations);
-    maxduration = max(durations);
-    disp('Statistics:')
-    tabulardisp(struct( ...
-        'LabIdx', labindices(:), ...
-        'Duration', durations, ...
-        'DurationRelToMax', durations / maxduration))
-    fprintf('    Min DurationRelToMax: %f\n', minduration/maxduration)
-    fprintf('Communication overhead: 1.0 - %.2f/%.2f = %.2f%%\n', ...
-        maxduration, totalelapsed, (1.0 - maxduration/totalelapsed)*100)
-    fprintf('####### ... matched tracescene v1. #######\n')
-end
 % <<<===
 
 % Received gain (in dBW): Rows for access points, columns for mobiles
-downlinkgaindbw = todb(sum(downlinkgainswatts, 3));
+downlinkgaindbw = elfun.todb(sum(downlinkgainswatts, 3));
 
 % Downlink calculations
-dlinks = dlinksinr( ...
+dlinks = power.dlinksinr( ...
     downlinkgaindbw, ...
     linkoptions.AccessPointChannel, ...
     linkoptions.MinimumDiscernableSignal);
@@ -79,10 +51,10 @@ end
 
 % Received gain (in watts), rows for receivers
 uplinkgainwatts = sum(uplinkgainswatts, 3);
-uplinkgaindbw = todb(uplinkgainwatts);
+uplinkgaindbw = elfun.todb(uplinkgainwatts);
 
 % Uplink calculations
-ulinks = ulinksinr( ...
+ulinks = power.ulinksinr( ...
     uplinkgaindbw, ...
     dlinks.AccessPoint, ...
     linkoptions.AccessPointChannel, ...

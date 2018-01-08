@@ -1,7 +1,7 @@
-function varargout = structarrayfun(fun, structs, varargin)
-%STRUCTARRAYFUN Apply a function to each field of a structure array.
-% [A, B, C, ...] = STRUCTARRAYFUN(@(X1, X2), [S1, S2], ...)
-% generalizes STRUCTFUN from scalar structs to struct arrays.
+function varargout = structfun(fun, structs, varargin)
+%STRUCTFUN Apply a function to each field of a structure array.
+% [A, B, C, ...] = STRUCTFUN(@(X1, X2), [S1, S2], ...)
+% generalizes (built-in) STRUCTFUN from scalar structs to struct arrays.
 % See also STRUCTFUN.
 
 import arguments.nargoutfor

@@ -15,8 +15,8 @@ fprintf('Building Mex files...\n')
 build = @(varargin) buildtoolboxmex(varargin{:}, mexflags{:});
 % build('mexfiles', 'intersectmex.cpp')
 % build('mexfiles', 'pointermex.cpp')
-build('+scene', 'planarmirrormex.cpp')
-build('+scene', 'planarintersectionmex.cpp')
+build('+scenes', 'planarmirrormex.cpp')
+build('+scenes', 'planarintersectionmex.cpp')
 
 buildembreemex('embreescenemex.cpp', mexflags{:})
 

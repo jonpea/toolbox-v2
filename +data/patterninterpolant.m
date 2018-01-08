@@ -8,6 +8,7 @@ if nargin < 3
     wrap = @wrapcircle;
 end
 
+import datatypes.isfunction
 assert(isstruct(data))
 assert(isfunction(transform))
 assert(isfunction(wrap))

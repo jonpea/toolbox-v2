@@ -1,6 +1,6 @@
 function [stats, powertable, gaintable] = gainstatistics(interactions)
 
-isreflection = interactions.InteractionType == interaction.Reflection;
+isreflection = interactions.InteractionType == imagemethod.interaction.Reflection;
 pathnumreflections = accumarray(interactions.Identifier, isreflection);
 pathpower = accumarray(interactions.Identifier, interactions.Power);
 [numreflectionsunique, ~, map] = unique(pathnumreflections);
@@ -12,8 +12,8 @@ stats = struct( ...
     'RelativePower', totalpower/sum(totalpower));
 
 numunique = @(e) numel(unique(e));
-issink = interactions.InteractionType == interaction.Sink;
-issource = interactions.InteractionType == interaction.Source;
+issink = interactions.InteractionType == imagemethod.interaction.Sink;
+issource = interactions.InteractionType == imagemethod.interaction.Source;
 
 % One source and one sink per path
 assert(all(accumarray(interactions.Identifier, issink) == 1))

@@ -6,7 +6,7 @@ import embree.embreescene
 import facevertex.gridplan
 import points.text
 import rayoptics.imagemethod
-import scene.completescene
+import scenes.completescene
 
 %%
 scenefactory = @embreescene;

@@ -35,7 +35,7 @@ classdef embreescene < handle
                 raycapacity = defaultbuffercapacity;
             end
                         
-            obj.CompleteScene = scene.completescene(faces, vertices);
+            obj.CompleteScene = scenes.completescene(faces, vertices);
             %obj.Frame = obj.CompleteScene.Frame; % TODO: refactor
             
             obj.Deleted = false;

@@ -13,5 +13,5 @@ switch size(xyz, 2)
         plotter = @plot3;
 end
 
-[varargout{1 : nargout}] = points.unary(plotter, varargin{:});
+[varargout{1 : nargout}] = unary(plotter, varargin{:});
 

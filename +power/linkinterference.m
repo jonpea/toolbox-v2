@@ -1,4 +1,4 @@
-function result = interference(linkgaindb, assignedsource, sourcechannel, dim)
+function result = linkinterference(linkgaindb, assignedsource, sourcechannel, dim)
 % Interference power involves distinct pairings on the same channel
 % i.e. a given source/access point does not interfere with itself
 % and there is no interference across channels
@@ -14,7 +14,7 @@ isdifferentchannel = rowcolumn( ...
     @ne, ...
     sourcechannel(assignedsource), ...
     sourcechannel(allsources));
-linkgainwatts = fromdb(linkgaindb);
+linkgainwatts = elfun.fromdb(linkgaindb);
 linkgainwatts(issamesource | isdifferentchannel) = 0.0; % drop "non-interfering" elements
 result = sum(linkgainwatts, dim);
 end

@@ -3,9 +3,11 @@ function headings = scanheader(fid)
 % SCANHEADER(FILENAME) and SCANHEADER(FOPEN(FILENAME)) returns a cell array
 % containing the strings in the first line of the file named FILENAME.
 % See also FOPEN, FCLOSE, FGETL.
+
 if ischar(fid)
-    [fid, cleaner] = openfile(fid, 'r'); %#ok<ASGLU>
+    [fid, cleaner] = iofun.fopen(fid, 'r'); %#ok<ASGLU>
 end
+
 headings = split(fgetl(fid));
 
 % This is a work-around for inconsistent behaviour in R2016b, 

@@ -14,7 +14,7 @@ parser.addParameter('Fraction', 1.0, @isnumeric)
 parser.addParameter('Reporting', false, @islogical)
 parser.addParameter('Plotting', false, @islogical)
 parser.addParameter('Printing', false, @islogical)
-parser.addParameter('Scene', @scene.completescene, @isfunction)
+parser.addParameter('Scene', @scenes.completescene, @isfunction)
 parser.addParameter('Serialize', false, @islogical)
 parser.addParameter('SPMD', isscalar(currentpool), @islogical)
 parser.addParameter('Verbosity', 0, @isscalar)
@@ -64,24 +64,31 @@ materials.TransmissionGain = materialsdata(wallmaterials, 1);
 materials.ReflectionGain = materialsdata(wallmaterials, 2);
 %%
 if options.Plotting
-    figure(1), clf('reset'), hold on
-    plan = patch( ...
+    ax = axes(figure(1));
+    clf(ax, 'reset')
+    hold(ax, 'on')
+    %plan = ...
+    patch(ax, ...
         'Faces', faces, ...
         'Vertices', vertices, ...
         'FaceColor', 'blue', ...
         'FaceAlpha', 0.2, ...
-        'EdgeColor', rgbgray, ...
+        'EdgeColor', graphics.rgb.gray, ...
         'LineWidth', 1);
-    labelfacets(plan, 'FontSize', 7, 'Color', 'black')
-    labelpoints(vertices, 'FontSize', 7)
-    set(gca, 'XTick', [0, 30.5], 'YTick', [0, 7.5])
-    axis tight, axis equal, grid on
+    points.text(ax, facevertex.reduce(@mean, faces, vertices), 'FontSize', 7, 'Color', 'black')
+    points.text(ax, vertices, 'FontSize', 7)
+    set(ax, 'XTick', [0, 30.5], 'YTick', [0, 7.5])
+    axis(ax, 'tight')
+    axis(ax, 'equal')
+    grid(ax, 'on')
     %plotframes(scene.Origin, scene.Frame, 0, 'Color', 'red')
 end
 
 %% Access point
+angle = deg2rad(200); % [rad]
 origin = [13.0, 6.0]; % [m]
-direction = angulartocartesian(deg2rad(200.0)); % [rad]
+direction = angulartocartesian(angle); % [rad]
+codirection = angulartocartesian(angle + pi/2); % [rad]
 direction2 = arguments.compose(@horzcat, @pol2cart, 2, deg2rad(200.0), 1);
 assert(isequal(direction, direction2))
 if options.MultiSource
@@ -90,28 +97,28 @@ if options.MultiSource
 end
 source = accesspointtable( ...
     origin, ...
-    'Frame', frame(direction), ...
+    'Frame', cat(3, direction, codirection), ...
     'Frequency', 2.45d9); % [Hz]
 
 %%
 % Access point's antenna gain functions
-sourcepattern = loadpattern(fullfile('data', 'yuen1b.txt'), @todb);
+sourcepattern = data.loadpattern(fullfile('+data', 'yuen1b.txt'), @elfun.todb);
 if options.Plotting
     allangles = linspace(0, 2*pi, 1000);
-    radius = fromdb(sourcepattern(allangles));
+    radius = elfun.fromdb(sourcepattern(allangles));
     figure(2), clf('reset'), hold on
     polar(allangles, radius, 'b.')
     
     figure(1), hold on
-    sourceangle = cartesiantoangular(source.Frame(:, :, 1));
+    sourceangle = cartesiantoangularnew(source.Frame(:, :, 1));
     for i = 1 : size(source.Position, 1)
         origin = source.Position(i, :);
         pattern = bsxfun(@plus, origin, ...
             angulartocartesian(allangles(:) + sourceangle(i), radius(:)));
         circular = bsxfun(@plus, origin, ...
             angulartocartesian(allangles(:), 0.5*max(radius(:))));
-        plotpoints(pattern, 'Color', 'magenta')
-        plotpoints(circular, 'Color', rgbgray)
+        points.plot(pattern, 'Color', 'magenta')
+        points.plot(circular, 'Color', graphics.rgb.gray)
     end
     axis equal
     grid on
@@ -131,14 +138,15 @@ else
     x = 4.0;
     y = 4.0;
 end
-[sinkorigins, gridx, gridy] = gridpoints(x, y);
+[gridx, gridy] = meshgrid(x, y);
+sinkorigins = points.meshpoints(gridx, gridy);
 sink = mobiletable(sinkorigins);
 
 %%
 if options.Plotting
-    plotpoints(source.Position, 'x', 'Color', 'red', 'MarkerSize', 10)
+    points.plot(source.Position, 'x', 'Color', 'red', 'MarkerSize', 10)
     if isscalar(sink.Position)
-        plotpoints(sink.Position, '.', 'Color', rgbgray, 'MarkerSize', 1)
+        points.plot(sink.Position, '.', 'Color', rgbgray, 'MarkerSize', 1)
     end
 end
 
@@ -148,18 +156,18 @@ argumentlist = {
     sink.Position, ...
     scene ...
     'ReflectionArities', options.Arities ...
-    'FreeGain', friisfunction(source.Frequency) ...
-    'SourceGain', framefunction(sourcepattern, source.Frame) ...
-    'TransmissionGain', isofunction(materials.TransmissionGain) ...
-    'ReflectionGain', isofunction(materials.ReflectionGain) ...
-    'SinkGain', isofunction(0.0) ...
+    'FreeGain', power.friisfunction(source.Frequency) ...
+    'SourceGain', power.framefunctionnew(sourcepattern, source.Frame) ...
+    'TransmissionGain', power.isofunction(materials.TransmissionGain) ...
+    'ReflectionGain', power.isofunction(materials.ReflectionGain) ...
+    'SinkGain', power.isofunction(0.0) ...
     'Reporting', options.Reporting ...
     'Verbosity', options.Verbosity ...
     'SPMD', options.SPMD ...
     };
 
 starttime = tic;
-[downlinks, ~, interactions] = analyze(argumentlist{:});
+[downlinks, ~, interactions] = power.analyze(argumentlist{:});
 tracetime = toc(starttime);
 fprintf('============== analyze: %g sec ==============\n', tracetime)
 
@@ -170,28 +178,28 @@ if options.Reporting
         numel(unique(interactions.Data.Identifier)))
     
     starttime = tic;
-    interactiongains = computegain(interactions);
+    interactiongains = power.computegain(interactions);
     powertime = toc(starttime);
     fprintf('============== computegain: %g sec ==============\n', powertime)
     
-    assert(istabular(interactiongains))
+    assert(datatypes.struct.tabular.istabular(interactiongains))
     
     %% Distribution of interaction nodes
     disp('From stored interaction table')
-    tabulardisp(interactionstatistics(interactions.Data.InteractionType))
+    disp(struct2table(imagemethod.interactionstatistics(interactions.Data.InteractionType)))
     
     %% Distribution of received power
-    [gainstats, powertable] = gainstatistics(interactiongains);
-    tabulardisp(gainstats)
+    [gainstats, powertable] = power.gainstatistics(interactiongains);
+    disp(struct2table(gainstats))
     
     %%
-    issink = interactiongains.InteractionType == interaction.Sink;
+    issink = interactiongains.InteractionType == imagemethod.interaction.Sink;
     assert(isequalfp( ...
-        fromdb(interactiongains.TotalGain(issink)), ...
-        interactiongains.Power(issink)))
+        elfun.fromdb(interactiongains.TotalGain(issink)), ...
+        interactiongains.Power(issink), inf))
     
     missingarities = setdiff(0 : max(options.Arities), options.Arities);
-    assert(all(vec(powertable(:, :, missingarities + 1) == 0)))
+    assert(all(ops.vec(powertable(:, :, missingarities + 1) == 0)))
     assert(isequalfp(downlinks.PowerComponentsWatts, powertable(:, :, options.Arities + 1)))
     disp('calculated powers do match :-)')
     
@@ -205,8 +213,8 @@ end
 
 %% Power distributions
 powers = downlinks.PowerComponentsWatts;
-distribution = reflectionstatistics(powers);
-tabulardisp(distribution)
+distribution = power.reflectionstatistics(powers);
+disp(struct2table(distribution))
 
 %%
 if options.Reporting && options.Serialize
@@ -236,16 +244,16 @@ save([mfilename, 'powers.mat'], ...
     'gridx', 'gridy', 'gridp', 'scene', ...
     'argumentlist', 'sourcepattern', 'source')
 %savebig([mfilename, 'interactions.mat'], 'interactions')
-power = reshape(sum(powers, 3), size(gridx));
+powersum = reshape(sum(powers, 3), size(gridx));
 
 %% Aggregate power at each receiver
 if options.Reporting
-    sinkindices = find(interactiongains.InteractionType == interaction.Sink);
+    sinkindices = find(interactiongains.InteractionType == imagemethod.interaction.Sink);
     reportpower = accumarray( ...
         interactions.Data.ObjectIndex(sinkindices), ...
         interactiongains.Power(sinkindices));
     reportpower = reshape(reportpower, size(gridx));
-    assert(isequalfp(reportpower, power))
+    assert(isequalfp(reportpower, powersum))
     disp('calculated powers do match :-)')
 end
 
@@ -259,7 +267,7 @@ if min(size(gridx)) == 1
 end
 
 %%
-surfc(gridx, gridy, todb(power), 'EdgeAlpha', 0.1)
+surfc(gridx, gridy, elfun.todb(powersum), 'EdgeAlpha', 0.1)
 set(gca, 'DataAspectRatio', [1.0, 1.0, 25])
 title('Gain at Receivers (dBW)')
 rotate3d on
@@ -279,3 +287,11 @@ printnow = @(prefix) ...
 printnow('surf_front')
 view(-125, 15)
 printnow('surf_back')
+
+function tf = isequalfp(a, b, tol)
+if nargin < 3
+    tol = 1e-12;
+end
+a = a(:);
+b = b(:);
+tf = max(abs(a - b) ./ (0.5*(abs(a) + abs(b)) + 1)) < tol;

@@ -18,7 +18,6 @@ draw(@max, 3, 'magenta')
 function draw(fun, dimension, color)
 
 import points.meshpoints
-import points.unary
 import facevertex.cap
 
 [temp{1 : 3}] = meshgrid(linspace(0, 1, 5));
@@ -27,7 +26,7 @@ vertices = points.meshpoints(temp{:});
 clf
 hold('on')
 grid('on')
-unary(@plot3, vertices, 'o')
+points.plot(vertices, 'o')
 xlabel('x'); ylabel('y'); zlabel('z')
 patch( ...
     'Faces', cap(fun, dimension, vertices), ...

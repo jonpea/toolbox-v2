@@ -29,7 +29,5 @@ assert( ...
 % i.e. containing the coordinates of one point per row
 points = cell2mat(cellfun(@(x) x(:), varargin, 'UniformOutput', false));
 
-if 1 < nargout
-    % Return grid matrices if requested
-    varargout = varargin;
-end
+% Return grid matrices if requested
+varargout = varargin;

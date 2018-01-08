@@ -18,7 +18,7 @@ classdef FacetSequence < sequence.Sequence
             assert(isnumeric(arity) && isscalar(arity))
             obj.Arity = arity;
             obj.NumFacets = numfacets;
-            obj.NumTuples = imagemethodcardinality(numfacets, arity);
+            obj.NumTuples = rayoptics.imagemethodcardinality(numfacets, arity);
             obj.Index = 0;
         end
         
@@ -29,7 +29,7 @@ classdef FacetSequence < sequence.Sequence
         function element = getnext(obj)
             assert(hasnext(obj))
             obj.Index = obj.Index + 1;
-            element = imagemethodsequence( ...
+            element = rayoptics.imagemethodsequence( ...
                 obj.Index, obj.NumFacets, obj.Arity);
         end
         

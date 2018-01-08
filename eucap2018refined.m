@@ -13,10 +13,8 @@ import facevertex.vertices
 import ops.vec
 %
 import points.bbox
-import points.binary
 import points.meshpoints
 import points.text
-import points.unary
 
 %%
 settings = parse(varargin{:});
@@ -101,7 +99,7 @@ axis(ax, 'equal')
             scene.Material, facets, ...% 2D & 3D are currently identical
             'Faces', faces(scene), ...
             'Vertices', vertices(scene))
-        points.unary(@plot3, ax, vertices(scene), '.', 'MarkerSize', 15)
+        points.plot(ax, vertices(scene), '.', 'MarkerSize', 15)
         points.text(ax, vertices(scene), 'Color', 'black')
         points.text(ax, facevertex.reduce(@mean, scene), 'Color', 'red')
         graphics.axislabels('x', 'y', 'z')
@@ -139,7 +137,7 @@ ax = settings.Axes('3-D Scene');
 draw(ax, scene3D)
 
 %%
-quarterTurn = @(x, n) (x + [3, 0, 0])*points.rotor3([0 0 1], n*pi/2);
+quarterTurn = @(x, n) (x + [3, 0, 0])*elmat.rotor3([0 0 1], n*pi/2);
 allBuildings = arrayfun( ...
     facevertex.clone(quarterTurn, scene3D), 0 : 3, ...
     'UniformOutput', false);

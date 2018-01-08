@@ -25,8 +25,8 @@ if nargin < 3 || isempty(separator)
 end
 assert(ischar(format))
 
-[fid, cleaner] = openfile(filename, 'r'); %#ok<ASGLU>
-headings = scanheader(fid);
+[fid, cleaner] = iofun.fopen(filename, 'r'); %#ok<ASGLU>
+headings = data.scanheader(fid);
 
 % Chomp lines to separator
 header = fgetl(fid);

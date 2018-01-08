@@ -1,2 +1,2 @@
 function capacity = defaultbuffercapacity
-capacity = 100;
+capacity = 1;

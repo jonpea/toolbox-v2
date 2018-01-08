@@ -26,10 +26,10 @@ if isnumeric(frequency) && isscalar(frequency)
     frequency = @(~) frequency;
 end
 
-assert(isfunction(frequency) || isvector(frequency))
+assert(datatypes.isfunction(frequency) || isvector(frequency))
 
     function result = evaluate(id, distance)
-        result = friisgain(distance, speedoflight./frequency(id), units);
+        result = power.friisgain(distance, elfun.lightspeed./frequency(id), units);
     end
 
 evaluator = @evaluate;

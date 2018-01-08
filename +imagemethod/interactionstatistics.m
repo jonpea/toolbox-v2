@@ -1,6 +1,6 @@
 function stats = interactionstatistics(interactiontypes)
 
-count = @(type) sum(interaction.(type) == interactiontypes);
+count = @(type) sum(imagemethod.interaction.(type) == interactiontypes);
 numsources = count('Source');
 numsinks = count('Sink');
 numreflected = count('Reflection');
