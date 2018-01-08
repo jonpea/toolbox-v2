@@ -14,15 +14,8 @@ parser.addParameter( ...
 parser.parse(unmatched)
 linkoptions = parser.Results;
 
-% ===>>>
-fprintf('\n')
-fprintf('####### Re-running with tracescene2... #######\n')
-ttemp = tic;
 [downlinkgainswatts, uplinkgainswatts, interactions, durations] = ...
     imagemethod.tracescenenew2(origins, targets, traceoptions); %#ok<ASGLU>
-totalelapsed = toc(ttemp);
-fprintf('Elapsed time is %.5f seconds.\n', totalelapsed)
-% <<<===
 
 % Received gain (in dBW): Rows for access points, columns for mobiles
 downlinkgaindbw = elfun.todb(sum(downlinkgainswatts, 3));
