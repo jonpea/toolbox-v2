@@ -148,7 +148,6 @@ end
 % This implementation is significantly slower than #1
 % e.g. 21.2 seconds vs 1.6 seconds on a problem of reasonable size.
 %{
-timer = starttimer('filtering v2...');
 numdimensions = size(faceorigins, 2); % before reshape operation, below
 beta = zeros(numel(t), numdimensions - 1);
 for i = 1 : size(offsettolocal, 3)
@@ -160,7 +159,6 @@ for i = 1 : size(offsettolocal, 3)
     rayid = rayid(selected, :);
     t = t(selected, :);
 end
-stoptimer(timer)
 %}
 
 % =========================================================================

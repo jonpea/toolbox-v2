@@ -10,7 +10,7 @@ import scenes.completescene
 
 %%
 scenefactory = @embreescene;
-% scenefactory = @completescene;
+%scenefactory = @completescene;
 
 %%
 numsegments = 6;

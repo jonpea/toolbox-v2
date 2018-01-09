@@ -1,14 +1,11 @@
 %% Analysis of Building 903, Level 4, Newmarket Campus
 function yzg0012d(varargin)
+%% Introduction
+% This script mirrors the |nelib| program implemented in |yzg001.f90|.
 
-import arguments.compose
-import contracts.ndebug
-import data.building903level4
-import parallel.currentpool
-
+%% Optional arguments
 parser = inputParser;
 parser.addParameter('LargeScale', true, @islogical)
-parser.addParameter('MultiSource', false, @islogical)
 parser.addParameter('Arities', 0 : 2, @isrow)
 parser.addParameter('Fraction', 1.0, @isnumeric)
 parser.addParameter('Reporting', false, @islogical)
@@ -16,7 +13,7 @@ parser.addParameter('Plotting', false, @islogical)
 parser.addParameter('Printing', false, @islogical)
 parser.addParameter('Scene', @scenes.completescene, @isfunction)
 parser.addParameter('Serialize', false, @islogical)
-parser.addParameter('SPMD', isscalar(currentpool), @islogical)
+parser.addParameter('SPMD', isscalar(parallel.currentpool), @islogical)
 parser.addParameter('Verbosity', 0, @isscalar)
 parser.addParameter('XGrid', [], @isvector)
 parser.addParameter('YGrid', [], @isvector)
@@ -24,26 +21,12 @@ parser.addParameter('CullDuplicateFaces', false, @islogical)
 parser.parse(varargin{:})
 options = parser.Results;
 
-%% Introduction
-% This script mirrors the |nelib| program implemented in |yzg001.f90|.
-
-%% Constants
-t0 = tic;
-format compact
-fprintf('NDEBUG = %u\n', ndebug)
-
-%%
-global UNIQUEFACES
-UNIQUEFACES = options.CullDuplicateFaces;
-
 %% Wall plan & materials set
-[linevertices, materialsdata, wallmaterials] = building903level4;
-[faces2, vertices2] = linestofacevertex(linevertices);
+[linevertices, materialsdata, wallmaterials] = data.building903level4;
+
 [faces, vertices] = facevertex.compress(facevertex.xy2fv( ...
     linevertices(:, [1 3])', ...
     linevertices(:, [2 4])'));
-assert(isequal(faces, faces2))
-assert(isequal(vertices, vertices2))
 
 if options.CullDuplicateFaces
     [~, select] = unique(sort(faces, 2), 'rows');
@@ -56,23 +39,23 @@ else
     warning('off', 'embreescene:DuplicateFaces')
     warning('off', 'embreescene:DuplicateVertices')
 end
-scene = options.Scene(faces, vertices);
-%scene = axisalignedmultifacet(fvtoaxisalignedbounds(faces, vertices));
 
-%%
-materials.TransmissionGain = materialsdata(wallmaterials, 1);
-materials.ReflectionGain = materialsdata(wallmaterials, 2);
+scene = options.Scene(faces, vertices);
+
+materials = struct( ...
+    'TransmissionGain', materialsdata(wallmaterials, 1), ...
+    'ReflectionGain', materialsdata(wallmaterials, 2));
+
 %%
 if options.Plotting
     ax = axes(figure(1));
     clf(ax, 'reset')
     hold(ax, 'on')
-    %plan = ...
     patch(ax, ...
         'Faces', faces, ...
         'Vertices', vertices, ...
-        'FaceColor', 'blue', ...
         'FaceAlpha', 0.2, ...
+        'FaceColor', graphics.rgb.blue, ...
         'EdgeColor', graphics.rgb.gray, ...
         'LineWidth', 1);
     points.text(ax, facevertex.reduce(@mean, faces, vertices), 'FontSize', 7, 'Color', 'black')
@@ -81,22 +64,16 @@ if options.Plotting
     axis(ax, 'tight')
     axis(ax, 'equal')
     grid(ax, 'on')
-    %plotframes(scene.Origin, scene.Frame, 0, 'Color', 'red')
 end
 
 %% Access point
-angle = deg2rad(200); % [rad]
-origin = [13.0, 6.0]; % [m]
-direction = angulartocartesian(angle); % [rad]
-codirection = angulartocartesian(angle + pi/2); % [rad]
-direction2 = arguments.compose(@horzcat, @pol2cart, 2, deg2rad(200.0), 1);
-assert(isequal(direction, direction2))
-if options.MultiSource
-    origin(end + 1, :) = [20, 4];
-    direction(end + 1, :) = angulartocartesian(deg2rad(45));
-end
-source = accesspointtable( ...
-    origin, ...
+apangle = deg2rad(200); % [rad]
+aporigin = [13.0, 6.0]; % [m]
+radius = 1.0; % [m]
+direction = funfun.pipe(@horzcat, 2, @pol2cart, apangle, radius);
+codirection = funfun.pipe(@horzcat, 2, @pol2cart, apangle + pi/2, radius);
+source = scenes.accesspointtable( ...
+    aporigin, ...
     'Frame', cat(3, direction, codirection), ...
     'Frequency', 2.45d9); % [Hz]
 
@@ -104,24 +81,25 @@ source = accesspointtable( ...
 % Access point's antenna gain functions
 sourcepattern = data.loadpattern(fullfile('+data', 'yuen1b.txt'), @elfun.todb);
 if options.Plotting
-    allangles = linspace(0, 2*pi, 1000);
+    
+    allangles = linspace(0, 2*pi, 100);
     radius = elfun.fromdb(sourcepattern(allangles));
-    figure(2), clf('reset'), hold on
-    polar(allangles, radius, 'b.')
+    
+    figure(2), clf('reset')
+    polarplot(allangles, radius, 'b.'), title('AP gain (dBW)')
     
     figure(1), hold on
-    sourceangle = cartesiantoangularnew(source.Frame(:, :, 1));
-    for i = 1 : size(source.Position, 1)
-        origin = source.Position(i, :);
-        pattern = bsxfun(@plus, origin, ...
-            angulartocartesian(allangles(:) + sourceangle(i), radius(:)));
-        circular = bsxfun(@plus, origin, ...
-            angulartocartesian(allangles(:), 0.5*max(radius(:))));
-        points.plot(pattern, 'Color', 'magenta')
-        points.plot(circular, 'Color', graphics.rgb.gray)
-    end
+    temp = power.framefunctionnew(sourcepattern, source.Frame);
+    graphics.polar( ...
+        @(varargin) elfun.fromdb(temp(varargin{:})), ...
+        source.Position, ...
+        source.Frame, ...
+        'Azimuth', allangles, ...
+        'Color', 'red')
+    
     axis equal
     grid on
+    
 end
 
 %% Mobiles / receive points
@@ -144,16 +122,16 @@ sink = mobiletable(sinkorigins);
 
 %%
 if options.Plotting
-    points.plot(source.Position, 'x', 'Color', 'red', 'MarkerSize', 10)
+    points.plot(source.Position, 'x', 'Color', graphics.rgb.red, 'MarkerSize', 10)
     if isscalar(sink.Position)
-        points.plot(sink.Position, '.', 'Color', rgbgray, 'MarkerSize', 1)
+        points.plot(sink.Position, '.', 'Color', graphics.rgb.gray, 'MarkerSize', 1)
     end
 end
 
 %% Trace reflection paths
-argumentlist = {
+argumentlist = { % saved to file for later reference
     source.Position ...
-    sink.Position, ...
+    sink.Position ...
     scene ...
     'ReflectionArities', options.Arities ...
     'FreeGain', power.friisfunction(source.Frequency) ...
@@ -165,7 +143,6 @@ argumentlist = {
     'Verbosity', options.Verbosity ...
     'SPMD', options.SPMD ...
     };
-
 starttime = tic;
 [downlinks, ~, interactions] = power.analyze(argumentlist{:});
 tracetime = toc(starttime);
@@ -196,7 +173,7 @@ if options.Reporting
     issink = interactiongains.InteractionType == imagemethod.interaction.Sink;
     assert(isequalfp( ...
         elfun.fromdb(interactiongains.TotalGain(issink)), ...
-        interactiongains.Power(issink), inf))
+        interactiongains.Power(issink)))
     
     missingarities = setdiff(0 : max(options.Arities), options.Arities);
     assert(all(ops.vec(powertable(:, :, missingarities + 1) == 0)))
@@ -204,11 +181,10 @@ if options.Reporting
     disp('calculated powers do match :-)')
     
     %%
-    fprintf('\nTiming\n______\n')
+    fprintf('Timing\n')
+    fprintf('______\n')
     fprintf(' computing nodes: %g sec\n', tracetime)
     fprintf(' computing gains: %g sec\n', powertime)
-    fprintf('   all processes: %g sec\n', toc(t0))
-    
 end
 
 %% Power distributions
@@ -235,15 +211,11 @@ if options.Reporting && options.Serialize
 end
 
 %%
-if options.MultiSource
-    disp('Aborting: Subsequent code is not intended for MultiSource')
-    return
-end
 gridp = reshape(powers, [size(gridx), size(powers, 3)]); %#ok<NASGU>
 save([mfilename, 'powers.mat'], ...
     'gridx', 'gridy', 'gridp', 'scene', ...
     'argumentlist', 'sourcepattern', 'source')
-%savebig([mfilename, 'interactions.mat'], 'interactions')
+%iofun.savebig([mfilename, 'interactions.mat'], 'interactions')
 powersum = reshape(sum(powers, 3), size(gridx));
 
 %% Aggregate power at each receiver
@@ -275,19 +247,18 @@ colorbar
 set(gcf, 'PaperOrientation', 'landscape')
 view(-35, 25)
 
+%%
 if ~options.Printing
-    % Printing to file consumes a *lot* of time
-    return
+    % Printing to file is *very* time-consuming
+    printnow = @(prefix) ...
+        print('-dpdf', '-bestfit', ...
+        sprintf('%s_%dx%d', prefix, size(gridx, 1), size(gridx, 2)));
+    printnow('surf_front')
+    view(-125, 15)
+    printnow('surf_back')
 end
 
-%%
-printnow = @(prefix) ...
-    print('-dpdf', '-bestfit', ...
-    sprintf('%s_%dx%d', prefix, size(gridx, 1), size(gridx, 2)));
-printnow('surf_front')
-view(-125, 15)
-printnow('surf_back')
-
+% -------------------------------------------------------------------------
 function tf = isequalfp(a, b, tol)
 if nargin < 3
     tol = 1e-12;

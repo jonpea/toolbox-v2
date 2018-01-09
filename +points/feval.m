@@ -1,10 +1,7 @@
 function varargout = feval(fun, c, varargin)
 
-import arguments.nargoutfor
-import datatypes.isfunction
-
-assert(isfunction(fun))
+assert(datatypes.isfunction(fun))
 assert(iscell(c))
 
-varargout = cell(1, nargoutfor(fun, nargout));
+varargout = cell(1, arguments.nargoutfor(fun, nargout));
 [varargout{:}] = fun(c{:}, varargin{:});

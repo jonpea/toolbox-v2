@@ -235,7 +235,6 @@ classdef embreescene < handle
             if ~isempty(obj.MexHandle)
                 return % already constructed
             end
-            timer = autotimer('[**] embreescene.construct'); %#ok<NASGU>
             obj.MexHandle = embree.embreescenemex('new');
             obj.addquads(obj.Faces, obj.Vertices);
             fprintf('[Constructed Embree BVH @ %u]\n', obj.MexHandle)
@@ -245,7 +244,6 @@ classdef embreescene < handle
             if ~isempty(obj.RayBuffers)
                 return % already allocated
             end
-            timer = autotimer('[**] embreescene.allocatebuffers'); %#ok<NASGU>
             numfaces = obj.NumFacets;
             hitcapacity = obj.HitCapacity;
             raycapacity = obj.RayCapacity;
@@ -303,4 +301,8 @@ classdef embreescene < handle
         
     end
     
+end
+
+function n = defaultbuffercapacity
+n = 1e4;
 end

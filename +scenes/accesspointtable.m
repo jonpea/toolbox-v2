@@ -65,13 +65,13 @@ source.Channel = replicate(source.Channel);
 
 % Transmission gain
 if isnumeric(source.Gain)
-    source.Gain = isofunction(replicate(source.Gain));
+    source.Gain = power.isofunction(replicate(source.Gain));
 end
-isbinaryfunction = @(f) isfunction(f) && (nargin(f) < 0 || 2 <= nargin(f));
+isbinaryfunction = @(f) datatypes.isfunction(f) && (nargin(f) < 0 || 2 <= nargin(f));
 assert(isbinaryfunction(source.Gain))
 
 % Post-condition
-assert(istabular(source))
+%assert(datatypes.struct.tabular.istabular(source))
 
 end
 

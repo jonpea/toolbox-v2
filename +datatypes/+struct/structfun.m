@@ -4,15 +4,13 @@ function varargout = structfun(fun, structs, varargin)
 % generalizes (built-in) STRUCTFUN from scalar structs to struct arrays.
 % See also STRUCTFUN.
 
-import arguments.nargoutfor
-
 narginchk(2, nargin)
 
 fields = struct2cell(structs);
 fields = num2cell(fields, (1 : ndims(structs)) + 1);
 fields = cellfun(@squeezefirst, fields, 'UniformOutput', false);
 aggregate = cell2struct(fields, fieldnames(structs), 1);
-nout = nargoutfor(fun, nargout);
+nout = arguments.nargoutfor(fun, nargout);
 [varargout{1 : nout}] = structfun( ...
     @(args) fun(args{:}), aggregate, varargin{:});
 

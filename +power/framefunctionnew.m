@@ -25,17 +25,20 @@ assert(ndebug || all(ismember(unique(facetofunction), 1 : numel(functions))))
         assert(ndebug || isvector(faceindices))
         assert(ndebug || ismatrix(directions))
                 
-        % Transform global Cartesian coordinates to local 
-        % Cartesian coordinates relative to faces' local frames 
-        % via "local(i, j) = dot(map(face(i), :, j), global(:))".
-        localdirections = reshape( ...
-            matfun.dot(frames(faceindices, :, :), directions, 2), ...
-            numel(faceindices), []);
+        % Transform global Cartesian- to local Cartesian coordinates 
+        % NB: This is compatible with singleton expansion
+        %     i.e. face indices or directions may be singleton
+        localdirections = matfun.dot(frames(faceindices, :, :), directions, 2);
+
+        % Squeeze out the singleton in the diretion of the dot product
+        [s1, s2, s3] = size(localdirections);
+        assert(s2 == 1)
+        localdirections = reshape(localdirections, s1, s3);
         
         % Angles relative to local frame
         angles = cartesiantoangularnew(localdirections);
 
-        gain = indexedunary( ...
+        gain = funfun.indexedunary( ...
             functions, ...
             facetofunction(faceindices), ...
             angles);

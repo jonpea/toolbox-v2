@@ -29,7 +29,7 @@ functions = {
 
 y = wrapcircle(x, full);
 quadrants = 1 + fix(y/quarter);
-y = reshape(indexedunary(functions, quadrants, y(:)), size(y));
+y = reshape(funfun.indexedunary(functions, quadrants, y(:)), size(y));
 
 % Alternative implementation: Applies an element-wise
 % transformation which is much slower

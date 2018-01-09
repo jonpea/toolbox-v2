@@ -6,9 +6,6 @@ narginchk(1, 1)
 nargoutchk(0, 2)
 
 numdimensions = size(xyz, 2);
-if numdimensions ~= 2
-    [];
-end
 assert(ismember(numdimensions, 2 : 3))
 
 callbacks = {@convert2d, @convert3d};

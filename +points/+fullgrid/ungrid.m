@@ -47,7 +47,11 @@ if isempty(pos)
     pos = numel(y);
 end
 success = numel(pos) + 1 < numel(y) && all(mod(pos, pos(1)) == 0);
-shape = tern(success, [pos(1), numel(y)/pos(1)], []);
+if success
+    shape = [pos(1), numel(y)/pos(1)];
+else
+    shape = [];
+end
 
 function result = allzero(x)
 result = all(x(:) == 0);

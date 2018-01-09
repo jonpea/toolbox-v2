@@ -12,7 +12,7 @@ settings = imagemethod.tracesceneargumentsnew(varargin{:});
 settings.Reporting = settings.Reporting && 3 <= nargout;
 
 % Disable SPMD operation if a pool of workers is not available
-if settings.SPMD && isempty(currentpool)
+if settings.SPMD && isempty(parallel.currentpool)
     warning([mfilename, ':PoolRequiredForSPMD'], ...
         'Create a parallel pool using parpool for option ''SMPD''.')
     settings.SPMD = false;
@@ -80,9 +80,6 @@ end
             settings.Scene, origins, directions, faceindices);
     end
 
-import parallel.parreduce
-% import sequence.IndexSequence
-
 tasks = sequence.NestedSequence( ...
     sequence.ArraySequence(arities), ...
     @(arity) imagemethod.FacetSequence(settings.Scene.NumFacets, arity), ...
@@ -95,28 +92,17 @@ tasks = sequence.NestedSequence( ...
             next = [];
         end
     end
-[downlinkpower, uplinkpower, interactions, elapsed] = parreduce( ...
+[downlinkpower, uplinkpower, interactions, elapsed] = parallel.parreduce( ...
     @spmdbody, 3, @getnext, ...
     downlinkpower, uplinkpower, interactions, ...
     'Parameters', {@reflectionpoints, @transmissionpoints, settings}, ...
     'Initialize', @tic, ...
     'Finalize', @toc);
 
-if true
-    downlinkpower = datafun.reduce(@plus, downlinkpower{:});
-    uplinkpower = datafun.reduce(@plus, uplinkpower{:});    
-else
-    masterindex = 1;
-    
-    % Sum powers (in watts) and place result on worker #1
-    downlinkpowersum = gplus(downlinkpower, masterindex);
-    uplinkpowersum = gplus(uplinkpower, masterindex);
-    
-    % Transfer results from workers back to client
-    % NB: Powers have already been summed to lab/worker #1
-    downlinkpower = downlinkpowersum{masterindex};
-    uplinkpower = uplinkpowersum{masterindex};
-end
+% TODO: Would GPLUS run more efficiently?
+downlinkpower = parallel.reduce(@plus, downlinkpower);
+uplinkpower = parallel.reduce(@plus, uplinkpower);
+
 interactions = [interactions{:}];
 
 % Convert cell array of structs to a (single) tabular struct

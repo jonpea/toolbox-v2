@@ -14,15 +14,13 @@ function result = reduce(op, result, varargin)
 %
 % See also CUMREDUCE.
 
-import datafun.reduce % for recursive call
-
 narginchk(2, nargin)
 assert(isa(op, 'function_handle'))
 
 if iscell(result) && isempty(varargin)
     % Accommodate a single cell array
     assert(nargin == 2)
-    result = reduce(op, result{:});
+    result = datatypes.reduce(op, result{:}); % recursive call
     return
 end
 

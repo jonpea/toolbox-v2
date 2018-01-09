@@ -1,4 +1,4 @@
-function tests = rotor3dtest
+function tests = rotor3test
 tests = functiontests(localfunctions);
 end
 
@@ -14,7 +14,7 @@ orientation = rand(1, 3); % row vector
 % NB: Test requires that input is orthogonal to axis of rotation
 preimage = sum(null(orientation(:)'), 2)';
 
-rotor = rotor3d(orientation, angle);
+rotor = elmat.rotor3(orientation, angle);
 image = preimage*rotor;
 
 % Rotation matrix is orthogonal

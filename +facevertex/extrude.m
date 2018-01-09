@@ -1,13 +1,8 @@
 function varargout = extrude(varargin)
 
-import contracts.unreachable
-import datafun.reduce
-import facevertex.cat
-import facevertex.fv
-
 narginchk(2, 3)
 
-[faces, vertices] = fv(varargin{1 : end - 1});
+[faces, vertices] = facevertex.fv(varargin{1 : end - 1});
 span = varargin{end};
 
 assert(ismember(size(span, 1), [1, size(faces, 1)]), ...
@@ -39,7 +34,7 @@ end
     @process, 1 : size(uniqueSpan, 1), 'UniformOutput', false);
 
 varargout = {
-    cat(models{:}) ...
+    facevertex.cat(models{:}) ...
     vertcat(faceMaps{:}) ...
     vertcat(vertexMaps{:}) ...
     };

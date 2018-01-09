@@ -2,7 +2,7 @@ function [evaluator, interpolant] = patterninterpolant(data, transform, wrap)
 
 narginchk(1, 3)
 if nargin < 2
-    transform = @identity;
+    transform = @elfun.identity;
 end
 if nargin < 3
     wrap = @wrapcircle;
@@ -53,7 +53,7 @@ assert(all(0 <= data.theta & data.theta <= 180))
 assert(all(0 <= data.gain))
 
 % Convert unstructured rows to structured grid
-[theta, phi, gain] = ungrid(data.theta, data.phi, data.gain);
+[theta, phi, gain] = points.fullgrid.ungrid(data.theta, data.phi, data.gain);
 
 interpolant = griddedInterpolant({
     deg2rad(theta), ... % inclination from the z-axis

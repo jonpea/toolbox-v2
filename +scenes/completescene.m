@@ -41,7 +41,8 @@ classdef completescene < handle
             narginchk(2, 3)
             
             if nargin < 3 || isempty(buffersize)
-                buffersize = defaultbuffercapacity;
+                % Ddefault buffer capacity
+                buffersize = 1;
             end
             
             assert(min(faces(:)) >= 1)
@@ -58,10 +59,6 @@ classdef completescene < handle
             obj.Offset = mex.mexindex(0);
             obj.Chunks = []; % dynamic growth to very small size
             
-            %[origins, tangents] = fvtotangents(faces, vertices);
-            %[frames, offsettolocalmaps, normals, offsets] = ...
-            %    fvframes(origins, tangents{:});
-            
             [origins, normals, offsettolocalmaps] = reference.frames(faces, vertices);
             offsets = matfun.dot(normals, origins, 2);
                         
@@ -74,7 +71,6 @@ classdef completescene < handle
             obj.Origin = origins;
             obj.UnitNormal = normals;
             obj.UnitOffset = offsets;
-            %obj.Frame = frames;
             
             obj.IntersectFacet = @obj.intersectfacet;
             obj.Intersect = @obj.intersectpaths;
@@ -92,15 +88,9 @@ classdef completescene < handle
             assert(isscalar(faceid))
             normal = obj.FaceNormalsTransposed(:, faceid);
             offset = obj.FaceOffsetsTransposed(faceid);
-            if false
-                mirrorpoints = points'; % ensure pointer to data...
-                planarmirrormex(normal, offset, points', mirrorpoints);
-                mirrorpoints = mirrorpoints'; % ... remains valid
-            else
-                normal = normal(:)';
-                alpha = (offset - sum(normal.*points, 2)); % "... ./dotrows(n,n)" only if "||n|| ~= 1.0"
-                mirrorpoints = points + 2*alpha.*normal;
-            end
+            normal = normal(:)';
+            alpha = (offset - sum(normal.*points, 2)); % "... ./dotrows(n,n)" only if "||n|| ~= 1.0"
+            mirrorpoints = points + 2*alpha.*normal;
         end
         
         function hits = intersectpaths(obj, origins, directions, faceindices)

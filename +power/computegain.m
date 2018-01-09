@@ -40,7 +40,6 @@ interactionrows = accumarray( ...
     end
 
 % Compute gain associated with individual interactions
-timer = starttimer('evaluating interaction gain functions...');
 sourcegain = accululatefor('Source', @elfun.identity); % @todb in old version
 reflectiongain = accululatefor('Reflection', @elfun.identity);
 transmissiongain = accululatefor('Transmission', @elfun.identity);
@@ -48,7 +47,6 @@ transmissiongain = accululatefor('Transmission', @elfun.identity);
 % Aggregate sparse (with dense storage) vectors into a single column
 interactions.InteractionGain = ...
     sourcegain + reflectiongain + transmissiongain;
-stoptimer(timer)
 
 % Extracts source wavelength for each reflected path
 issource = interactions.InteractionType == imagemethod.interaction.Source;
@@ -59,22 +57,17 @@ assert(sum(issink) == numpaths)
 sourceid = interactions.ObjectIndex(issource, :);
 
 % Friis free-space gains
-timer = starttimer('                     free-space gains...');
 totaldistance = accumarray(interactions.Identifier, interactions.FreeDistance);
 freegain = gainfunctions.Free(sourceid, totaldistance);
 % freegain2 = friisgain(totaldistance, raywavelength, 'db');
 % assert(norm(freegain - freegain2, inf) < 1e-14)
-stoptimer(timer)
 
 % Accumulate gains over paths
-timer = starttimer('        accumulating gains over paths...');
 interactiongain = accumarray( ...
     interactions.Identifier, interactions.InteractionGain);
 totalgain = freegain + interactiongain;
 power = elfun.fromdb(totalgain);
-stoptimer(timer)
 
-timer = starttimer('       assigning sink-specific fields...');
 % This function assigns given values to the rows of an array (whose rows
 % are assocated with interactions) corresponding to sink nodes
 selectsink = interactions.InteractionType == imagemethod.interaction.Sink;
@@ -88,7 +81,6 @@ interactions.FreeGain = assignsinks(freegain);
 interactions.PathInteractionGain = assignsinks(interactiongain);
 interactions.TotalGain = assignsinks(totalgain);
 interactions.Power = assignsinks(power);
-stoptimer(timer)
 
 % tabulardisp(tabularhead( ...
 %     tabularcolumns(interactions, 'FinalDistance', 'TotalDistance'), 10))
@@ -98,7 +90,6 @@ assert(ndebug || all(isfinite(interactions.TotalDistance)))
 assert(ndebug || isequal(size(interactions.FinalDistance), size(interactions.TotalDistance)))
 assert(ndebug || norm(interactions.FinalDistance - interactions.TotalDistance, inf) < 1e-10)
 
-timer = starttimer('                   re-ordering fields...');
 result = orderfields(interactions, { ...
     'Identifier'
     'ObjectIndex'
@@ -118,6 +109,5 @@ result = orderfields(interactions, { ...
     'SourceGain'
     'SinkGain'
     });
-stoptimer(timer)
 
 end

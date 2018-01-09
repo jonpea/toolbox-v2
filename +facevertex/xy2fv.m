@@ -18,11 +18,6 @@ function varargout = xy2fv(varargin)
 %
 %   See also PATCH, FV2XY.
 
-import contracts.issame
-import contracts.ndebug
-import datafun.reduce
-import facevertex.fv
-
 narginchk(2, 4)
 if ischar(varargin{end})
     mask = varargin{end};
@@ -30,6 +25,8 @@ if ischar(varargin{end})
 else
     mask = 'duplicate';
 end
+import contracts.issame
+import contracts.ndebug
 assert(ndebug || issame(@size, varargin{:}))
 assert(ndebug || issame(@isnan, varargin{:}))
 
@@ -42,7 +39,7 @@ faces = reshape(1 : prod(shape), shape);
 % Mark duplicate trailing vertices with NaN
 if strcmpi(mask, 'nan')
     isduplicate = cellfun(@isDuplicatePadding, varargin, 'UniformOutput', false);
-    select = reduce(@and, isduplicate);
+    select = datatypes.reduce(@and, isduplicate);
     faces(select) = nan;
 end
 
@@ -54,6 +51,6 @@ varargin = cellfun(@(x) x(:), varargin, 'UniformOutput', false);
 vertices = [varargin{:}];
 
 varargout = cell(1, max(1, nargout));
-[varargout{:}] = fv(faces, vertices);
+[varargout{:}] = facevertex.fv(faces, vertices);
 
 end

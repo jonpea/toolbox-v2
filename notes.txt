@@ -9,7 +9,8 @@ Key Modules to Document
 
 Demos
 =====
-
+- Extruding plans & transforming scenes
+- Reading Butterworth data
 
 Utilities
 =========

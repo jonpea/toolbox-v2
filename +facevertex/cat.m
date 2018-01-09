@@ -9,9 +9,7 @@ function varargout = cat(varargin)
 %
 %   See also FACEVERTEX.COMPRESS, CAT, VERTCAT, PATCH.
 
-import datafun.reduce
 import facevertex.fv
-import facevertex.isfv
 
 % Parse optional argument
 if ischar(varargin{end})
@@ -32,7 +30,7 @@ end
 
 % Preconditions
 assert(ischar(padding))
-assert(all(cellfun(@isfv, varargin)))
+assert(all(cellfun(@facevertex.isfv, varargin)))
 
 % Pad columns of connectivity lists to ensure conformity
 switch validatestring(padding, {'nan', 'duplicate'})
@@ -47,7 +45,7 @@ varargin = cellfun( ...
     'UniformOutput', false);
 
 % Concatenate successive pairs
-c = reduce(@catPair, varargin);
+c = datatypes.reduce(@catPair, varargin);
 
 varargout = cell(1, max(1, nargout));
 [varargout{:}] = fv(c);
@@ -58,7 +56,6 @@ end
 function c = catPair(a, b)
 %CATPAIR Concatenate a single pair of polygon complexes.
 
-import facevertex.fv
 import datatypes.struct.structsfun
 
 % Vertical concatenation of *all* fields i.e. including any 
