@@ -1,17 +1,18 @@
 %% Analysis of Building 903, Level 4, Newmarket Campus
 function yzg0013d(varargin)
+%% Introduction
+% This script mirrors the |nelib| program implemented in |yzg001.f90|.
 
 parser = inputParser;
 parser.addParameter('LargeScale', true, @islogical)
-parser.addParameter('MultiSource', false, @islogical)
 parser.addParameter('Arities', 0 : 2, @isrow)
 parser.addParameter('Fraction', 1.0, @isnumeric)
 parser.addParameter('Reporting', false, @islogical)
 parser.addParameter('Plotting', false, @islogical)
 parser.addParameter('Printing', false, @islogical)
-parser.addParameter('Scene', @completescene, @isfunction)
+parser.addParameter('Scene', @scenes.completescene, @isfunction)
 parser.addParameter('Serialize', false, @islogical)
-parser.addParameter('SPMD', isscalar(currentpool), @islogical)
+parser.addParameter('SPMD', isscalar(parallel.currentpool), @islogical)
 parser.addParameter('StudHeight', 3.0, @isscalar)
 parser.addParameter('Verbosity', 0, @isscalar)
 parser.addParameter('XGrid', [], @isvector)
@@ -20,24 +21,8 @@ parser.addParameter('CullDuplicateFaces', false, @islogical)
 parser.parse(varargin{:})
 options = parser.Results;
 
-%% Introduction
-% This script mirrors the |nelib| program implemented in |yzg001.f90|.
-
-%% Constants
-t0 = tic;
-format compact
-fprintf('NDEBUG = %u\n', ndebug)
-
-%%
-disabletimer
-disablegpu % enablegpu | disablegpu
-resetgpu
-
-global UNIQUEFACES
-UNIQUEFACES = options.CullDuplicateFaces;
-
 %% Wall plan & materials set
-[linevertices, materialsdata, wallmaterials] = building903level4;
+[linevertices, materialsdata, wallmaterials] = data.building903level4;
 [faces, vertices] = linestofacevertex(linevertices);
 if options.CullDuplicateFaces
     [~, select] = unique(sort(faces, 2), 'rows');
@@ -50,91 +35,78 @@ else
     warning('off', 'embreescene:DuplicateFaces')
     warning('off', 'embreescene:DuplicateVertices')
 end
-[faces, vertices] = extrudeplan(faces, vertices, 0.0, options.StudHeight);
+temp = facevertex.extrude(faces, vertices, [0.0, options.StudHeight]);
+[faces, vertices] = facevertex.fv(temp);
 scene = options.Scene(faces, vertices);
 %scene = axisalignedmultifacet(fvtoaxisalignedbounds(faces, vertices));
 z0 = (0.0 + options.StudHeight)/2;
 
 %%
-materials.TransmissionGain = materialsdata(wallmaterials, 1);
-materials.ReflectionGain = materialsdata(wallmaterials, 2);
+materials = struct( ...
+    'TransmissionGain', materialsdata(wallmaterials, 1), ...
+    'ReflectionGain', materialsdata(wallmaterials, 2));
 %%
 if options.Plotting
-    figure(1), clf('reset'), hold on
-    plan = patch( ...
+    ax = axes(figure(1));
+    clf(ax, 'reset')
+    hold(ax, 'on')
+    patch(ax, ...
         'Faces', faces, ...
         'Vertices', vertices, ...
-        'FaceColor', 'blue', ...
         'FaceAlpha', 0.2, ...
-        'EdgeColor', rgbgray, ...
+        'FaceColor', graphics.rgb.blue, ...
+        'EdgeColor', graphics.rgb.gray, ...
         'LineWidth', 1);
-    labelfacets(plan, 'FontSize', 7, 'Color', 'black')
-    labelpoints(vertices, 'FontSize', 7)
-    set(gca, 'XTick', [0, 30.5], 'YTick', [0, 7.5])
-    axis tight, axis equal, grid on
-    plotframes(scene.Origin, scene.Frame, 0, 'Color', 'red')
-    %view(3)
+    points.text(ax, facevertex.reduce(@mean, faces, vertices), 'FontSize', 7, 'Color', 'black')
+    points.text(ax, vertices, 'FontSize', 7)
+    set(ax, 'XTick', [0, 30.5], 'YTick', [0, 7.5])
+    axis(ax, 'tight')
+    axis(ax, 'equal')
+    grid(ax, 'on')
 end
 
 %% Access point
-origin = [13.0, 6.0, z0]; % [m]
-direction = angulartocartesian(deg2rad(200));
-codirection = perp(direction(1 : 2)); % (**) to guarantee consistency with 2D case
+apangle = deg2rad(200); % [rad]
+aporigin = [13.0, 6.0, z0]; % [m]
+radius = 1.0; % [m]
+direction = funfun.pipe(@horzcat, 2, @pol2cart, apangle, radius);
+codirection = funfun.pipe(@horzcat, 2, @pol2cart, apangle + pi/2, radius);
 [direction(3), codirection(3)] = deal(0.0);
-if options.MultiSource
-    origin(end + 1, :) = [20, 4];
-    direction(end + 1, :) = angulartocartesian(deg2rad(45));
-end
 source = accesspointtable( ...
-    origin, ...
-    'Frame', cat(3, direction, codirection, [0, 0, 1]), ... % (**)
+    aporigin, ...
+    'Frame', cat(3, direction, codirection, [0, 0, 1]), ...
     'Frequency', 2.45d9); % [Hz]
 
 %%
 % Access point's antenna gain functions
-zeniths = source.Frame(:, :, 1);
-% antennapatternfilename = fullfile('data', 'yuen1b3d.txt');
-% sourcepattern = loadpattern(antennapatternfilename, @todb);
-% antennapatternfilename = fullfile('data', 'yuen1b.txt');
-% sourcepattern = embeddedpattern(loadpattern(antennapatternfilename, @todb));
-sourcepattern = embeddedpattern(loadpattern(fullfile('data', 'yuen1b.txt'), @todb));
+elevation = 0.0;
+sourcepattern = data.embeddedpattern( ...
+    data.loadpattern(fullfile('+data', 'yuen1b.txt'), @elfun.todb), ...
+    elevation);
 if options.Plotting
-    allangles = gridpoints(pi/2, linspace(0, 2*pi, 1000));
-    inclination = allangles(:, 1);
-    azimuth = allangles(:, 2);
-    assert(all(inclination == pi/2))
-    radius = fromdb(sourcepattern(allangles));
-    figure(2), clf('reset'), hold on
-    polar(azimuth, radius, 'b.')
+    
+    [azimuth, elevation] = meshgrid(linspace(0, 2*pi, 100)', elevation);
+    allangles = points.meshpoints(azimuth, elevation);
+    radius = elfun.fromdb(sourcepattern(allangles));
+    figure(2), clf('reset')
+    polarplot(azimuth, radius, 'b.')
     
     figure(1), hold on
-    sourceangle = cartesiantoangular(source.Frame(:, 1 : 2, 1));
-    for i = 1 : size(source.Position, 1)
-        origin = source.Position(i, 1 : 2);
-        pattern = bsxfun(@plus, origin, ...
-            angulartocartesian(azimuth + sourceangle(i), radius(:)));
-        circular = bsxfun(@plus, origin, ...
-            angulartocartesian(azimuth, 0.5*max(radius(:))));
-        pattern(:, 3) = z0;
-        circular(:, 3) = z0;
-        plotpoints(pattern, 'Color', 'magenta')
-        plotpoints(circular, 'Color', 'black')
-    end
-    axis equal
-    grid on
+    temp = power.framefunctionnew(sourcepattern, source.Frame);
     ax = gca;
-    plotradialintensity(ax, ...
-        framefunctionnew(sourcepattern, frame(zeniths)), ...
+    graphics.spherical(ax, ...
+        temp, ...
         source.Position, ...
         source.Frame, ...
         'EdgeAlpha', 0.1)
-    labelaxes('x', 'y', 'z', 'Parent', ax)
+    graphics.axislabels(ax, 'x', 'y', 'z')
     colormap(ax, jet)
-    colorbar(ax) % ('Location', 'southoutside')
+    colorbar(ax)
     axis(ax, 'equal')
     grid(ax, 'on')
     rotate3d(ax, 'on')
     view(ax, 3)
+    
 end
 
 %% Mobiles / receive points
@@ -151,77 +123,81 @@ else
     x = 4.0;
     y = 4.0;
 end
-[sinkorigins, gridx, gridy] = gridpoints(x, y, z0);
+[gridx, gridy, gridz] = meshgrid(x, y, z0);
+sinkorigins = points.meshpoints(gridx, gridy, gridz);
 sink = mobiletable(sinkorigins);
 
 %%
 if options.Plotting
-    plotpoints(source.Position, 'x', 'Color', 'red', 'MarkerSize', 10)
-    if isscalar(sink.Position) || true
-        plotpoints(sink.Position, '.', 'Color', 'blue', 'MarkerSize', 2)
+    points.plot(source.Position, 'x', 'Color', graphics.rgb.red, 'MarkerSize', 10)
+    if isscalar(sink.Position)
+        points.plot(sink.Position, '.', 'Color', graphics.rgb.gray, 'MarkerSize', 1)
     end
 end
 
 %% Trace reflection paths
-arguments = {
-    source.Position, sink.Position, scene ...
+argumentlist = { % saved to file for later reference
+    source.Position ...
+    sink.Position ...
+    scene ...
     'ReflectionArities', options.Arities ...
-    'FreeGain', friisfunction(source.Frequency) ...
-    'SourceGain', framefunctionnew(sourcepattern, source.Frame) ...
-    'TransmissionGain', isofunction(materials.TransmissionGain) ...
-    'ReflectionGain', isofunction(materials.ReflectionGain) ...
-    'SinkGain', isofunction(0.0) ...
-    'Reporting', options.Reporting ... 
+    'FreeGain', power.friisfunction(source.Frequency) ...
+    'SourceGain', power.framefunctionnew(sourcepattern, source.Frame) ...
+    'TransmissionGain', power.isofunction(materials.TransmissionGain) ...
+    'ReflectionGain', power.isofunction(materials.ReflectionGain) ...
+    'SinkGain', power.isofunction(0.0) ...
+    'Reporting', options.Reporting ...
     'Verbosity', options.Verbosity ...
     'SPMD', options.SPMD ...
     };
-
 starttime = tic;
-[downlinks, ~, interactions] = analyze(arguments{:});
+[downlinks, ~, interactions] = power.analyze(argumentlist{:});
 tracetime = toc(starttime);
 fprintf('============== analyze: %g sec ==============\n', tracetime)
 
 %% Compute gains and display table of interactions
-if options.Reporting 
-
+if options.Reporting
+    
+    fprintf('\nComputed %u paths\n\n', ...
+        numel(unique(interactions.Data.Identifier)))
+    
     starttime = tic;
-    interactiongains = computegain(interactions);
+    interactiongains = power.computegain(interactions);
     powertime = toc(starttime);
     fprintf('============== computegain: %g sec ==============\n', powertime)
     
-    assert(istabular(interactiongains))
+    assert(datatypes.struct.tabular.istabular(interactiongains))
     
     %% Distribution of interaction nodes
     disp('From stored interaction table')
-    tabulardisp(interactionstatistics(interactions.Data.InteractionType))
+    disp(struct2table(imagemethod.interactionstatistics(interactions.Data.InteractionType)))
     
     %% Distribution of received power
-    [gainstats, powertable] = gainstatistics(interactiongains);
-    tabulardisp(gainstats)
+    [gainstats, powertable] = power.gainstatistics(interactiongains);
+    disp(struct2table(gainstats))
     
     %%
-    issink = interactiongains.InteractionType == interaction.Sink;
+    issink = interactiongains.InteractionType == imagemethod.interaction.Sink;
     assert(isequalfp( ...
-        fromdb(interactiongains.TotalGain(issink)), ...
+        elfun.fromdb(interactiongains.TotalGain(issink)), ...
         interactiongains.Power(issink)))
     
     missingarities = setdiff(0 : max(options.Arities), options.Arities);
-    assert(all(vec(powertable(:, :, missingarities + 1) == 0)))
+    assert(all(ops.vec(powertable(:, :, missingarities + 1) == 0)))
     assert(isequalfp(downlinks.PowerComponentsWatts, powertable(:, :, options.Arities + 1)))
     disp('calculated powers do match :-)')
     
     %%
-    fprintf('\nTiming\n______\n')
+    fprintf('Timing\n')
+    fprintf('______\n')
     fprintf(' computing nodes: %g sec\n', tracetime)
     fprintf(' computing gains: %g sec\n', powertime)
-    fprintf('   all processes: %g sec\n', toc(t0))
-    
 end
 
 %% Power distributions
 powers = downlinks.PowerComponentsWatts;
-distribution = reflectionstatistics(powers);
-tabulardisp(distribution)
+distribution = power.reflectionstatistics(powers);
+disp(struct2table(distribution))
 
 %%
 if options.Reporting && options.Serialize
@@ -242,24 +218,21 @@ if options.Reporting && options.Serialize
 end
 
 %%
-if options.MultiSource
-    disp('Aborting: Subsequent code is not intended for MultiSource')
-    return
-end
 gridp = reshape(powers, [size(gridx), size(powers, 3)]); %#ok<NASGU>
-save([mfilename 'powers.mat'], 'gridx', 'gridy', 'gridp', ...
-    'scene', 'arguments', 'sourcepattern', 'source')
-% savebig([mfilename 'interactions.mat'], 'interactions')
-power = reshape(sum(powers, 3), size(gridx));
+save([mfilename, 'powers.mat'], ...
+    'gridx', 'gridy', 'gridp', 'scene', ...
+    'argumentlist', 'sourcepattern', 'source')
+%iofun.savebig([mfilename, 'interactions.mat'], 'interactions')
+powersum = reshape(sum(powers, 3), size(gridx));
 
 %% Aggregate power at each receiver
 if options.Reporting
-    sinkindices = find(interactiongains.InteractionType == interaction.Sink);
+    sinkindices = find(interactiongains.InteractionType == imagemethod.interaction.Sink);
     reportpower = accumarray( ...
         interactions.Data.ObjectIndex(sinkindices), ...
         interactiongains.Power(sinkindices));
     reportpower = reshape(reportpower, size(gridx));
-    assert(isequalfp(reportpower, power))
+    assert(isequalfp(reportpower, powersum))
     disp('calculated powers do match :-)')
 end
 
@@ -267,8 +240,13 @@ if ~options.Plotting
     return
 end
 
+if min(size(gridx)) == 1
+    fprintf('Ignoring ''Plotting'' for grid of size %s\n', mat2str(size(gridx)))
+    return
+end
+
 %%
-surfc(gridx, gridy, todb(power), 'EdgeAlpha', 0.1)
+surfc(gridx, gridy, elfun.todb(powersum), 'EdgeAlpha', 0.1)
 set(gca, 'DataAspectRatio', [1.0, 1.0, 25])
 title('Gain at Receivers (dBW)')
 rotate3d on
@@ -276,17 +254,22 @@ colorbar
 set(gcf, 'PaperOrientation', 'landscape')
 view(-35, 25)
 
-if ~options.Printing
-    % Printing to file consumes a *lot* of time
-    return
-end
-
 %%
-printnow = @(prefix) ...
-    print('-dpdf', '-bestfit', ...
-    sprintf('%s_%dx%d', prefix, size(gridx, 1), size(gridx, 2)));
-printnow('surf_front')
-view(-125, 15)
-printnow('surf_back')
-
+if ~options.Printing
+    % Printing to file is *very* time-consuming
+    printnow = @(prefix) ...
+        print('-dpdf', '-bestfit', ...
+        sprintf('%s_%dx%d', prefix, size(gridx, 1), size(gridx, 2)));
+    printnow('surf_front')
+    view(-125, 15)
+    printnow('surf_back')
 end
+
+% -------------------------------------------------------------------------
+function tf = isequalfp(a, b, tol)
+if nargin < 3
+    tol = 1e-12;
+end
+a = a(:);
+b = b(:);
+tf = max(abs(a - b) ./ (0.5*(abs(a) + abs(b)) + 1)) < tol;

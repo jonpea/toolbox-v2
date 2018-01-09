@@ -25,7 +25,7 @@ numcolumns = 3;
     function verify(numfunctions, map, varargin)
         x = randi(10, [numel(map), numcolumns]);
         functions = makefunctions(numfunctions);
-        actual = indexedunary(functions, map, x, varargin{:});
+        actual = funfun.indexedunary(functions, map, x, varargin{:});
         expected = parentfunction(map, x, varargin{:});
         testcase.verifyEqual(actual, expected)
     end

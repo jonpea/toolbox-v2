@@ -15,7 +15,7 @@ result = zeros(size(x, 1), 1);
     function apply(fun, rows)
         result(rows, :) = fun(x(rows, :, :, :), varargin{:});
     end
-rowsoffun = invertindices(funofrow, numel(functions));
+rowsoffun = funfun.invertindices(funofrow, numel(functions));
 cellfun(@apply, functions(:), rowsoffun(:));
 
 end
