@@ -194,7 +194,7 @@ disp(struct2table(distribution))
 
 %%
 if options.Reporting && options.Serialize
-    numinteractions = tabularsize(interactiongains);
+    numinteractions = datatypes.struct.tabular.height(interactiongains);
     if 1e6 < numinteractions
         prompt = sprintf( ...
             'Proceed to save %d rows to .mat file? {yes | no} ', ...
@@ -215,7 +215,7 @@ gridp = reshape(powers, [size(gridx), size(powers, 3)]); %#ok<NASGU>
 save([mfilename, 'powers.mat'], ...
     'gridx', 'gridy', 'gridp', 'scene', ...
     'argumentlist', 'sourcepattern', 'source')
-%iofun.savebig([mfilename, 'interactions.mat'], 'interactions')
+iofun.savebig([mfilename, 'interactions.mat'], 'interactions')
 powersum = reshape(sum(powers, 3), size(gridx));
 
 %% Aggregate power at each receiver

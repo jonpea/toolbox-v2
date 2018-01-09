@@ -42,7 +42,9 @@ classdef completescene < handle
             
             if nargin < 3 || isempty(buffersize)
                 % Ddefault buffer capacity
-                buffersize = 1;
+                buffersize = 2;
+                assert(1 < buffersize, ...
+                    'MATLAB seems to reallocate scalars')
             end
             
             assert(min(faces(:)) >= 1)
@@ -51,11 +53,11 @@ classdef completescene < handle
             numdimensions = size(vertices, 2);
             assert(ismember(numdimensions, 2 : 3));
             obj.Buffer = struct( ...
-                'FaceIndex', zeros(1, buffersize), ...
-                'RayIndex', zeros(1, buffersize),  ...
-                'RayParameter', zeros(1, buffersize), ...
-                'Point', zeros(numdimensions, buffersize), ...
-                'FaceCoordinates', zeros(numdimensions - 1, buffersize));
+                'FaceIndex', allocate(1, buffersize), ...
+                'RayIndex', allocate(1, buffersize),  ...
+                'RayParameter', allocate(1, buffersize), ...
+                'Point', allocate(numdimensions, buffersize), ...
+                'FaceCoordinates', allocate(numdimensions - 1, buffersize));
             obj.Offset = mex.mexindex(0);
             obj.Chunks = []; % dynamic growth to very small size
             
@@ -167,8 +169,7 @@ classdef completescene < handle
                 'FaceIndex', ctomatlab(extract(obj.Buffer.FaceIndex)), ...
                 'Point', extract(obj.Buffer.Point), ...
                 'RayParameter', extract(obj.Buffer.RayParameter), ...
-                'FaceCoordinates', ...
-                extract(obj.Buffer.FaceCoordinates));
+                'FaceCoordinates', extract(obj.Buffer.FaceCoordinates));
             
             if reset
                 obj.Offset = mex.mexindex(0);
@@ -258,3 +259,8 @@ function a = reallocate(a)
 numcols = 2*size(a, 2);
 a(:, end + 1 : numcols) = zeros('like', a);
 end
+
+function a = allocate(varargin)
+a = repmat(-7777, varargin{:});
+end
+

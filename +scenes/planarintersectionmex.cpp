@@ -25,10 +25,10 @@ template<int NumDims> inline
         mx::array_ptr ray_parameter_buffer,
         mx::array_ptr point_buffer,
         mx::array_ptr face_coordinates_buffer,
-        mx::size_type & buffer_offset,
         // State variables
         rt::size_type & face_id,
-        rt::size_type & ray_id)
+        rt::size_type & ray_id,
+        mx::size_type & buffer_offset)
 {
     typedef rt::vector<NumDims - 1> facet_vector;
     typedef rt::vector<NumDims> spatial_vector;
@@ -39,7 +39,7 @@ template<int NumDims> inline
     
     const auto hit_capacity = mx::num_columns(face_index_buffer);
     
-    rt::size_type num_hits = 0;
+    /*rt::size_type num_hits = 0;*/
     
     const bool success = rt::intersect<NumDims>(
             // Inputs
@@ -55,18 +55,33 @@ template<int NumDims> inline
             scalar<rt::real_type>(t_far),
             num_rays,
             // Outputs
-            data<rt::index_type>(face_index_buffer) + buffer_offset,
-            data<rt::index_type>(ray_index_buffer) + buffer_offset,
-            data<rt::real_type>(ray_parameter_buffer) + buffer_offset,
-            data<spatial_vector>(point_buffer) + buffer_offset,
-            data<facet_vector>(face_coordinates_buffer) + buffer_offset,
-            hit_capacity - buffer_offset,
+            data<rt::index_type>(face_index_buffer) /*+ buffer_offset*/,
+            data<rt::index_type>(ray_index_buffer) /*+ buffer_offset*/,
+            data<rt::real_type>(ray_parameter_buffer) /*+ buffer_offset*/,
+            data<spatial_vector>(point_buffer) /*+ buffer_offset*/,
+            data<facet_vector>(face_coordinates_buffer) /*+ buffer_offset*/,
+            hit_capacity,
             // State variables
             face_id,
             ray_id,
-            num_hits);
+            buffer_offset /*num_hits*/);
     
-    buffer_offset += num_hits;
+    /*buffer_offset += num_hits;*/
+    
+    // =====>>
+    // mexPrintf("--- All %u recorded hits ---\n", buffer_offset);
+    // for (mx::size_type num_hits = 0; num_hits < buffer_offset; ++num_hits)
+    // {
+    //     mexPrintf("        num_hits = %u\n", num_hits);
+    //     mexPrintf("         face_id = %u\n", data<rt::index_type>(face_index_buffer)[num_hits]);
+    //     mexPrintf("          ray_id = %u\n", data<rt::index_type>(ray_index_buffer)[num_hits]);
+    //     mexPrintf("   ray_parameter = %g\n", data<rt::real_type>(ray_parameter_buffer)[num_hits]);
+    //     // mexPrintf("face_coordinates = (%g, %g)\n",
+    //     //         face_coordinates_buffer[num_hits][0],
+    //     //         face_coordinates_buffer[num_hits][1]);
+    //     mexPrintf("----------------------------------------\n");
+    // }
+    // <<=====
     
     return success;
 }
@@ -219,10 +234,10 @@ void mexFunction(
                 ray_parameter_buffer,
                 point_buffer,
                 face_coordinates_buffer,
-                buffer_offset,
                 // State variables
                 face_id,
-                ray_id);
+                ray_id,
+                buffer_offset);
     }
     catch (::std::exception const& error)
     {

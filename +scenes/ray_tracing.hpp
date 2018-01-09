@@ -79,7 +79,7 @@ bool intersect(
         real_type * ray_parameter_buffer,
         vector<N> * intersection_buffer,
         vector<N - 1> * face_coordinates_buffer,
-        const size_type hit_capacity, 
+        const size_type buffer_capacity, 
         // State variables
         size_type & face_id, 
         size_type & ray_id, 
@@ -101,6 +101,13 @@ bool intersect(
        
         for (/* ray_id = "resume" */; ray_id < num_rays; ++ray_id)
         {
+            if (num_hits == buffer_capacity) 
+            {
+                //mexPrintf("face_id = %u, ray_id = %u [num_hits = %u of %u]--> buffer overflow\n", face_id, ray_id, num_hits, buffer_capacity);
+                return false; // "not success: buffer overflow"
+            }
+            //mexPrintf("face_id = %u, ray_id = %u [num_hits = %u of %u]\n", face_id, ray_id, num_hits, buffer_capacity);
+            
             auto const& ray_origin = ray_origins[ray_id];
             auto const& ray_direction = ray_directions[ray_id];
             
@@ -109,6 +116,8 @@ bool intersect(
                     denominator = dot_product(face_normal, ray_direction);
             const auto 
                     t = numerator / denominator;
+            
+            //mexPrintf("parameter = %g\n", t);
             
             if (excludes(t_near, t_far, t) || ::std::isnan(t)) continue;
             
@@ -129,9 +138,20 @@ bool intersect(
                     unit_excludes))
                 continue;
 
-            if (num_hits == hit_capacity) 
+            /*
+            if (num_hits == buffer_capacity) 
                 return false; // "not success: buffer overflow"
-                           
+            */
+
+            // =====>>
+            // mexPrintf("        num_hits = %u\n", num_hits);
+            // mexPrintf("         face_id = %u\n", static_cast<index_type>(face_id));
+            // mexPrintf("          ray_id = %u\n", static_cast<index_type>(ray_id));
+            // mexPrintf("   ray_parameter = %g\n", t);
+            // mexPrintf("face_coordinates = (%g, %g)\n", face_coordinates[0], face_coordinates[1]);
+            // mexPrintf("----------------------------------------\n");
+            // <<=====
+            
             face_index_buffer[num_hits] = static_cast<index_type>(face_id);
             ray_index_buffer[num_hits] = static_cast<index_type>(ray_id);
             ray_parameter_buffer[num_hits] = t;
@@ -139,7 +159,20 @@ bool intersect(
             ::std::copy(
                     begin(face_coordinates), 
                     end(face_coordinates),
-                    begin(face_coordinates_buffer[num_hits]));            
+                    begin(face_coordinates_buffer[num_hits]));     
+            
+            // =====>>
+            // mexPrintf("--- Actually stored ---\n");
+            // mexPrintf("        num_hits = %u\n", num_hits);
+            // mexPrintf("         face_id = %u\n", face_index_buffer[num_hits]);
+            // mexPrintf("          ray_id = %u\n", ray_index_buffer[num_hits]);
+            // mexPrintf("   ray_parameter = %g\n", ray_parameter_buffer[num_hits]);
+            // mexPrintf("face_coordinates = (%g, %g)\n", 
+            //         face_coordinates_buffer[num_hits][0], 
+            //         face_coordinates_buffer[num_hits][1]);
+            // mexPrintf("----------------------------------------\n");
+            // <<=====
+
             ++num_hits;
         }
 

@@ -344,6 +344,9 @@ if settings.Reporting
     
     assert(istabular(nodetable))
     
+    %disp('Before...')
+    %disp(struct2table(nodetable))
+
     % Sort nodes on each path by ray index and
     % ray parameter, and sort paths by path index
     [~, permutation] = sortrows([
@@ -352,10 +355,16 @@ if settings.Reporting
         nodetable.Parameter  % previously 'RayParameter'
         ]);
     
+    %disp('Permutation...')
+    %disp(permutation)
+    
     % Store for aggregation
     import datatypes.struct.tabular.rows
     nodetables{end + 1} = rows(nodetable, permutation);
     
+    %disp('After...')
+    %disp(struct2table(nodetables{end}))
+    %error('Done! (old)')
 end
 
 end
