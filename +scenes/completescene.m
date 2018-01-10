@@ -25,7 +25,7 @@ classdef completescene < handle
         Origin
         UnitNormal
         UnitOffset
-        %Frame
+        Frame
         
         % Interface for image method
         Intersect
@@ -61,7 +61,7 @@ classdef completescene < handle
             obj.Offset = mex.mexindex(0);
             obj.Chunks = []; % dynamic growth to very small size
             
-            [origins, normals, offsettolocalmaps] = reference.frames(faces, vertices);
+            [origins, normals, unittangents, offsettolocalmaps] = reference.frames(faces, vertices);
             offsets = matfun.dot(normals, origins, 2);
                         
             obj.FaceOriginsTransposed = origins';
@@ -73,6 +73,7 @@ classdef completescene < handle
             obj.Origin = origins;
             obj.UnitNormal = normals;
             obj.UnitOffset = offsets;
+            obj.Frame = cat(3, normals, unittangents);
             
             obj.IntersectFacet = @obj.intersectfacet;
             obj.Intersect = @obj.intersectpaths;

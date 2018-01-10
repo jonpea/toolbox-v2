@@ -4,8 +4,8 @@ narginchk(1, nargin)
 assert(ismember(numel(fieldnames(data)), 2 : 3))
 
 parser = inputParser;
-parser.addParameter('OutputTransform', @identity, @isfunction)
-parser.addParameter('InputTransform', @wrapcircle, @isfunction)
+parser.addParameter('OutputTransform', @elfun.identity, @datatypes.isfunction)
+parser.addParameter('InputTransform', @elfun.wrapcircle, @datatypes.isfunction)
 parser.parse(varargin{:})
 options = parser.Results;
 
@@ -53,7 +53,7 @@ assert(all(0 <= data.theta & data.theta <= 180))
 assert(all(0 <= data.gain))
 
 % Convert unstructured rows to structured grid
-[phi, theta, gain] = ungrid(data.phi, data.theta, data.gain);
+[phi, theta, gain] = points.fullgrid.ungrid(data.phi, data.theta, data.gain);
 
 interpolant = griddedInterpolant({
     deg2rad(phi), ... % azimuthal angle from x-axis

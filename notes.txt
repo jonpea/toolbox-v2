@@ -35,3 +35,7 @@ Geometry
 Repositories
 ============
 - nlelib Fortran code with makefile
+
+Recurring patterns
+==================
+- disp(struct2table(someStruct))

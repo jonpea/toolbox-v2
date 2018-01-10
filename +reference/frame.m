@@ -1,4 +1,4 @@
-function [origin, normal, map] = frame(face, vertices)
+function [origin, normal, unittangents, map] = frame(face, vertices)
 
 narginchk(2, 2)
 assert(isrow(face))
@@ -16,6 +16,8 @@ numdimensions = size(vertices, 2);
 [q, r] = qr(tangents', 0);
 
 % Workings:
+% p(1:n) := vector of global coordinates
+% alpha(1:n-1) := vector of local coordinates
 % T := tangents'
 % p(:) = T*alpha(:) = (Q*R)*alpha(:)
 % --> alpha(:) = inv(Q*R)*p(:) = inv(R)*Q'*p(:)
@@ -24,6 +26,12 @@ map = reshape(q/r', 1, numdimensions, []);
 
 individualtangents = num2cell(tangents, 2);
 normal = unitrows(perp(individualtangents{:})); % unit normal vector
+
+% Stack tangent vectors in 3rd dimension
+% NB: Only the first is guaranteed to follow an edge; 
+% the other is perpendicular
+q = num2cell(q', 2);
+unittangents = cat(3, q{:});
 
 % ========================================================================
 function [origin, tangents] = fvtangents(indices, vertices)

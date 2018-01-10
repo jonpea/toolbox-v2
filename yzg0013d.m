@@ -23,7 +23,10 @@ options = parser.Results;
 
 %% Wall plan & materials set
 [linevertices, materialsdata, wallmaterials] = data.building903level4;
-[faces, vertices] = linestofacevertex(linevertices);
+[faces, vertices] = facevertex.compress(facevertex.xy2fv( ...
+    linevertices(:, [1 3])', ...
+    linevertices(:, [2 4])'));
+
 if options.CullDuplicateFaces
     [~, select] = unique(sort(faces, 2), 'rows');
     fprintf('Removing %d redundant facet(s): %s\n', ...

@@ -24,8 +24,7 @@ classdef quadscene < abstractscene
                     'Some facets are not rhomboid')
             end
             
-            import reference.frames
-            [origin, normal, map] = reference.frames(faces, vertices);
+            [origin, normal, ~, map] = reference.frames(faces, vertices);
             
             obj.FaceOrigin = origin;
             obj.FaceNormal = normal;

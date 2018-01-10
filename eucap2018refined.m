@@ -1,21 +1,5 @@
 function eucap2018refined(varargin)
 
-import datatypes.cell2table
-%
-import graphics.*
-%
-import facevertex.clone
-import facevertex.extrude
-import facevertex.faces
-import facevertex.fv
-import facevertex.vertices
-%
-import ops.vec
-%
-import points.bbox
-import points.meshpoints
-import points.text
-
 %%
 settings = parse(varargin{:});
 
@@ -34,14 +18,14 @@ dbtype panel
 
 %% Scene geometry and material properties
 facets = datatypes.cell2table({
-    'Material'     'Gain'   'FaceAlpha'   'FaceColor'   'LineWidth'
-    panel.Steel     -3       0.1           rgb.black     2
-    panel.Wood      -3       0.1           rgb.salmon    2
-    panel.Concrete  -20      0.1           rgb.red       5
-    panel.Gib       -3       0.1           rgb.magenta   2
-    panel.Glass     -3       0.1           rgb.cyan      2
-    panel.Ceiling   -3       0.05          rgb.blue      1
-    panel.Floor     -3       0.1           rgb.green     1
+    'Material'     'Gain'   'FaceAlpha'   'FaceColor'            'LineWidth'
+    panel.Steel     -3       0.1           graphics.rgb.black     2
+    panel.Wood      -3       0.1           graphics.rgb.salmon    2
+    panel.Concrete  -20      0.1           graphics.rgb.red       5
+    panel.Gib       -3       0.1           graphics.rgb.magenta   2
+    panel.Glass     -3       0.1           graphics.rgb.cyan      2
+    panel.Ceiling   -3       0.05          graphics.rgb.blue      1
+    panel.Floor     -3       0.1           graphics.rgb.green     1
     });
 facets.EdgeColor = facets.FaceColor;
 
@@ -82,11 +66,11 @@ scene2D.Material = faceData2D.Material;
 ax = settings.Axes('2-D Scene');
 facevertex.multipatch(ax, ...
     scene2D.Material, facets, ...
-    'Faces', faces(scene2D), ...
-    'Vertices', vertices(scene2D))
-points.text(ax, vertices(scene2D), 'Color', 'blue')
+    'Faces', facevertex.faces(scene2D), ...
+    'Vertices', facevertex.vertices(scene2D))
+points.text(ax, facevertex.vertices(scene2D), 'Color', 'blue')
 points.text(ax, facevertex.reduce(@mean, scene2D), 'Color', 'red')
-axis(ax, bbox(vertices(scene2D), 0.1))
+axis(ax, points.bbox(facevertex.vertices(scene2D), 0.1))
 axis(ax, 'equal')
 
 %%

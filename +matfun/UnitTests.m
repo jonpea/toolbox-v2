@@ -3,7 +3,7 @@ classdef UnitTests < matlab.unittest.TestCase
     properties (TestParameter)
         
         % Vector norms, including min/max norm
-        p = {1, 2, 3, -inf, inf} 
+        p = {1, 2, 3, -inf, inf}
         
         % Arrays of dimension 2 to 4
         sz1 = {0, 1, 3}
@@ -11,7 +11,7 @@ classdef UnitTests < matlab.unittest.TestCase
         sz3 = {0, 1, 3}
         sz4 = {1, 1, 3}
         
-        % Dimension of application, including one greater than the 
+        % Dimension of application, including one greater than the
         % max number of actually dimensions (which always has size 1).
         dim = {1, 2, 3, 4, 5}
         
@@ -23,9 +23,6 @@ classdef UnitTests < matlab.unittest.TestCase
             a = data(sz1, sz2, sz3, sz4);
             actual = matfun.norm(a, p, dim);
             expected = cellfun(@(v) norm(squeeze(v), p), num2cell(a, dim));
-            if 1e-6 < norm(actual(:) - expected(:))
-               []; 
-            end
             testCase.verifyEqual(actual, expected, ...
                 'AbsTol', 1e-10, 'RelTol', 1e-10)
         end

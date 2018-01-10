@@ -22,7 +22,7 @@ parser.parse(varargin{:});
 
 % Date and time
 dateformat = 'HH:MM PM dddd, mmmm dd, yyyy';
-record.DateNum = datenum(nextline(fid), dateformat);
+record.MetaData.DateNum = datenum(nextline(fid), dateformat);
 
 % Scan list frequencies
 scanlist = 'scan:list:frequencies';
@@ -44,24 +44,24 @@ end
 frequencyunit = unique(allunits);
 assert(isscalar(frequencyunit))
 assert(isequal(validatehertz(frequencyunit{:}), 'MHz'))
-record.FrequencyHz = vertcat(allvalues{:})*1e6; % convert MHz to Hz
+record.Data.FrequencyHz = vertcat(allvalues{:})*1e6; % convert MHz to Hz
 
 % Preamplifier status
 [prefix, status] = splittuple(line, {' ', ';'});
 assert(strcmpi(prefix, 'preamplifier'))
 status = validatestring(status, {'on', 'off'});
-record.Preamplifier = status;
+record.MetaData.Preamplifier = status;
 
 line = nextline(fid);
 [prefix, value, unit] = splittuple(line, {' ', ';'});
 assert(strcmpi(prefix, 'bandwidth:if'))
 assert(isequal(validatehertz(unit), 'kHz'))
-record.BandwidthHz = str2double(value)*1e3; % convert kHz to Hz
+record.MetaData.BandwidthHz = str2double(value)*1e3; % convert kHz to Hz
 
 line = nextline(fid);
 [prefix, value, unit] = splittuple(line, {' ', ';'});
 assert(strcmpi(prefix, 'specialfunc:samplingtime'))
-record.SamplingDurationSec = str2double(value)/1e3; % convert ms to sec
+record.MetaData.SamplingDurationSec = str2double(value)/1e3; % convert ms to sec
 assert(isequal(validatesecond(unit), 'ms'))
 
 assert(startsWith(nextline(fid), 'Sampling Time', 'IgnoreCase', true))
@@ -92,14 +92,17 @@ end
 headerformat = [headerprefix '%d'];
 transmitterindices = cellfun( ...
     @(header) sscanf(header, headerformat), headers);
-record.Transmitter = headers; % useful sanity-check
+record.Data.Transmitter = headers; % useful sanity-check
 %record.TransmitterIndex = transmitterindices; % redundant after sorting
 
-record = orderfields(record, {
-    ... % Non-singleton entries
+% Non-singleton entries
+record.Data = orderfields(record.Data, {
     'Transmitter';
     'FrequencyHz';
-    ... % Singleton entries
+    });
+
+% Singleton entries
+record.MetaData = orderfields(record.MetaData, {
     'BandwidthHz';
     'SamplingDurationSec';
     'Preamplifier';
@@ -109,7 +112,7 @@ record = orderfields(record, {
 % Sort rows acording to transmitter index/name
 [sortedindentifiers, permutation] = sort(transmitterindices);
 assert(isequal(sortedindentifiers(:)', 1 : numtransmitters))
-record = tabularrows(record, permutation);
+record.Data = datatypes.struct.tabular.rows(record.Data, permutation);
 buffer = buffer(permutation, :);
 
 end

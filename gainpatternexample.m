@@ -23,7 +23,8 @@ present('trans_TE_Wall_3.txt')
 %% Reflection coefficients
 present('refl_TM_Wall_3.txt')
 %%
-present('refl_TE_Wall_3.txt')
+% This dataset no longer exists
+%present('refl_TE_Wall_3.txt')
 
 %%
 % NB: This is a work-around to force capture of plot above - 
@@ -62,9 +63,9 @@ interpolant2 = @(theta, phi) ...
 radius2 = reshape(interpolant2(polar2, azimuth2), size(polar2));
 
 subplot(2, 1, 1)
-graphics.spherical(radius1, azimuth1, polar1, opacity{:})
+plotspherical(radius1, azimuth1, polar1, opacity{:})
 title('Sub-sampled every 1 degree')
-labelaxes('x', 'y', 'z')
+graphics.axislabels('x', 'y', 'z')
 minradius = min(columndata.gain(:));
 maxradius = max(columndata.gain(:));
 if abs(minradius - maxradius) <= eps*(abs(maxradius) + 1)
@@ -79,17 +80,74 @@ rotate3d on
 view(3)
 
 subplot(2, 1, 2)
-graphics.spherical(radius2, azimuth2, polar2, opacity{:})
+plotspherical(radius2, azimuth2, polar2, opacity{:})
 title('Wrapped through quadrants')
-labelaxes('x', 'y', 'z')
+graphics.axislabels('x', 'y', 'z')
 axis equal
 rotate3d on
 view(3)
 
-input('Press enter to continue', 's');
+% input('Press enter to continue', 's');
 
 end
 
 function x = resample(x)
 x = linspace(min(x), max(x), 361);
+end
+
+% -------------------------------------------------------------------------
+function varargout = plotspherical(varargin)
+
+[ax, radius, azimuth, inclination, varargin] = parse(varargin{:});
+
+if mod(numel(varargin), 2) == 1
+    units = varargin{1};
+    assert(ischar(units))
+else
+    units = 'radians';
+end
+
+switch validatestring(units, {'degrees', 'radians'})
+    case 'degrees'
+        azimuth = deg2rad(azimuth);
+        inclination = deg2rad(inclination);
+end
+elevation = 0.5*pi - inclination;
+[x, y, z] = sph2cart(azimuth, elevation, ones(size(radius)));
+
+[varargout{1 : nargout}] = surf( ...
+    x, y, z, 'CData', radius, 'Parent', ax, varargin{:});
+
+end
+
+% -------------------------------------------------------------------------
+function [ax, radius, inclination, azimuth, varargin] = parse(varargin)
+
+narginchk(1, nargin)
+
+last = find(cellfun(@ischar, varargin), 1, 'first') - 1;
+if isempty(last)
+    last = numel(varargin);
+end
+[ax, arrays] = arguments.parsefirst(@datatypes.isaxes, gca, 0, varargin{1 : last});
+varargin = varargin(last + 1 : end);
+
+assert(ismember(numel(arrays), [1, 3]))
+switch numel(arrays)
+    case 1
+        radius = arrays{1};
+        inclination = linspace(0, pi, size(radius, 1));
+        azimuth = linspace(0, 2*pi, size(radius, 2));
+    case 3
+        [radius, inclination, azimuth] = arrays{:};
+end
+
+equalsize = @(a, b) isequal(size(a), size(b));
+assert( ...
+    equalsize(azimuth, radius) ...
+    || numel(azimuth) == size(radius, 1))
+assert( ...
+    equalsize(inclination, radius) ...
+    || numel(inclination) == size(radius, 2))
+
 end

@@ -27,7 +27,7 @@ functions = {
     @(x) full - x; % fourth quadrant
     };
 
-y = wrapcircle(x, full);
+y = elfun.wrapcircle(x, full);
 quadrants = 1 + fix(y/quarter);
 y = reshape(funfun.indexedunary(functions, quadrants, y(:)), size(y));
 

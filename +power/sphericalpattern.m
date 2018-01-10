@@ -5,7 +5,7 @@ if nargin < 2
     transform = @elfun.identity;
 end
 if nargin < 3
-    wrap = @wrapcircle;
+    wrap = @elfun.wrapcircle;
 end
 import datatypes.isfunction
 assert(isfunction(fun))

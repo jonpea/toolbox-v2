@@ -1,15 +1,12 @@
 function varargout = text(varargin)
 
-import arguments.parsefirst
-import datatypes.isaxes
-import elmat.index
-import points.components;
-
 narginchk(1, nargin)
 
+import arguments.parsefirst
+import datatypes.isaxes
 [ax, xyz, varargin] = parsefirst(@isaxes, gca, 1, varargin{:});
 
-xyz = components(xyz);
+xyz = points.components(xyz);
 default = cellstr(num2str(index(xyz{1})));
 
 [txt, varargin] = parsefirst(@iscellstr, default, 0, varargin{:});

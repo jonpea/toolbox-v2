@@ -1,4 +1,4 @@
-function [origin, normal, map] = frames(faces, vertices)
+function [origin, normal, tangents, map] = frames(faces, vertices)
 %FVFRAMES Local coordinate frames for face-vertex representation
 % [FRAME,NORMAL,OFFSET,ORIGIN,MAP]=FRAMES(FACES,TANGENTS{:}) returns frame
 % data for face-vertex models in the rows of the following arrays:
@@ -33,8 +33,8 @@ classtype = class(vertices);
 numdimensions = size(vertices, 2);
 origin = allocate(numdimensions);
 normal = allocate(numdimensions);
-map = allocate(numdimensions, numdimensions - 1);
-[origin(:, :), normal(:, :), map(:, :, :)] = ...
+[tangents, map] = deal(allocate(numdimensions, numdimensions - 1));
+[origin(:, :), normal(:, :), tangents(:, :, :), map(:, :, :)] = ...
     combineIndividualFrames(faces, vertices);
 
 end

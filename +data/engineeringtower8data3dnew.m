@@ -17,8 +17,9 @@ assert(options.DoorHeight <= options.StudHeight)
 
 % 2D plan and attributes
 [wallfaces, doorfaces, vertices, types, doortypes2d] = ...
-    engineeringtower8data2dnew(options.Convention);
+    data.engineeringtower8data2dnew(options.Convention);
 
+import data.panel
 archtypes(doortypes2d == panel.DoorInConcrete) = panel.ConcreteWall;
 archtypes(doortypes2d == panel.DoorInGibCavity) = panel.GibWall;
 archtypes(doortypes2d == panel.DoorToLift) = panel.ConcreteWall;
@@ -32,11 +33,11 @@ doorheight = floorheight + options.DoorHeight;
 ceilingheight = floorheight + options.StudHeight;
 
 % Extrude plan
-model = extrudeplan(wallfaces, vertices, floorheight, ceilingheight);
+model = facevertex.extrude(wallfaces, vertices, [floorheight, ceilingheight]);
 if options.WithDoors
-    doormodel = extrudeplan(doorfaces, vertices, floorheight, doorheight);
-    archmodel = extrudeplan(doorfaces, vertices, doorheight, ceilingheight);
-    model = catfacevertex(catfacevertex(model, doormodel), archmodel);
+    doormodel = facevertex.extrude(doorfaces, vertices, [floorheight, doorheight]);
+    archmodel = facevertex.extrude(doorfaces, vertices, [doorheight, ceilingheight]);
+    model = facevertex.cat(model, doormodel, archmodel);
     types = [
         types(:);
         doortypes(:);
@@ -45,13 +46,17 @@ if options.WithDoors
 end
 
 if options.WithFloor
-    model = capfacevertex(model, true, false);
-    types(end + 1, 1) = panel.Floor;
+    %model = capfacevertex(model, true, false);
+    floorface = facevertex.cap(@min, 3, model);
+    model.Faces(end + 1, :) = floorface;
+    types(end + 1, 1) = data.panel.Floor;
 end
 
 if options.WithCeiling
-    model = capfacevertex(model, false, true);
-    types(end + 1, 1) = panel.Ceiling;
+    %model = capfacevertex(model, false, true);
+    ceilingface = facevertex.cap(@max, 3, model);
+    model.Faces(end + 1, :) = ceilingface;
+    types(end + 1, 1) = data.panel.Ceiling;
 end
 
 faces = model.Faces;

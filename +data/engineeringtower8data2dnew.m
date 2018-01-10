@@ -46,9 +46,9 @@ doorfaces = [
 % Materials of walls in which each door is installed
 doorsincore = 10; % excluding 13, which is in gib cavity
 doorstolift = [8, 11];
-doortypes = repmat(panel.DoorInGibCavity, size(doorfaces(:, 1)));
-doortypes(doorsincore) = panel.DoorInConcrete;
-doortypes(doorstolift) = panel.DoorToLift;
+doortypes = repmat(data.panel.DoorInGibCavity, size(doorfaces(:, 1)));
+doortypes(doorsincore) = data.panel.DoorInConcrete;
+doortypes(doorstolift) = data.panel.DoorToLift;
 
 % Coordinate transformation
 switch validatestring(convention, {'butterworth', 'neve', 'pais', 'wyfy'})
@@ -57,7 +57,7 @@ switch validatestring(convention, {'butterworth', 'neve', 'pais', 'wyfy'})
         rotor = 1;
     case 'pais'
         offset = max(vertices(:, 1 : 2), [], 1);
-        rotor = rotor2d(pi);
+        rotor = elmat.rotor2(pi);
 end
 vertices = vertices*rotor + offset;
 
@@ -102,19 +102,19 @@ if ~isempty(fig)
     clf, hold on
     %labelpoints(vertices)
     % Walls
-    drawwalls(panel.GibWall, 'magenta', 1)
-    drawwalls(panel.ConcreteWall, 'red', 1)
-    drawwalls(panel.GlassWindow, 'cyan', 1)
+    drawwalls(data.panel.GibWall, 'magenta', 1)
+    drawwalls(data.panel.ConcreteWall, 'red', 1)
+    drawwalls(data.panel.GlassWindow, 'cyan', 1)
     % Doors
-    drawdoors(panel.DoorInConcrete, 'green', 3)
-    drawdoors(panel.DoorInGibCavity, 'black', 3)
-    drawdoors(panel.DoorToLift, 'blue', 3)
+    drawdoors(data.panel.DoorInConcrete, 'green', 3)
+    drawdoors(data.panel.DoorInGibCavity, 'black', 3)
+    drawdoors(data.panel.DoorToLift, 'blue', 3)
     axis('equal')
     axis('tight')
     camproj('perspective')
     rotate3d('on')
-    drawwalls(panel.Floor, 'green', 1)
-    drawwalls(panel.Ceiling, 'blue', 1)
+    drawwalls(data.panel.Floor, 'green', 1)
+    drawwalls(data.panel.Ceiling, 'blue', 1)
 end
 
 end
@@ -125,12 +125,13 @@ function [faces, vertices, gains] = engineeringtower8data
 % glass = -3;
 % gain_concrete = -20;
 % gain_wall = -3;
+import data.panel
 glass = double(panel.GlassWindow);
 concrete = double(panel.ConcreteWall);
 gib = double(panel.GibWall);
 
 header = { 'x1', 'y1', 'x2', 'y2', 'gain' }; %#ok<*NASGU>
-data = num2cell([
+datatable = num2cell([
     1          0          0    18.5000          0    glass
     2    18.5000          0    18.5000    18.5000    glass
     3    18.5000    18.5000          0    18.5000    glass
@@ -176,7 +177,7 @@ data = num2cell([
     43          0     4.2000     4.7000     4.2000    gib
     ], 1);
 
-[faces, vertices] = linestofacevertex(data{2 : 5});
-gains = panel(data{end});
+[faces, vertices] = data.linestofacevertex(datatable{2 : 5});
+gains = panel(datatable{end});
 
 end
