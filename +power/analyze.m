@@ -39,7 +39,7 @@ dlinks = orderfields(dlinks, {
     });
 
 if nargout < 2
-    return
+    return % uplink calculations are not required
 end
 
 % Received gain (in watts), rows for receivers

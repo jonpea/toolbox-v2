@@ -59,8 +59,6 @@ sourceid = interactions.ObjectIndex(issource, :);
 % Friis free-space gains
 totaldistance = accumarray(interactions.Identifier, interactions.FreeDistance);
 freegain = gainfunctions.Free(sourceid, totaldistance);
-% freegain2 = friisgain(totaldistance, raywavelength, 'db');
-% assert(norm(freegain - freegain2, inf) < 1e-14)
 
 % Accumulate gains over paths
 interactiongain = accumarray( ...

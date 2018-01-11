@@ -94,6 +94,5 @@ end
 
 function r = unitradius(~, azimuth, inclination)
 % First input argument (unused) corresponds to "index".
-import sx.sizesx
-r = ones(sizesx(azimuth, inclination), 'like', azimuth);
+r = ones(sx.size(azimuth, inclination), 'like', azimuth);
 end

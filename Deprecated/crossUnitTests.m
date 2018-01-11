@@ -3,11 +3,11 @@ classdef crossUnitTests < matlab.unittest.TestCase
     properties (TestParameter)
         
         % Arrays of dimension 2 to 4
-        % NB: CROSS requires at one dimension is equal to 3.
+        % NB: CROSS requires that one dimension is equal to 3.
         sz1 = {0, 1, 5}
         sz2 = {0, 1, 5}
         sz3 = {0, 1, 5}
-        sz4 = {1, 1, 5}
+        sz4 = {0, 1, 5}
         
         % Dimension of application, including one greater than the
         % max number of actually dimensions (which always has size 1).
@@ -17,7 +17,7 @@ classdef crossUnitTests < matlab.unittest.TestCase
     
     methods (Test, ParameterCombination = 'exhaustive')
         
-        function standardTest(testCase, sz1, sz2, sz3, sz4, dim)
+        function crossStandardTest(testCase, sz1, sz2, sz3, sz4, dim)
             
             % Shape of operand arrays
             shape = [sz1, sz2, sz3, sz4];
@@ -37,7 +37,7 @@ classdef crossUnitTests < matlab.unittest.TestCase
             
         end
         
-        function singletonTest(testCase, sz1, sz2, sz3, sz4, dim)
+        function crossSingletonTest(testCase, sz1, sz2, sz3, sz4, dim)
             
             % First operand, arbitrary values
             aShape = [sz1, sz2, sz3, sz4];

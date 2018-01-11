@@ -1,10 +1,15 @@
 function fun = comp(varargin)
 %COMP Composition of functions.
-%   FG = COMP(ARG1,ARG2,..) is a function handle for which
-%     [X,Y,..] = FG(A,B,..) is equivalent to 
-%     [X,Y,..] = PIPE(ARG1,ARG2,..,A,B).
+%   FUN = COMP(F1,..,FM) is a function handle for which
+%     [Y1,Y2,..] = FUN(X1,..,XN) is equivalent to 
+%     [Y1,Y2,..] = PIPE({F1,..,FM},..,X1,..,XN).
+%
+%   Example:
+%   >> f = funfun.comp(@sqrt, @exp);
+%   >> x = pi;
+%   >> assert(isequal(f(x), sqrt(exp(x))))
 %
 %   See also PIPE.
 
-outer = vararin;
-fun = @(varargin) funfun.pipe(outer{:}, varargin{:});
+outer = varargin;
+fun = @(varargin) funfun.pipe(outer, varargin{:});

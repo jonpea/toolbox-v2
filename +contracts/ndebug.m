@@ -1,4 +1,4 @@
-function ndebug = ndebug(ndebug)
+function varargout = ndebug(ndebug)
 %NDEBUG Control selective assertions.
 % NDEBUG returns FALSE if selective assertions are enabled and TRUE
 % otherwise i.e. ASSERT(NDEBUG || ...) is
@@ -26,3 +26,13 @@ if nargin == 1 || isempty(NDEBUG)
 end
 
 ndebug = NDEBUG;
+
+if nargout == 1
+    varargout = {ndebug};
+else
+    if ndebug
+        fprintf('assert is <strong>disabled</strong>\n')
+    else
+        fprintf('assert is <strong>enabled</strong>\n')
+    end
+end

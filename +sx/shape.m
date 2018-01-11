@@ -1,9 +1,9 @@
-function newshape = sxshape(a, positions, numdims)
-%SXSHAPE Singleton eXpansion shape.
-%   SXSHAPE(A,POS,N) returns the size of array A suitable for use 
+function newshape = shape(a, positions, numdims)
+%SHAPE Singleton expansion shape.
+%   SHAPE(A,POS,N) returns the size of array A suitable for use 
 %   in an expression that relies on singleton expansion.
 %
-%   See also SXRESHAPE.
+%   See also SX.RESHAPE.
 narginchk(2, 3)
 if nargin < 3 || isempty(numdims)
     numdims = max(positions(:));

@@ -58,8 +58,8 @@ elapsed = toc(timer); %#ok<NASGU>
 
         % Prepare for singleton expansion
         numslots = 3;
-        sxshaperay = sxshape(rayorigins, [1, numslots]);
-        sxshapeface = sxshape(facenormals, [2, numslots]);
+        sxshaperay = sx.shape(rayorigins, [1, numslots]);
+        sxshapeface = sx.shape(facenormals, [2, numslots]);
         
         % Compute ray parameters of each candidate intersection point
         % TODO: Note that 
@@ -88,8 +88,8 @@ elapsed = toc(timer); %#ok<NASGU>
 
         % Prepare for singleton expansion
         numslots = 3;
-        sxshaperay = sxshape(rayorigins, [1, numslots]);
-        sxshapeface = sxshape(facenormals, [2, numslots]);
+        sxshaperay = sx.shape(rayorigins, [1, numslots]);
+        sxshapeface = sx.shape(facenormals, [2, numslots]);
         
         denominators = sum( ...
             bsxfun(@times, ...

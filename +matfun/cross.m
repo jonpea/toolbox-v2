@@ -17,7 +17,7 @@ narginchk(2, 3)
 
 import contracts.msgid
 
-shape = sx.sizesx(a, b);
+shape = sx.size(a, b);
 
 if nargin < 3
     dim = find(shape == 3, 1, 'first');

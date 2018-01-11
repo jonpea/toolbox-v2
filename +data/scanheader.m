@@ -11,5 +11,5 @@ end
 headings = split(fgetl(fid));
 
 % This is a work-around for inconsistent behaviour in R2016b, 
-% which returns a string array rather than a cell array
+% which returns a char array rather than a cell array of char vectors.
 headings = cellstr(headings); 

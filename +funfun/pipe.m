@@ -45,8 +45,7 @@ nout = arguments.nargoutfor(fouter, nargout);
 
 % -------------------------------------------------------------------------
 function varargout = pipeTwo(fouter, varargin)
-[numout, finner, varargin] = ...
-    arguments.parsefirst(@isnumeric, 1, 1, varargin{:});
+[numout, finner, varargin] = arguments.parsefirst(@isnumeric, 1, 1, varargin{:});
 [temporary{1 : numout}] = feval(finner, varargin{:});
 [varargout{1 : nargout}] = feval(fouter, temporary{:});
 
@@ -60,7 +59,10 @@ assert(~isempty(list))
 % e.g. {@f, 2, @g, @h} becomes {@f, 2, @g, 1, @h}
 isfun = cellfun(@datatypes.isfunction, list);
 consecutive = isfun(1 : end - 1) & isfun(2 : end);
-list = elmat.insert(list, 1 + find(consecutive), {1});
+positions = find(consecutive);
+defaults = cellfun(@nargin, list(positions));
+defaults(defaults == -1) = 1; % most reasonable default for functions with variable argument lists
+list = elmat.insert(list, 1 + positions, num2cell(defaults));
 
 import datatypes.isfunction
 assert(all(cellfun(@isfunction, list(1 : 2 : end))))

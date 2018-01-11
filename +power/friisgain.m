@@ -14,7 +14,7 @@ switch validatestring(lower(type), {'db', 'linear'}, mfilename, 'type', 3)
     case 'db'
         % This improves on the finite-precision accuracy of
         % the mathematically equivalent expression
-        %  "todb(friisgrain(.., 'linear')) = 10*log10((..)^2)".
+        %  "todb(friisgain(.., 'linear')) = 10*log10((..)^2)".
         g = 20*(log10(lambda) - log10(4*pi*distance));
         
     case 'linear'

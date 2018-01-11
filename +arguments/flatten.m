@@ -1,4 +1,17 @@
 function list = flatten(varargin)
+%FLATTEN Packs its argument list into a single cell array.
+%
+% Examples:
+%   >> arguments.flatten({1,2},3,{4,5,6})
+%   ans =
+%     1×6 cell array
+%       {[1]}    {[2]}    {[3]}    {[4]}    {[5]}    {[6]}
+%
+%   >> arguments.flatten({1,2},{{3}},{4,5,6})
+%   ans =
+%     1×6 cell array
+%       {[1]}    {[2]}    {1×1 cell}    {[4]}    {[5]}    {[6]}
+%
 
 varargin = cellfun(@enbrace, varargin, 'UniformOutput', false);
     function c = enbrace(c)

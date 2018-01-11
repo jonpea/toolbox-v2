@@ -222,7 +222,7 @@ facetofunctionmap = arrayfun(@paneltofunctionindex, scene.PanelType);
     function pattern = loadquadpattern(filename)
         pattern = data.loadpatternnew(fullfile('+data', filename), ...
             'OutputTransform', @elfun.todb, ...
-            'InputTransform', @elfun.wrapquadrant);
+            'InputTransform', @specfun.wrapquadrant);
     end
 
     function fun = makegainfunctions(patterns, offsets)

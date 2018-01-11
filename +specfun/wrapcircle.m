@@ -3,4 +3,4 @@ narginchk(1, 2)
 if nargin < 2
     full = 2*pi;
 end
-y = elfun.wrapinterval(x, 0, full);
+y = specfun.wrapinterval(x, 0, full);

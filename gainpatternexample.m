@@ -56,7 +56,7 @@ radius1 = interpolant1(polar1, azimuth1);
 
 
 interpolant2 = @(theta, phi) ...
-    interpolant1(wrapquadrant(theta), wrapquadrant(phi));
+    interpolant1(specfun.wrapquadrant(theta), specfun.wrapquadrant(phi));
 [polar2, azimuth2] = ndgrid( ...
     linspace(0.0, pi, 360), ... % polar angles
     linspace(0.0, pi, 360)); % azimuthal angles

@@ -5,7 +5,7 @@ assert(ismember(numel(fieldnames(data)), 2 : 3))
 
 parser = inputParser;
 parser.addParameter('OutputTransform', @elfun.identity, @datatypes.isfunction)
-parser.addParameter('InputTransform', @elfun.wrapcircle, @datatypes.isfunction)
+parser.addParameter('InputTransform', @specfun.wrapcircle, @datatypes.isfunction)
 parser.parse(varargin{:})
 options = parser.Results;
 

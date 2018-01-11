@@ -26,10 +26,10 @@ assert(size(limits, 2) == 2)
 
 % Prepare for singleton expansion
 numslots = 3;
-lower = reshape(lower, sxshape(lower, [1, numslots]));
-upper = reshape(upper, sxshape(upper, [1, numslots]));
-tails = reshape(tails, sxshape(tails, [2, numslots]));
-directions = reshape(directions, sxshape(directions, [2, numslots]));
+lower = reshape(lower, sx.shape(lower, [1, numslots]));
+upper = reshape(upper, sx.shape(upper, [1, numslots]));
+tails = reshape(tails, sx.shape(tails, [2, numslots]));
+directions = reshape(directions, sx.shape(directions, [2, numslots]));
 
 % Parameter interval for bounding box slab in each direction
     function t = parameterfor(offset)

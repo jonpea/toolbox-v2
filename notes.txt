@@ -6,6 +6,13 @@ Key Modules to Document
 =======================
 - Antenna patterns: isofunction, sphericalpattern
 - Both work (deliberately) in cartesian coordinates native to tracescene
+- I/O: loadcolumns, scanheader, ungrid
+
+Key concepts
+============
+- The ultimate input to user-defined gain propagation functions is a 
+  an unstructured set of direction vectors in local Cartesian coordinates; 
+- 
 
 Demos
 =====

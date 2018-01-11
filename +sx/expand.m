@@ -7,36 +7,36 @@ function varargout = expand(varargin)
 %   expansion for N-ary elementwise operations.
 %
 %   NB: Since MATLAB performs implicit singleton expansion, this
-%   function is intended *only* for testing and performance profiling.
+%   function is intended *only* for the following scenerios:
+%   - testing and performance profiling
+%   - correctly accounting for the shape of unused arguments
+%
+%   Example: 
+%   The following three functions are mathematically equivalent
+%   >> f1 = @(x, y) sin(x + zeros(size(y))  % naive version
+%   >> f2 = @(x, y) sin(sx.expand(x, y));   % more efficient
+%   >> f3 = @(x, y) sx.expand(sin(x), y);   % most efficient
+%
+%   In contrast, the following function not equivalent to f1/f2/f3:
+%   >> f4 = @(x, ~) sin(x);                 % no singleton expansion
+%   >> f5 = @(x, y) sin(sx.expand(y, x));   % like "sin(y)"
 %
 %   See also SIZESX, BSXFUN.
 
-import sx.sizesx
-
-commonshape = sizesx(varargin{:});
+commonshape = sx.size(varargin{:});
 numdims = numel(commonshape);
     function inflated = inflateArray(a)
-        function shape = inflateSize(a)
-            shape = size(a);
-            shape(end + 1 : numdims) = 1; % pad trailing dimensions
-        end
-        shape = inflateSize(a);
-        checkcompatibility(shape, commonshape)
+        [shape{1 : numdims}] = size(a); % excess dimensions have size one
+        shape = cell2mat(shape);
         issingleton = shape == 1;
         shape(issingleton) = commonshape(issingleton); % inflate current singletons
         shape(~issingleton) = 1; % preserve current non-singletons
         inflated = repmat(a, shape);
     end
-varargout = cellfun(@inflateArray, varargin, 'UniformOutput', false);
 
-end
+varargout = cellfun( ...
+    @inflateArray, ...
+    varargin(1 : max(1, nargout)), ... % skips redundant outputs
+    'UniformOutput', false);
 
-function checkcompatibility(shape1, shape2)
-assert(contracts.ndebug || ...
-    isSingletonExpansionCompatible(shape1, shape2), ...
-    'Shapes are incompatible with singleton expansion')
-end
-
-function result = isSingletonExpansionCompatible(shape1, shape2)
-result = all(1 == shape1 | shape1 == shape2 | shape2 == 1);
 end

@@ -30,10 +30,8 @@ assert(ndebug || all(ismember(unique(facetofunction), 1 : numel(functions))))
         %     i.e. face indices or directions may be singleton
         localdirections = matfun.dot(frames(faceindices, :, :), directions, 2);
 
-        % Squeeze out the singleton in the diretion of the dot product
-        [s1, s2, s3] = size(localdirections);
-        assert(s2 == 1)
-        localdirections = reshape(localdirections, s1, s3);
+        % Squeeze out the singleton in the direction of the dot product
+        localdirections = elmat.squeeze(localdirections, 2);
         
         % Angles relative to local frame
         angles = cartesiantoangularnew(localdirections);
