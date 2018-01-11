@@ -15,7 +15,7 @@ parser.parse(unmatched)
 linkoptions = parser.Results;
 
 [downlinkgainswatts, uplinkgainswatts, interactions, durations] = ...
-    imagemethod.tracescenenew2(origins, targets, traceoptions); %#ok<ASGLU>
+    imagemethod.tracescene(origins, targets, traceoptions); %#ok<ASGLU>
 
 % Received gain (in dBW): Rows for access points, columns for mobiles
 downlinkgaindbw = elfun.todb(sum(downlinkgainswatts, 3));

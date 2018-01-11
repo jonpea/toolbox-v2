@@ -6,7 +6,6 @@ classdef completescene < handle
         FaceNormalsTransposed
         FaceOffsetsTransposed
         FaceMapsTransposed
-        Private % this can eventually be deleted
     end
     
     properties (Hidden = true)
@@ -79,10 +78,7 @@ classdef completescene < handle
             obj.Intersect = @obj.intersectpaths;
             obj.Mirror = @obj.mirror;
             obj.NumFacets = size(origins, 1);
-            
-            obj.Private.Faces = faces;
-            obj.Private.Vertices = vertices;
-            
+                       
         end
         
         function mirrorpoints = mirror(obj, points, faceid)

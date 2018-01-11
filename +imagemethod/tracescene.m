@@ -1,22 +1,16 @@
-function [downlinkpower, uplinkpower, interactions, elapsed] = ...
-    tracescenenew2(origins, targets, varargin)
+function [downlinkpower, uplinkpower, interactions, functions, elapsed] = ...
+    tracescene(origins, targets, varargin)
 %TRACESCENE Tabulate ray interactions with a scene.
 
 narginchk(2, nargin)
-assert(ismatrix(origins) && ismember(size(origins, 2), [2, 3]))
-assert(ismatrix(targets) && ismember(size(targets, 2), [2, 3]))
+assert(ismatrix(origins) && ismember(size(origins, 2), 2 : 3))
+assert(ismatrix(targets) && ismember(size(targets, 2), 2 : 3))
+assert(size(origins, 2) == size(targets, 2))
 
 settings = imagemethod.tracesceneargumentsnew(varargin{:});
 
 % Disable reporting if results are not actually used
 settings.Reporting = settings.Reporting && 3 <= nargout;
-
-% Disable SPMD operation if a pool of workers is not available
-if settings.SPMD && isempty(parallel.currentpool)
-    warning([mfilename, ':PoolRequiredForSPMD'], ...
-        'Create a parallel pool using parpool for option ''SMPD''.')
-    settings.SPMD = false;
-end
 
 % Compute gains for each invidual reflection arity...
 arities = settings.ReflectionArities;
@@ -24,24 +18,18 @@ settings = rmfield(settings, 'ReflectionArities');
 [downlinkpower, uplinkpower, interactions, elapsed] = ...
     findinteractions(arities, origins, targets, settings);
 
-interactions = struct( ...
-    'Data', interactions, ...
-    'Functions', struct( ...
+functions = struct( ...
     'Free', settings.FreeGain, ...
     'Reflection', settings.ReflectionGain, ...
     'Sink', settings.SinkGain, ...
     'Source', settings.SourceGain, ...
-    'Transmission', settings.TransmissionGain));
+    'Transmission', settings.TransmissionGain);
 
 end
 
 % -------------------------------------------------------------------------
 function [downlinkpower, uplinkpower, interactions, elapsed] = ...
     findinteractions(arities, origins, targets, settings)
-
-% Prepare to restore ndebug after aplying NDEBUG option (see [*])
-state = contracts.ndebug;
-cleaner = onCleanup(@() contracts.ndebug(state));
 
 % Key dimensions
 numarities = numel(arities);
@@ -54,10 +42,9 @@ numtargets = size(targets, 1);
 sourcepoints = origins(pairedsourceindices, :);
 sinkpoints = targets(pairedsinkindices, :);
 
-% Pre-allocate arrays
+% Pre-allocate output arrays
 spmd
-    [uplinkpower, downlinkpower] = deal( ...
-        zeros(numtargets, numorigins, numarities));
+    [uplinkpower, downlinkpower] = deal(zeros(numtargets, numorigins, numarities));
     interactions = {};
 end
 
@@ -80,6 +67,8 @@ end
             settings.Scene, origins, directions, faceindices);
     end
 
+% Lazy (non-strict) list of independent tasks to be processed, each
+% comprisng a list of facet sequences to check for reflected ray paths.
 tasks = sequence.NestedSequence( ...
     sequence.ArraySequence(arities), ...
     @(arity) imagemethod.FacetSequence(settings.Scene.NumFacets, arity), ...
@@ -92,6 +81,9 @@ tasks = sequence.NestedSequence( ...
             next = [];
         end
     end
+
+% Process these tasks in parallel: Each parallel worker sums (uplink- and
+% downlink) contributions for the tasks that it processes...
 [downlinkpower, uplinkpower, interactions, elapsed] = parallel.parreduce( ...
     @spmdbody, 3, @getnext, ...
     downlinkpower, uplinkpower, interactions, ...
@@ -99,10 +91,13 @@ tasks = sequence.NestedSequence( ...
     'Initialize', @tic, ...
     'Finalize', @toc);
 
-% TODO: Would GPLUS run more efficiently?
+% ... Subsequently, the sums on the parallel workers are further
+% reduced to grand totals on the client.
 downlinkpower = parallel.reduce(@plus, downlinkpower);
 uplinkpower = parallel.reduce(@plus, uplinkpower);
 
+% If requested, each worker saves a complete record of individual ray-facet
+% interactions: Here, those records are collected on the client processor.
 interactions = [interactions{:}];
 
 % Convert cell array of structs to a (single) tabular struct

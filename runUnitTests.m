@@ -11,9 +11,12 @@ end
             TestRunProgressPlugin.withVerbosity(verbosity));
     end
 
+run(?elfun.UnitTests)
+run(?elmat.UnitTests)
 run(?matfun.UnitTests)
 run(?rayoptics.UnitTests)
 run(?reference.UnitTests)
+run(?specfun.UnitTests)
 run(?sx.UnitTests)
 
 end

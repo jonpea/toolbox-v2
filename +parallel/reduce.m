@@ -13,7 +13,7 @@ function y = reduce(fun, x, targetlab)
 %   end
 %   assert(isequal(reduce(@sum, x), reduce(x)))
 %
-% See also gop, gplus, gcat.
+%   See also GOP, GPLUS, GCAT.
 
 narginchk(2, 3)
 

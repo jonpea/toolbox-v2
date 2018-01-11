@@ -32,7 +32,8 @@ parser.parse(varargin{:})
 angles = parser.Results;
 options = parser.Unmatched;
 if ismember('CData', fieldnames(options))
-    warning([mfilename, ':CDataIsSet'], ...
+    warning( ...
+        contracts.msgid(mfilename, 'CDataIsSet'), ...
         'Field ''CData'' is set but will be over-ridden.')
 end
 

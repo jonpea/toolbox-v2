@@ -17,10 +17,46 @@
 
 ## Overview
 
+## Getting started
+
+### Installation
+
+The toolbox has been developed on Windows: If you are interested in another platform, please do make contct.
+
+1. Clone the source repository.
+```matlab
+>> !git clone https://github.com/jonpea/toolbox-v2.git
+>> cd toolbox-v2
+```
+
+2. Compile the relevant Mex-files.
+```matlab
+>> compile
+```
+
+3. Optionally, save the root folder to your MATLAB path.
+```matlab
+>> addpath(pwd, '-save')
+```
+
+4. Optionally, run the unit tests.
+```matlab
+>> runUnitTests
+```
+
+### Tutorials & examples
+
+To see the index of supporting scripts:
+```matlab
+>> help +tutorial
+>> help +examples
+```
+
 ## Dependencies
 
 |        Module | Description                                       |
 |---------------|---------------------------------------------------|
+| `+contracts`  | Support for `assert`                              |
 | `+embree`     | Calculation of transmission points                |
 | `+facevertex` | Representation of polygon complexes               |
 | `+mex`        | Required for C++ back-end                         |

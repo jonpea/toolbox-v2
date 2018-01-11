@@ -15,14 +15,12 @@ function c = cross(a, b, dim)
 
 narginchk(2, 3)
 
-import contracts.msgid
-
 shape = sx.size(a, b);
 
 if nargin < 3
     dim = find(shape == 3, 1, 'first');
     if isempty(dim)
-        error(msgid(mfilename, 'InvalidDimAorB'), ...
+        error(contracts.msgid(mfilename, 'InvalidDimAorB'), ...
             'A and B must have at least one dimension of length 3.')
     end
 end
@@ -30,7 +28,7 @@ end
 assert(isscalar(dim) && isnumeric(dim) && 1 <= dim)
 
 if all([size(a, dim), size(b, dim)] ~= 3)
-    error(msgid(mfilename, 'InvalidDimAorBForCrossProd'), ...
+    error(contracts.msgid(mfilename, 'InvalidDimAorBForCrossProd'), ...
         'A and B must be of length 3 in the dimension in which the cross product is taken.')
 end
 

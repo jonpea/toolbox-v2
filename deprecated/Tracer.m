@@ -288,8 +288,6 @@ narginchk(4, 4)
 assert(isequal(size(origins), size(directions)))
 assert(size(origins, 3) == numel(faceindices) + 1)
 hitsall = scene.Intersect(origins, directions, faceindices);
-% hitsallembree = SETTINGS.Private.Embree.Intersect(origins, directions, faceindices);
-% comparehits(hitsall, hitsallembree, [])
 end
 
 % =========================================================================

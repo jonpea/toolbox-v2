@@ -12,9 +12,7 @@ parser.addParameter('Plotting', false, @islogical)
 parser.addParameter('Printing', false, @islogical)
 parser.addParameter('Scene', @scenes.completescene, @isfunction)
 parser.addParameter('Serialize', false, @islogical)
-parser.addParameter('SPMD', isscalar(parallel.currentpool), @islogical)
 parser.addParameter('StudHeight', 3.0, @isscalar)
-parser.addParameter('Verbosity', 0, @isscalar)
 parser.addParameter('XGrid', [], @isvector)
 parser.addParameter('YGrid', [], @isvector)
 parser.addParameter('CullDuplicateFaces', false, @islogical)
@@ -150,8 +148,6 @@ argumentlist = { % saved to file for later reference
     'ReflectionGain', power.isofunction(materials.ReflectionGain) ...
     'SinkGain', power.isofunction(0.0) ...
     'Reporting', options.Reporting ...
-    'Verbosity', options.Verbosity ...
-    'SPMD', options.SPMD ...
     };
 starttime = tic;
 [downlinks, ~, interactions] = power.analyze(argumentlist{:});
@@ -162,7 +158,7 @@ fprintf('============== analyze: %g sec ==============\n', tracetime)
 if options.Reporting
     
     fprintf('\nComputed %u paths\n\n', ...
-        numel(unique(interactions.Data.Identifier)))
+        numel(unique(interactions.Identifier)))
     
     starttime = tic;
     interactiongains = power.computegain(interactions);
@@ -173,7 +169,7 @@ if options.Reporting
     
     %% Distribution of interaction nodes
     disp('From stored interaction table')
-    disp(struct2table(imagemethod.interactionstatistics(interactions.Data.InteractionType)))
+    disp(struct2table(imagemethod.interactionstatistics(interactions.InteractionType)))
     
     %% Distribution of received power
     [gainstats, powertable] = power.gainstatistics(interactiongains);
@@ -232,7 +228,7 @@ powersum = reshape(sum(powers, 3), size(gridx));
 if options.Reporting
     sinkindices = find(interactiongains.InteractionType == imagemethod.interaction.Sink);
     reportpower = accumarray( ...
-        interactions.Data.ObjectIndex(sinkindices), ...
+        interactions.ObjectIndex(sinkindices), ...
         interactiongains.Power(sinkindices));
     reportpower = reshape(reportpower, size(gridx));
     assert(isequalfp(reportpower, powersum))

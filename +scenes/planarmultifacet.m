@@ -23,10 +23,6 @@ obj.OffsetToEdgeMap = map;
 obj.Frame = frame;
 obj.NumFacets = size(faces, 1);
 
-% These fields should eventually be removed
-obj.Private.Faces = faces;
-obj.Private.Vertices = vertices;
-
 % Methods
 obj.Intersect = @(varargin) intersectpaths(obj, varargin{:});
 obj.IntersectFacet = @(varargin) intersect(obj, varargin{:});
