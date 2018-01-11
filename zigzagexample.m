@@ -2,15 +2,10 @@
 
 %%
 clear
-import embree.embreescene
-import facevertex.gridplan
-import points.text
-import rayoptics.imagemethod
-import scenes.completescene
 
 %%
-scenefactory = @embreescene;
-%scenefactory = @completescene;
+scenefactory = @embree.embreescene;
+%scenefactory = @scenes.completescene;
 
 %%
 numsegments = 6;
@@ -19,7 +14,7 @@ vspace = @(x, n) [x, 0] + linspace(-0.4, 0.4, numpairs)'*[0, 1];
 sourcepoints = vspace(0.0);
 sinkpoints = vspace(numsegments);
 
-[faces, vertices] = gridplan(0 : numsegments, 0.5*[-1, 1]);
+[faces, vertices] = facevertex.gridplan(0 : numsegments, 0.5*[-1, 1]);
 
 %%
 ax = axes(figure(1));
@@ -41,7 +36,7 @@ faceindices(1 : 2 : end) = top;
 faceindices(2 : 2 : end) = bottom;
 
 scene = scenefactory(faces, vertices);
-[pairindices, pathpoints] = imagemethod( ...
+[pairindices, pathpoints] = rayoptics.imagemethod( ...
     scene.IntersectFacet, ...
     scene.Mirror, ...
     faceindices, ...

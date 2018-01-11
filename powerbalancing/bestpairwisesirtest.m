@@ -22,7 +22,7 @@ mingaindb = -50;
 maxgaindb = -1;
 alpha = rand(numbasestations, nummobiles);
 pathwisegaindb = (1 - alpha)*mingaindb + alpha*maxgaindb;
-pathwisegain = fromdb(pathwisegaindb);
+pathwisegain = elfun.fromdb(pathwisegaindb);
 
 % Solution via iterative balancing
 bestsirdb1 = CalculateBestSIR_pairwise(pathwisegain);
@@ -52,7 +52,7 @@ ub = 1e3; % large but finite upper bound; inf doesn't seem to work
 
 sirvec = (C*txpowerofmobile(:)) ./ (F*txpowerofmobile(:));
 sir = reshape(sirvec, size(pathwisegain));
-sirdbs = todb(sir)
+sirdbs = elfun.todb(sir)
 minmaxsirdbs = min(max(sirdbs));
 upper = minmaxsirdbs + 2;
 lower = minmaxsirdbs - 1;
@@ -104,14 +104,14 @@ scale = x(:)\txpowerofmobile(:);
 computed = scale*x(:);
 
 disp('Optimal Power:')
-tabulardisp(struct( ...
+disp(struct2table(struct( ...
     'Actual', computed(:), ...
-    'Expected', txpowerofmobile(:)))
-fprintf('%g vs %g\n', todb(alpha), bestsirdb1)
+    'Expected', txpowerofmobile(:))))
+fprintf('%g vs %g\n', elfun.todb(alpha), bestsirdb1)
 disp('SIR:')
-tabulardisp(struct( ...
+disp(struct2table(struct( ...
     'Actual', uplinksir(pathwisegain, computed(:)')', ...
-    'Expected', uplinksir(pathwisegain, txpowerofmobile)'))
+    'Expected', uplinksir(pathwisegain, txpowerofmobile)')))
 
 return % ==================================================================
 

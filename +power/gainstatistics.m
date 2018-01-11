@@ -11,7 +11,6 @@ stats = struct( ...
     'TotalPower', totalpower, ...
     'RelativePower', totalpower/sum(totalpower));
 
-numunique = @(e) numel(unique(e));
 issink = interactions.InteractionType == imagemethod.interaction.Sink;
 issource = interactions.InteractionType == imagemethod.interaction.Source;
 

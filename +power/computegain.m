@@ -80,8 +80,6 @@ interactions.PathInteractionGain = assignsinks(interactiongain);
 interactions.TotalGain = assignsinks(totalgain);
 interactions.Power = assignsinks(power);
 
-% tabulardisp(tabularhead( ...
-%     tabularcolumns(interactions, 'FinalDistance', 'TotalDistance'), 10))
 import contracts.ndebug
 assert(ndebug || all(isfinite(interactions.FinalDistance)))
 assert(ndebug || all(isfinite(interactions.TotalDistance)))

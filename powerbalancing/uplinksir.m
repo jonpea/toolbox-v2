@@ -23,7 +23,7 @@ BSintfpow = repmat(basestationrxpower, 1, nummobiles) - desmobRXpow;
 
 % SIR (in dB) at each base station for each desired mobile
 % [row for each base station, column for each (desired) mobile]
-sirdb = todb(desmobRXpow ./ BSintfpow);
+sirdb = elfun.todb(desmobRXpow ./ BSintfpow);
 
 % For each mobile (i.e. down each column), determine BS with max SIR
 % Each output has [column for each mobile]
@@ -47,8 +47,8 @@ unvec = @(vec) reshape(vec, size(pathgain));
 compare(unvec(desmobRXpow_vec), desmobRXpow)
 compare(unvec(BSintfpow_vec), BSintfpow)
 
-sirdb_vec1 = todb(desmobRXpow_vec) - todb(BSintfpow_vec);
-sirdb_vec2 = todb(desmobRXpow_vec./BSintfpow_vec);
+sirdb_vec1 = elfun.todb(desmobRXpow_vec) - elfun.todb(BSintfpow_vec);
+sirdb_vec2 = elfun.todb(desmobRXpow_vec./BSintfpow_vec);
 compare(unvec(sirdb_vec1), sirdb)
 compare(unvec(sirdb_vec2), sirdb)
 

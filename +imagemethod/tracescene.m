@@ -1,23 +1,28 @@
-function [downlinkpower, uplinkpower, interactions, functions, elapsed] = ...
-    tracescene(origins, targets, varargin)
+function [downlinks, uplinks, trace, elapsed] = ...
+    tracescene(reflect, transmit, numfacets, origins, targets, varargin)
 %TRACESCENE Tabulate ray interactions with a scene.
 
-narginchk(2, nargin)
+narginchk(5, nargin)
+assert(datatypes.isfunction(reflect))
+assert(datatypes.isfunction(transmit))
+assert(isscalar(numfacets) && isnumeric(numfacets))
 assert(ismatrix(origins) && ismember(size(origins, 2), 2 : 3))
 assert(ismatrix(targets) && ismember(size(targets, 2), 2 : 3))
 assert(size(origins, 2) == size(targets, 2))
 
-settings = imagemethod.tracesceneargumentsnew(varargin{:});
+settings = imagemethod.tracesceneSettings(varargin{:});
 
-% Disable reporting if results are not actually used
+% Disable reporting if results are not actually used.
+% NB: The cost of the trace dominates that of the calculation itself.
 settings.Reporting = settings.Reporting && 3 <= nargout;
 
 % Compute gains for each invidual reflection arity...
 arities = settings.ReflectionArities;
 settings = rmfield(settings, 'ReflectionArities');
-[downlinkpower, uplinkpower, interactions, elapsed] = ...
-    findinteractions(arities, origins, targets, settings);
+[downlinks, uplinks, interactions, elapsed] = ...
+    findinteractions(reflect, transmit, numfacets, arities, origins, targets, settings);
 
+% These may be required for validation of aggregate values
 functions = struct( ...
     'Free', settings.FreeGain, ...
     'Reflection', settings.ReflectionGain, ...
@@ -25,53 +30,66 @@ functions = struct( ...
     'Source', settings.SourceGain, ...
     'Transmission', settings.TransmissionGain);
 
+trace = struct( ...
+    'Data', interactions, ...
+    'Functions', functions);
+
 end
 
 % -------------------------------------------------------------------------
-function [downlinkpower, uplinkpower, interactions, elapsed] = ...
-    findinteractions(arities, origins, targets, settings)
+function [downlinks, uplinks, hits, elapsed] = findinteractions( ...
+    reflect, transmit, numfacets, arities, origins, targets, settings)
 
 % Key dimensions
-numarities = numel(arities);
-numorigins = size(origins, 1);
-numtargets = size(targets, 1);
+numArities = numel(arities);
+numOrigins = size(origins, 1);
+numTargets = size(targets, 1);
 
 % Broadcast arrays: Shared by each parallel worker
-[pairedsourceindices, pairedsinkindices] = deal(zeros(numorigins*numtargets, 1));
-[pairedsourceindices(:), pairedsinkindices(:)] = ndgrid(1 : numorigins, 1 : numtargets);
-sourcepoints = origins(pairedsourceindices, :);
-sinkpoints = targets(pairedsinkindices, :);
+[pairedSourceIndices, pairedSinkIndices] = deal(zeros(numOrigins*numTargets, 1));
+[pairedSourceIndices(:), pairedSinkIndices(:)] = ndgrid(1 : numOrigins, 1 : numTargets);
+sourcePoints = origins(pairedSourceIndices, :);
+sinkPoints = targets(pairedSinkIndices, :);
 
 % Pre-allocate output arrays
 spmd
-    [uplinkpower, downlinkpower] = deal(zeros(numtargets, numorigins, numarities));
-    interactions = {};
+    [uplinks, downlinks] = deal(zeros(numTargets, numOrigins, numArities));
+    hits = {};
 end
 
-    function [sourceindices, sinkindices, pathpoints] = reflectionpoints(faceindices)
-        [pairindices, pathpoints] = rayoptics.imagemethod( ...
-            settings.Scene.IntersectFacet, ...
-            settings.Scene.Mirror, ...
-            faceindices, ...
-            sourcepoints, ...
-            sinkpoints);
-        sourceindices = pairedsourceindices(pairindices, :);
-        sinkindices = pairedsinkindices(pairindices, :);
+    function [sourceIndices, sinkIndices, pathPoints] = reflectionPoints(faceIndices)
+        % function [pairindices, pathPoints] = rx(sourcePoints, sinkPoints, faceIndices)
+        %     [pairindices, pathPoints] = rayoptics.imagemethod( ...
+        %     settings.Scene.IntersectFacet, ...
+        %     settings.Scene.Mirror, ...
+        %     faceIndices, ...
+        %     sourcePoints, ...
+        %     sinkPoints);
+        % end
+        % [pairindices, pathPoints] = rx(sourcePoints, sinkPoints, faceIndices);
+        [pairindices, pathPoints] = ...
+            reflect(sourcePoints, sinkPoints, faceIndices);
+        %fun = imagemethod.reflectionPoints(settings.Scene);
+        %[pairindices, pathPoints] = fun(sourcePoints, sinkPoints, faceIndices);
+        sourceIndices = pairedSourceIndices(pairindices, :);
+        sinkIndices = pairedSinkIndices(pairindices, :);
     end
 
-    function hits = transmissionpoints(origins, directions, faceindices)
+    function hits = transmissionPoints(origins, directions, faceindices)
         % Intersections comprise reflection- and transmission points, so
         % drop reflection points from list of candidate transmission
         % points i.e. those at the beginning or end of a line segment.
-        hits = tracesegments( ...
-            settings.Scene, origins, directions, faceindices);
+        assert(isequal(size(origins), size(directions)))
+        assert(size(origins, 3) == numel(faceindices) + 1)
+        %hits = settings.Scene.Intersect(origins, directions, faceindices);
+        hits = transmit(origins, directions, faceindices);
     end
 
 % Lazy (non-strict) list of independent tasks to be processed, each
 % comprisng a list of facet sequences to check for reflected ray paths.
 tasks = sequence.NestedSequence( ...
     sequence.ArraySequence(arities), ...
-    @(arity) imagemethod.FacetSequence(settings.Scene.NumFacets, arity), ...
+    @(arity) imagemethod.FacetSequence(numfacets, arity), ...
     @(globalindex, ~, facetindices) {globalindex, facetindices});
     function [hasnext, next] = getnext()
         hasnext = tasks.hasnext();
@@ -84,109 +102,114 @@ tasks = sequence.NestedSequence( ...
 
 % Process these tasks in parallel: Each parallel worker sums (uplink- and
 % downlink) contributions for the tasks that it processes...
-[downlinkpower, uplinkpower, interactions, elapsed] = parallel.parreduce( ...
+[downlinks, uplinks, hits, elapsed] = parallel.parreduce( ...
     @spmdbody, 3, @getnext, ...
-    downlinkpower, uplinkpower, interactions, ...
-    'Parameters', {@reflectionpoints, @transmissionpoints, settings}, ...
+    downlinks, uplinks, hits, ...
+    'Parameters', {@reflectionPoints, @transmissionPoints, settings}, ...
     'Initialize', @tic, ...
     'Finalize', @toc);
 
 % ... Subsequently, the sums on the parallel workers are further
 % reduced to grand totals on the client.
-downlinkpower = parallel.reduce(@plus, downlinkpower);
-uplinkpower = parallel.reduce(@plus, uplinkpower);
+downlinks = parallel.reduce(@plus, downlinks);
+uplinks = parallel.reduce(@plus, uplinks);
 
-% If requested, each worker saves a complete record of individual ray-facet
-% interactions: Here, those records are collected on the client processor.
-interactions = [interactions{:}];
+% If requested, each worker saves a complete record of individual 
+% ray-facet interactions: Here, those records are copied from the 
+% workers to the client processor. 
+% NB: To this point, interactions are stored as cell array of 
+% structs in a Composite object with a portion on each worker.
+hits = [hits{:}];
 
-% Convert cell array of structs to a (single) tabular struct
+% Convert cell array of structs to a (single) tabular struct...
 if settings.Reporting
-    interactions = [interactions{:}];
-else
-    interactions = struct;
-end
-
-if settings.Reporting   
-    interactions = datatypes.struct.structfun( ...
-        @vertcat, interactions, 'UniformOutput', false);
+    
+    % Combine individual chunks into a single (potentially huge) table
+    hits = datatypes.struct.structfun( ...
+        @vertcat, [hits{:}], 'UniformOutput', false);
+    
     % Remap sequence index so values start at 1 and are contiguous
-    pathlabels = [interactions.SequenceIndex, interactions.Identifier];
+    pathlabels = [hits.SequenceIndex, hits.Identifier];
     [~, ~, identifiers] = unique(pathlabels, 'rows');
-    interactions.Identifier = identifiers;
-    interactions = rmfield(interactions, 'SequenceIndex');
-    interactions = sorthits(interactions);
+    hits.Identifier = identifiers;
+    
+    % Sort according to ray identifier, and then 
+    % in order of interaction on each reflected segment
+    hits = rmfield(hits, 'SequenceIndex');
+    [~, permutation] = sortrows([
+        hits.Identifier, ...
+        hits.SegmentIndex, ... % previously 'RayIndex'
+        hits.Parameter  % previously 'RayParameter'
+        ]);    
+    hits = datatypes.struct.tabular.rows(hits, permutation);
+    
+else
+    % ... that has no fields if a trace was not requested.
+    hits = struct;
+    
 end
 
 end
 
 % -------------------------------------------------------------------------
-function hits = sorthits(hits)
-[~, permutation] = sortrows([
-    hits.Identifier, ...
-    hits.SegmentIndex, ... % previously 'RayIndex'
-    hits.Parameter  % previously 'RayParameter'
-    ]);
-hits = datatypes.struct.tabular.rows(hits, permutation);
-end
-
-% -------------------------------------------------------------------------
-function [downlinkpower, uplinkpower, nodetables] = spmdbody( ...
+function [downlinks, uplinks, nodeTables] = spmdbody( ...
     task, ...
-    downlinkpower, uplinkpower, nodetables, ...
-    reflectionpoints, transmissionpoints, settings)
+    downlinks, uplinks, nodeTables, ...
+    reflectionPoints, transmissionPoints, settings)
 
 import contracts.ndebug
 import datatypes.isfunction
 assert(iscell(task) && numel(task) == 2)
-assert(ndebug || isequal(size(downlinkpower), size(uplinkpower)))
-assert(ndebug || iscell(nodetables))
-assert(ndebug || isfunction(reflectionpoints))
-assert(ndebug || isfunction(transmissionpoints))
+assert(ndebug || isequal(size(downlinks), size(uplinks)))
+assert(ndebug || iscell(nodeTables))
+assert(ndebug || isfunction(reflectionPoints))
+assert(ndebug || isfunction(transmissionPoints))
 assert(ndebug || isstruct(settings))
 
     function result = evaluatechecked(fun, varargin)
         result = feval(fun, varargin{:});
         if not(contracts.ndebug || all(isfinite(result)))
-            error([mfilename ':NaNInfGainFunction'], ...
+            error( ...
+                contracts.msgid(mfilename, 'NaNInfGainFunction'), ...
                 'Gain function %s returns nan or inf', func2str(fun))
         end
     end
 
-[globalstep, candidatefaceindices] = task{:};
+[globalStep, candidateFaceIndices] = task{:};
 
 % Compute reflection points
 [segments.SourceIndex, segments.SinkIndex, pathpoints] = ...
-    reflectionpoints(candidatefaceindices);
+    reflectionPoints(candidateFaceIndices);
 
 if isempty(segments.SourceIndex)
-    % No paths exist between any source-receiver pairing
+    % No reflection paths exist between any source-receiver 
+    % pairing for the current sequence of candidate facets.
     return
 end
 
 % Key dimensions
-numfacesperpath = numel(candidatefaceindices);
-numraysperpath = numfacesperpath + 1;
-numpaths = numel(segments.SourceIndex);
-[numsources, numsinks, ~] = size(downlinkpower);
+numFacesPerPath = numel(candidateFaceIndices);
+numRaysPerPath = numFacesPerPath + 1;
+numPaths = numel(segments.SourceIndex);
+[numSources, numSinks, ~] = size(downlinks);
 
 % Rays defining each ray/segment
 directions = diff(pathpoints, 1, 3);
 
 % Indices/identifiers for each ray and each ray segment
-pathid = 1 : numpaths;
-rayid = repmat(pathid(:), 1, numraysperpath);
-segmentindex = repmat(1 : numraysperpath, numpaths, 1);
+pathid = 1 : numPaths;
+rayid = repmat(pathid(:), 1, numRaysPerPath);
+segmentIndex = repmat(1 : numRaysPerPath, numPaths, 1);
 
 % Compute transmission points on each path of ray segments
-transmission = transmissionpoints( ...
+transmission = transmissionPoints( ...
     pathpoints(:, :, 1 : end - 1), ...
     directions, ...
-    candidatefaceindices);
+    candidateFaceIndices);
 
 % Friis free-space gain (all negative) for each path
-segmentlengths = matfun.norm(directions, 2, 2);
-segments.PathLength = sum(segmentlengths, 3);
+segmentLengths = matfun.norm(directions, 2, 2);
+segments.PathLength = sum(segmentLengths, 3);
 gain.Free = evaluatechecked( ...
     settings.FreeGain, ...
     segments.SourceIndex, ...
@@ -208,19 +231,19 @@ gain.Sink = evaluatechecked( ...
 % Note: If spatially-varying transmission coefficients were ever
 % to be supported, function TransmissionGain would have the array
 % of intersection points as an additional argument.
-segments.FaceIndex = repmat(candidatefaceindices(:)', numpaths, 1);
-reflectiongainonpaths = evaluatechecked( ...
+segments.FaceIndex = repmat(candidateFaceIndices(:)', numPaths, 1);
+reflectionGainOnPaths = evaluatechecked( ...
     settings.ReflectionGain, ...
     segments.FaceIndex(:), ...
     stack(directions(:, :, 1 : end - 1))); % "incoming"
 gain.Reflection = accumarray( ...
     ops.vec(rayid(:, 2 : end)), ...
-    ops.vec(reflectiongainonpaths), ...
-    [numpaths, 1]);
+    ops.vec(reflectionGainOnPaths), ...
+    [numPaths, 1]);
 
 % Gain (all negative) for each transmission node (see Note above)
-alldirections = stack(directions);
-transmission.Direction = alldirections(transmission.RayIndex, :);
+allDirections = stack(directions);
+transmission.Direction = allDirections(transmission.RayIndex, :);
 transmission.GainOnPath = evaluatechecked( ...
     settings.TransmissionGain, ...
     transmission.FaceIndex(:), ...
@@ -228,7 +251,7 @@ transmission.GainOnPath = evaluatechecked( ...
 gain.Transmission = accumarray( ...
     ops.vec(rayid(transmission.RayIndex)), ...
     ops.vec(transmission.GainOnPath), ...
-    [numpaths, 1]);
+    [numPaths, 1]);
 
 % Path gain in dBW
 gain.Path = gain.Free + gain.Reflection + gain.Transmission;
@@ -236,23 +259,23 @@ gain.Path = gain.Free + gain.Reflection + gain.Transmission;
 % Accumulate sums of powers (watts) over source-receiver
 % pairs to update downlink- and uplink received power
     function inout = accumulate(inout, gaindb) 
-        index = numfacesperpath + 1; 
+        index = numFacesPerPath + 1; 
         inout(:, :, index) = inout(:, :, index) + ...
             accumarray( ...
             [segments.SinkIndex(:), segments.SourceIndex(:)], ...
             elfun.fromdb(gaindb), ... % NB: Convert dB to watts
-            [numsources, numsinks]);
+            [numSources, numSinks]);
     end
-downlinkpower = accumulate(downlinkpower, gain.Source + gain.Path);
-uplinkpower = accumulate(uplinkpower, gain.Sink + gain.Path);
+downlinks = accumulate(downlinks, gain.Source + gain.Path);
+uplinks = accumulate(uplinks, gain.Sink + gain.Path);
 
 if settings.Reporting
     
     import imagemethod.interaction
     numtransmissions = numel(transmission.FaceIndex);
-    segments.SourceType = repmat(interaction.Source, numpaths, 1);
-    segments.SinkType = repmat(interaction.Sink, numpaths, 1);
-    segments.ReflectionType = repmat(interaction.Reflection, numpaths, numfacesperpath);
+    segments.SourceType = repmat(interaction.Source, numPaths, 1);
+    segments.SinkType = repmat(interaction.Sink, numPaths, 1);
+    segments.ReflectionType = repmat(interaction.Reflection, numPaths, numFacesPerPath);
     transmission.Type = repmat(interaction.Transmission, numtransmissions, 1);
     transmission.Blank = blank(transmission.FaceIndex);
     
@@ -275,11 +298,11 @@ if settings.Reporting
     %    "[source(:); reflection(:)]" <-- incorrect
     %
     import ops.vec
-    nodetable = struct( ...
+    nodeTable = struct( ...
         'SequenceIndex', [
-        vec(repmat(globalstep, numpaths*numraysperpath, 1));
-        vec(repmat(globalstep, numtransmissions, 1));
-        vec(repmat(globalstep, numpaths, 1));
+        vec(repmat(globalStep, numPaths*numRaysPerPath, 1));
+        vec(repmat(globalStep, numtransmissions, 1));
+        vec(repmat(globalStep, numPaths, 1));
         ], ...
         'Identifier', [
         vec(rayid);
@@ -287,14 +310,14 @@ if settings.Reporting
         vec(pathid);
         ], ...
         'SegmentIndex', [ % previously 'RayIndex'
-        vec(segmentindex);
-        vec(segmentindex(transmission.RayIndex));
-        vec(repmat(numraysperpath + 1, numpaths, 1));
+        vec(segmentIndex);
+        vec(segmentIndex(transmission.RayIndex));
+        vec(repmat(numRaysPerPath + 1, numPaths, 1));
         ], ...
         'Parameter', [ % previously 'RayParameter'
-        zeros(numpaths*numraysperpath, 1);
+        zeros(numPaths*numRaysPerPath, 1);
         transmission.RayParameter;
-        ones(numpaths, 1);
+        ones(numPaths, 1);
         ], ...
         'ObjectIndex', [
         vec([segments.SourceIndex, segments.FaceIndex]);
@@ -317,49 +340,41 @@ if settings.Reporting
         directions(:, :, end);
         ], ...
         'FreeDistance', [
-        stack(segmentlengths);
+        stack(segmentLengths);
         transmission.Blank;
         zeros(size(segments.PathLength));
         ], ...
         'FinalDistance', [
-        vec(zeros(numpaths, numraysperpath));
+        vec(zeros(numPaths, numRaysPerPath));
         transmission.Blank;
         segments.PathLength;
         ], ...
         'SourceGain', [
-        vec([gain.Source, zeros(numpaths, numfacesperpath)]);
+        vec([gain.Source, zeros(numPaths, numFacesPerPath)]);
         blank(transmission.GainOnPath);
         blank(gain.Sink);
         ], ...
         'SinkGain', [
-        vec([blank(gain.Source), zeros(numpaths, numfacesperpath)]);
+        vec([blank(gain.Source), zeros(numPaths, numFacesPerPath)]);
         blank(transmission.GainOnPath);
         gain.Sink;
         ]);
     
-    assert(istabular(nodetable))
+    assert(istabular(nodeTable))
     
     % Sort nodes on each path by ray index and
     % ray parameter, and sort paths by path index
     [~, permutation] = sortrows([
-        nodetable.Identifier, ...
-        nodetable.SegmentIndex, ... % previously 'RayIndex'
-        nodetable.Parameter  % previously 'RayParameter'
+        nodeTable.Identifier, ...
+        nodeTable.SegmentIndex, ... % previously 'RayIndex'
+        nodeTable.Parameter  % previously 'RayParameter'
         ]);
     
     % Store for aggregation
     import datatypes.struct.tabular.rows
-    nodetables{end + 1} = rows(nodetable, permutation);    
+    nodeTables{end + 1} = rows(nodeTable, permutation);    
 end
 
-end
-
-% -------------------------------------------------------------------------
-function hitsall = tracesegments(scene, origins, directions, faceindices)
-narginchk(4, 4)
-assert(isequal(size(origins), size(directions)))
-assert(size(origins, 3) == numel(faceindices) + 1)
-hitsall = scene.Intersect(origins, directions, faceindices);
 end
 
 % -------------------------------------------------------------------------

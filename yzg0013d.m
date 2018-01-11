@@ -10,7 +10,7 @@ parser.addParameter('Fraction', 1.0, @isnumeric)
 parser.addParameter('Reporting', false, @islogical)
 parser.addParameter('Plotting', false, @islogical)
 parser.addParameter('Printing', false, @islogical)
-parser.addParameter('Scene', @scenes.completescene, @isfunction)
+parser.addParameter('Scene', @scenes.completescene, @datatypes.isfunction)
 parser.addParameter('Serialize', false, @islogical)
 parser.addParameter('StudHeight', 3.0, @isscalar)
 parser.addParameter('XGrid', [], @isvector)
@@ -138,9 +138,12 @@ end
 
 %% Trace reflection paths
 argumentlist = { % saved to file for later reference
+    imagemethod.reflectionPoints(scene) ...
+    scene.Intersect ...
+    scene.NumFacets ...
     source.Position ...
     sink.Position ...
-    scene ...
+    ... %scene ...
     'ReflectionArities', options.Arities ...
     'FreeGain', power.friisfunction(source.Frequency) ...
     'SourceGain', power.framefunctionnew(sourcepattern, source.Frame) ...
@@ -158,7 +161,7 @@ fprintf('============== analyze: %g sec ==============\n', tracetime)
 if options.Reporting
     
     fprintf('\nComputed %u paths\n\n', ...
-        numel(unique(interactions.Identifier)))
+        numel(unique(interactions.Data.Identifier)))
     
     starttime = tic;
     interactiongains = power.computegain(interactions);
@@ -169,7 +172,7 @@ if options.Reporting
     
     %% Distribution of interaction nodes
     disp('From stored interaction table')
-    disp(struct2table(imagemethod.interactionstatistics(interactions.InteractionType)))
+    disp(struct2table(imagemethod.interactionstatistics(interactions.Data.InteractionType)))
     
     %% Distribution of received power
     [gainstats, powertable] = power.gainstatistics(interactiongains);
@@ -228,7 +231,7 @@ powersum = reshape(sum(powers, 3), size(gridx));
 if options.Reporting
     sinkindices = find(interactiongains.InteractionType == imagemethod.interaction.Sink);
     reportpower = accumarray( ...
-        interactions.ObjectIndex(sinkindices), ...
+        interactions.Data.ObjectIndex(sinkindices), ...
         interactiongains.Power(sinkindices));
     reportpower = reshape(reportpower, size(gridx));
     assert(isequalfp(reportpower, powersum))

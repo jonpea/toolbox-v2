@@ -58,8 +58,7 @@ classdef embreescene < handle
                 return % underlying C++ object not actually constructed
             end
             if obj.Deleted
-                warning( ...
-                    contracts.msgid(mfilename, 'MultipleDelete'),...
+                warning(contracts.msgid(mfilename, 'MultipleDelete'),...
                     'Multiple calls to delete on a single instance')
                 return
             end
@@ -237,7 +236,7 @@ classdef embreescene < handle
             end
             obj.MexHandle = embree.embreescenemex('new');
             obj.addquads(obj.Faces, obj.Vertices);
-            fprintf('[Constructed Embree BVH @ %u]\n', obj.MexHandle)
+            %fprintf('[Constructed Embree BVH @ %u]\n', obj.MexHandle)
         end
         
         function allocatebuffers(obj)
@@ -257,7 +256,7 @@ classdef embreescene < handle
                 'RayIndex', raybuffer(index, 1), ...
                 'Mask', raybuffer(index, 1), ...  % mask out objects during traversal
                 'FaceCoordinates', raybuffer(real, 2), ... % internal use
-                'Time', raybuffer(real, 1), ...  % for motion blur
+                'Time', raybuffer(real, 1), ... % for motion blur (unused)
                 'FaceRayRegister', false(numfaces, raycapacity));            
             obj.HitBuffers = struct( ...
                 'RayIndex', hitbuffer(index, 1), ...
@@ -274,21 +273,27 @@ classdef embreescene < handle
         
         function addquads(obj, faces, vertices)
             
-            assert(size(vertices, 2) == 3)
-            assert(size(faces, 2) == 4)
-            assert(min(faces(:)) >= 1)
-            assert(max(faces(:)) <= size(vertices, 1))
+            assert(size(vertices, 2) == 3, ...
+                'Embree supports only 3-D meshes.')
+            assert(size(faces, 2) == 4, ...
+                'Only quadrilateral meshes are currently supported.')
+            assert(min(faces(:)) >= 1, ...
+                'Face-vertex indices cannot be smaller than 1 (MATLAB convention).')
+            assert(max(faces(:)) <= size(vertices, 1), ...
+                'Face-vertex indices cannot exceed number of vertices.')
             
             duplicaterows = @(a) size(unique(a, 'rows'), 1) < size(a, 1);
             if duplicaterows(vertices)
-                warning( ...
-                    contracts.msgid(mfilename, 'DuplicateVertices'), ...
-                    'Scene contains duplicate vertices')
+                if parallel.taskindex == 1
+                    warning(contracts.msgid(mfilename, 'DuplicateVertices'), ...
+                        'Scene contains duplicate vertices')
+                end
             end
             if duplicaterows(sort(faces, 2))
-                warning( ...
-                    contracts.msgid(mfilename, 'DuplicateFaces'), ...
-                    'Scene contains duplicate faces')
+                if parallel.taskindex == 1
+                    warning(contracts.msgid(mfilename, 'DuplicateFaces'), ...
+                        'Scene contains duplicate faces')
+                end
             end
             
             % Embree requires a buffer for 4-alignment
@@ -306,5 +311,5 @@ classdef embreescene < handle
 end
 
 function n = defaultbuffercapacity
-n = 1e4;
+n = 1e6;
 end

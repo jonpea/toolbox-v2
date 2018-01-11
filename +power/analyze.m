@@ -1,32 +1,35 @@
-function [dlinks, ulinks, interactions] = analyze(origins, targets, varargin)
+function [dlinks, ulinks, hits, durations] = ...
+    analyze(reflect, transmit, numfacets, origins, targets, varargin)
 
-[traceoptions, unmatched] = imagemethod.tracesceneargumentsnew(varargin{:});
+[traceoptions, unmatched] = imagemethod.tracesceneSettings(varargin{:});
 
+% Augment optional settings
 parser = inputParser;
 parser.addParameter( ...
     'AccessPointChannel', ...
     ones(size(origins, 1), 1), ...
-    @(c) isvector(c) && isround(c) && 1 <= min(c) && numel(c) == size(origins, 1))
+    @(c) isnumeric(c) && numel(c) == size(origins, 1) && 1 <= min(c(:)))
 parser.addParameter( ...
     'MinimumDiscernableSignal', ...
     minimumdiscernablesignal, ... % [dBW]
-    @(x) isscalar(x) && x < 0)
+    @(x) isnumeric(x) && isscalar(x) && x < 0)
 parser.parse(unmatched)
 linkoptions = parser.Results;
 
-[downlinkgainswatts, uplinkgainswatts, interactions, durations] = ...
-    imagemethod.tracescene(origins, targets, traceoptions); %#ok<ASGLU>
+[downlinks, uplinks, hits, durations] = ...
+    imagemethod.tracescene( ...
+    reflect, transmit, numfacets, origins, targets, traceoptions);
 
 % Received gain (in dBW): Rows for access points, columns for mobiles
-downlinkgaindbw = elfun.todb(sum(downlinkgainswatts, 3));
+downlinksDBW = elfun.todb(sum(downlinks, 3));
 
 % Downlink calculations
 dlinks = power.dlinksinr( ...
-    downlinkgaindbw, ...
+    downlinksDBW, ...
     linkoptions.AccessPointChannel, ...
     linkoptions.MinimumDiscernableSignal);
-dlinks.PowerComponentsWatts = downlinkgainswatts;
-dlinks.PowerDBW = downlinkgaindbw;
+dlinks.PowerComponentsWatts = downlinks;
+dlinks.PowerDBW = downlinksDBW;
 
 dlinks = orderfields(dlinks, {
     'PowerDBW' ...
@@ -43,7 +46,7 @@ if nargout < 2
 end
 
 % Received gain (in watts), rows for receivers
-uplinkgainwatts = sum(uplinkgainswatts, 3);
+uplinkgainwatts = sum(uplinks, 3);
 uplinkgaindbw = elfun.todb(uplinkgainwatts);
 
 % Uplink calculations
@@ -52,7 +55,7 @@ ulinks = power.ulinksinr( ...
     dlinks.AccessPoint, ...
     linkoptions.AccessPointChannel, ...
     linkoptions.MinimumDiscernableSignal);
-ulinks.PowerComponentsWatts = uplinkgainswatts;
+ulinks.PowerComponentsWatts = uplinks;
 ulinks.PowerDBW = uplinkgaindbw;
 
 ulinks = orderfields(ulinks, {

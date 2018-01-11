@@ -40,14 +40,17 @@ classdef completescene < handle
             narginchk(2, 3)
             
             if nargin < 3 || isempty(buffersize)
-                % Ddefault buffer capacity
+                % Default buffer capacity
+                % NB: This value must be >1 because the MATLAB runtime 
+                % appears to reallocate scalars during calls to Mex
+                % functions (naturally, we need the buffer to remain 
+                % undisturbed throughout the call).
                 buffersize = 2;
-                assert(1 < buffersize, ...
-                    'MATLAB seems to reallocate scalars')
             end
             
             assert(min(faces(:)) >= 1)
             assert(max(faces(:)) <= size(vertices, 1))
+            assert(1 < buffersize, 'Initial capacity *must* exceed 1.')
             
             numdimensions = size(vertices, 2);
             assert(ismember(numdimensions, 2 : 3));
@@ -63,17 +66,18 @@ classdef completescene < handle
             [origins, normals, unittangents, offsettolocalmaps] = reference.frames(faces, vertices);
             offsets = matfun.dot(normals, origins, 2);
                         
+            % Private members
             obj.FaceOriginsTransposed = origins';
             obj.FaceNormalsTransposed = normals';
             obj.FaceOffsetsTransposed = offsets';
             obj.FaceMapsTransposed = permute(offsettolocalmaps, [2 3 1]);
             obj.FaceMasksTransposed = true(1, numel(offsets));
             
+            % Public interface
             obj.Origin = origins;
             obj.UnitNormal = normals;
             obj.UnitOffset = offsets;
-            obj.Frame = cat(3, normals, unittangents);
-            
+            obj.Frame = cat(3, normals, unittangents);            
             obj.IntersectFacet = @obj.intersectfacet;
             obj.Intersect = @obj.intersectpaths;
             obj.Mirror = @obj.mirror;
@@ -161,9 +165,11 @@ classdef completescene < handle
             ctomatlab = @(index) index + 1; % "C/C++ to MATLAB"
             
             hits = struct( ...
+                ... % Index-valued fields
                 'RayIndex', ctomatlab(extract(obj.Buffer.RayIndex)), ...
                 'SegmentIndex', imagemethod.segmentindices(obj.Chunks), ...
                 'FaceIndex', ctomatlab(extract(obj.Buffer.FaceIndex)), ...
+                ... % Real-valued fields
                 'Point', extract(obj.Buffer.Point), ...
                 'RayParameter', extract(obj.Buffer.RayParameter), ...
                 'FaceCoordinates', extract(obj.Buffer.FaceCoordinates));
@@ -190,9 +196,6 @@ classdef completescene < handle
             assert(ndebug || ismember(size(origins, 2), 2 : 3))
             assert(ndebug || isequal(size(origins), size(directions)))
             assert(ndebug || isscalar(faceid)) % "either ':' or one facet"
-            if ~(sum(obj.Chunks) == obj.Offset)
-                [];
-            end
             assert(ndebug || sum(obj.Chunks) == obj.Offset)
             
             [tnear, tfar] = imagemethod.raylimits(class(origins));
@@ -204,8 +207,9 @@ classdef completescene < handle
             % To calculate number of hits from offsets
             oldoffset = obj.Offset;
             
+            % While candidate intersections remain to be processed...
             while true
-                
+                % ... extract as many as fit into available buffer storage
                 [success, face_loop_id, ray_loop_id, obj.Offset] = ...
                     scenes.planarintersectionmex( ...
                     ... % Inputs: Scene
@@ -226,15 +230,15 @@ classdef completescene < handle
                     obj.Buffer.Point, ...
                     obj.Buffer.FaceCoordinates, ...
                     obj.Offset, ...
-                    ... % State variables
+                    ... % State variables: C++ loop indices
                     face_loop_id, ...
                     ray_loop_id); ...
                     
                 if success
-                    break
+                    break % if candidates have been processed...
                 end
                 
-                % Increase the size of the buffer and continue
+                % ... or increase buffer size and continue
                 obj.Buffer = structfun( ...
                     @reallocate, obj.Buffer, 'UniformOutput', false);
                 
