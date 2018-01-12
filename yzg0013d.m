@@ -153,7 +153,7 @@ argumentlist = { % saved to file for later reference
     'Reporting', options.Reporting ...
     };
 starttime = tic;
-[downlinks, ~, interactions] = power.analyze(argumentlist{:});
+[downlinks, ~, trace] = power.analyze(argumentlist{:});
 tracetime = toc(starttime);
 fprintf('============== analyze: %g sec ==============\n', tracetime)
 
@@ -161,10 +161,10 @@ fprintf('============== analyze: %g sec ==============\n', tracetime)
 if options.Reporting
     
     fprintf('\nComputed %u paths\n\n', ...
-        numel(unique(interactions.Data.Identifier)))
+        numel(unique(trace.Data.Identifier)))
     
     starttime = tic;
-    interactiongains = power.computegain(interactions);
+    interactiongains = power.computegain(trace);
     powertime = toc(starttime);
     fprintf('============== computegain: %g sec ==============\n', powertime)
     
@@ -172,7 +172,7 @@ if options.Reporting
     
     %% Distribution of interaction nodes
     disp('From stored interaction table')
-    disp(struct2table(imagemethod.interactionstatistics(interactions.Data.InteractionType)))
+    disp(struct2table(imagemethod.interactionstatistics(trace.Data.InteractionType)))
     
     %% Distribution of received power
     [gainstats, powertable] = power.gainstatistics(interactiongains);
@@ -224,14 +224,14 @@ gridp = reshape(powers, [size(gridx), size(powers, 3)]); %#ok<NASGU>
 save([mfilename, 'powers.mat'], ...
     'gridx', 'gridy', 'gridp', 'scene', ...
     'argumentlist', 'sourcepattern', 'source')
-%iofun.savebig([mfilename, 'interactions.mat'], 'interactions')
+%iofun.savebig([mfilename, 'trace.mat'], 'trace')
 powersum = reshape(sum(powers, 3), size(gridx));
 
 %% Aggregate power at each receiver
 if options.Reporting
     sinkindices = find(interactiongains.InteractionType == imagemethod.interaction.Sink);
     reportpower = accumarray( ...
-        interactions.Data.ObjectIndex(sinkindices), ...
+        trace.Data.ObjectIndex(sinkindices), ...
         interactiongains.Power(sinkindices));
     reportpower = reshape(reportpower, size(gridx));
     assert(isequalfp(reportpower, powersum))
