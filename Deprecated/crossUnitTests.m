@@ -31,7 +31,7 @@ classdef crossUnitTests < matlab.unittest.TestCase
             b = reshape(fliplr(elements), shape);
             
             % Compare with MATLAB's built-in function
-            actual = matfun.cross(a, b, dim);
+            actual = specfun.cross(a, b, dim);
             expected = cross(a, b, dim);            
             testCase.verifyEqual(actual, expected)
             
@@ -51,7 +51,7 @@ classdef crossUnitTests < matlab.unittest.TestCase
             b = reshape(1 : prod(bShape), bShape); % either "1:0" or "1:3"
 
             % Compare with MATLAB's built-in function
-            actual = matfun.cross(a, b, dim);
+            actual = specfun.cross(a, b, dim);
             [aa, bb] = sx.expand(a, b);
             expected = cross(aa, bb, dim);
             testCase.verifyEqual(actual, expected)

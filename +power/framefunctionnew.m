@@ -28,7 +28,7 @@ assert(ndebug || all(ismember(unique(facetofunction), 1 : numel(functions))))
         % Transform global Cartesian- to local Cartesian coordinates 
         % NB: This is compatible with singleton expansion
         %     i.e. face indices or directions may be singleton
-        localdirections = matfun.dot(frames(faceindices, :, :), directions, 2);
+        localdirections = specfun.dot(frames(faceindices, :, :), directions, 2);
 
         % Squeeze out the singleton in the direction of the dot product
         localdirections = elmat.squeeze(localdirections, 2);

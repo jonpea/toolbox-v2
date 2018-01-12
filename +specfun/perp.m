@@ -53,7 +53,7 @@ v = reshape(cast(elements, class(a)), vshape);
 aa = subsasgn(a, third, zeros('like', a));
 
 % Cross produce exploiting singleton expansion
-bb = matfun.cross(v, aa, dim);
+bb = specfun.cross(v, aa, dim);
 
 % Drop the third element from the result
 b = subsasgn(bb, third, []);

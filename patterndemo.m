@@ -41,7 +41,7 @@ pipeline1 = funfun.comp( ...
         gain = pattern(azimuth, inclination);        
     end
 
-directions = rand(1e3, 3);
+directions = rand(1e6, 3);
 run1 = @() pipeline1(directions);
 run2 = @() pipeline2(directions);
 

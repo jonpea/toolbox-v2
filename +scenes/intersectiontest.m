@@ -28,16 +28,16 @@ faces = [
 range = [0.2, 0.8];
 weights = range(1) + rand(size(vertices, 1), 1)*diff(range);
 weights = weights/sum(weights);
-samples = repmat(fvsamples(faces, vertices, uv), 2, 1);
+samples = repmat(scenes.fvsamples(faces, vertices, uv), 2, 1);
 origins = repmat(sum(vertices.*weights, 1), size(samples, 1), 1);
 directions = samples - origins;
 
 tnear = 0;
 tfar = inf;
-[faceorigins, tangents] = fvtotangents(faces, vertices);
-[~, offsettolocal, facenormals] = fvframes(faceorigins, tangents{:});
+[faceorigins, tangents] = scenes.fvtotangents(faces, vertices);
+[~, offsettolocal, facenormals] = scenes.fvframes(faceorigins, tangents{:});
 
-cscene = completescene(faces, vertices);
+cscene = scenes.completescene(faces, vertices);
 chits = cscene.intersect( ...
     origins, directions, tnear, tfar);
 [~, permutation] = sortrows([chits.RayIndex, chits.FaceIndex]);
@@ -52,7 +52,7 @@ if plotting
     figure(1), clf, hold on
     patch('Faces', faces, 'Vertices', vertices, 'FaceAlpha', 0.05)
     plotvectors(origins, directions, 0)
-    plotvectors(fvcenters(faces, vertices), fvnormals(faces, vertices))
+    plotvectors(scenes.fvcenters(faces, vertices), fvnormals(faces, vertices))
     plotpoints(samples, 'x')
     plotpoints(ehits.Point, '.')
     plotpoints(chits.Point, 's')

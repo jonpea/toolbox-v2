@@ -1,4 +1,4 @@
-function evaluator = friisfunction(frequency, units)
+function evaluator = friisfunction(frequency, fun)
 %FRIISFUNCTION Friis function for signal gain of free-space propagation.
 % FUN = FRIISFUNCTION([FREQ(1), FREQ(2), ..., FREQ(N)]) returns a function
 % handle such that
@@ -18,8 +18,9 @@ if nargin < 1 || isempty(frequency)
     frequency = centerfrequency;
 end
 
-if nargin < 2 || isempty(units)
-    units = 'db';
+if nargin < 2
+    %units = 'db';
+    fun = @rayoptics.friisdb;
 end
 
 if isnumeric(frequency) && isscalar(frequency)
@@ -29,7 +30,8 @@ end
 assert(datatypes.isfunction(frequency) || isvector(frequency))
 
     function result = evaluate(id, distance)
-        result = power.friisgain(distance, elfun.lightspeed./frequency(id), units);
+        %result = power.friisgain(distance, elfun.lightspeed./frequency(id), units);
+        result = fun(distance, elfun.lightspeed./frequency(id));
     end
 
 evaluator = @evaluate;

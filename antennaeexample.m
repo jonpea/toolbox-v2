@@ -108,7 +108,7 @@ facetofunction = [
     1;
     2;
     ];
-frames = cat(3, zenith, cozenith, matfun.cross(zenith, cozenith));
+frames = cat(3, zenith, cozenith, specfun.cross(zenith, cozenith));
 
 %%
 % Sanity check

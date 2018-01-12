@@ -6,5 +6,5 @@ if nargin == 3
 end
 assert(isscalar(u))
 assert(isscalar(v))
-[edge1, edge2, origin] = fvtangents(faces, vertices);
+[edge1, edge2, origin] = scenes.fvtangents(faces, vertices);
 samples = origin + edge1*u + edge2*v;

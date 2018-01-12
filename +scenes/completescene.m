@@ -64,7 +64,7 @@ classdef completescene < handle
             obj.Chunks = []; % dynamic growth to very small size
             
             [origins, normals, unittangents, offsettolocalmaps] = reference.frames(faces, vertices);
-            offsets = matfun.dot(normals, origins, 2);
+            offsets = specfun.dot(normals, origins, 2);
                         
             % Private members
             obj.FaceOriginsTransposed = origins';
