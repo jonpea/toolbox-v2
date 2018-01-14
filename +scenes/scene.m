@@ -1,4 +1,4 @@
-classdef completescene < handle
+classdef scene < handle
     
     properties (SetAccess = immutable, Hidden = true)
         % These members are transposed/permuted for Mex function
@@ -27,15 +27,12 @@ classdef completescene < handle
         Frame
         
         % Interface for image method
-        Intersect
-        IntersectFacet
-        Mirror
         NumFacets
     end
     
     methods (Access = public)
         
-        function obj = completescene(faces, vertices, buffersize)
+        function obj = scene(faces, vertices, buffersize)
             
             narginchk(2, 3)
             
@@ -78,27 +75,25 @@ classdef completescene < handle
             obj.UnitNormal = normals;
             obj.UnitOffset = offsets;
             obj.Frame = cat(3, normals, unittangents);            
-            obj.IntersectFacet = @obj.intersectfacet;
-            obj.Intersect = @obj.intersectpaths;
-            obj.Mirror = @obj.mirror;
+            %obj.IntersectFacet = @obj.intersectfacet;
+            %obj.Intersect = @obj.intersectpaths;
+            %obj.Mirror = @obj.mirror;
             obj.NumFacets = size(origins, 1);
                        
         end
         
-        function mirrorpoints = mirror(obj, points, faceid)
-            %MIRROR Mirrors all points through a single specified facet.
-            narginchk(3, 3)
-            assert(isscalar(faceid))
-            normal = obj.FaceNormalsTransposed(:, faceid);
-            offset = obj.FaceOffsetsTransposed(faceid);
-            normal = normal(:)';
-            alpha = (offset - sum(normal.*points, 2)); % "... ./dotrows(n,n)" only if "||n|| ~= 1.0"
-            mirrorpoints = points + 2*alpha.*normal;
+        function [pairindices, pathPoints] = reflections(obj, sourcePoints, sinkPoints, faceIndices)
+            narginchk(4, 4)
+            [pairindices, pathPoints] = rayoptics.imagemethod( ...
+                @obj.intersectfacet, ...
+                @obj.mirror, ...
+                faceIndices, ...
+                sourcePoints, ...
+                sinkPoints);
         end
         
-        function hits = intersectpaths(obj, origins, directions, faceindices)
+        function hits = intersections(obj, origins, directions, faceindices)
             narginchk(4, 4)
-            nargoutchk(1, 1)
             import contracts.ndebug
             assert(ndebug || isequal(size(origins), size(directions)))
             assert(ndebug || size(origins, 3) == numel(faceindices) + 1)
@@ -110,6 +105,24 @@ classdef completescene < handle
                     faceidtoignore{i});
             end
             hits = obj.extractHits();
+        end
+
+    end
+    
+    methods (Access = private)
+        
+        function mirrorpoints = mirror(obj, points, faceid)
+            %MIRROR Mirrors all points through a single specified facet.
+            narginchk(3, 3)
+            assert(isscalar(faceid))
+            normal = obj.FaceNormalsTransposed(:, faceid);
+            offset = obj.FaceOffsetsTransposed(faceid);
+            normal = normal(:)';
+            % NB: The formula below is valid only if all normal 
+            % vectors have unit length. If this is not true, then the
+            % expression should be divided by "dot(normal, normal, 2)".
+            alpha = (offset - sum(normal.*points, 2)); 
+            mirrorpoints = points + 2*alpha.*normal;
         end
         
         function hits = intersectfacet(obj, origins, directions, faceid)
@@ -211,7 +224,7 @@ classdef completescene < handle
             while true
                 % ... extract as many as fit into available buffer storage
                 [success, face_loop_id, ray_loop_id, obj.Offset] = ...
-                    scenes.planarintersectionmex( ...
+                    scenes.intersectionmex( ...
                     ... % Inputs: Scene
                     obj.FaceOriginsTransposed(:, faceid), ...
                     obj.FaceNormalsTransposed(:, faceid), ...

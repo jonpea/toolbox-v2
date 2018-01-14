@@ -29,16 +29,16 @@ end
 numaxes = numel(varargin);
 assert(nargout <= numaxes)
 
-shape = ones(1, numaxes); % generate once
+shape = ones(1, numaxes); % (1) generate once, ...
     function x = orientVector(dim, numel)
         x = varargin{dim};
         if ~isvector(x)
             % Accommodates mixture of grid vectors and expanded arrays [**]
             return
         end
-        shape(dim) = numel; % insert...
+        shape(dim) = numel; % (2) ... insert, ...
         x = reshape(varargin{dim}, shape);
-        shape(dim) = 1; % ... and reset
+        shape(dim) = 1; % (3) ... and reset.
     end
 
 varargout = arrayfun(@orientVector, ...

@@ -10,7 +10,7 @@ mirrorpoints = zeros(size(points));
 faceoffset = faceoffset/scale;
 
 mirrorpoints = mirrorpoints';
-planarmirrormex(facenormal, faceoffset, points', mirrorpoints);
+scenes.mirrormex(facenormal, faceoffset, points', mirrorpoints);
 mirrorpoints = mirrorpoints';
 
 projection = 0.5*(points + mirrorpoints);

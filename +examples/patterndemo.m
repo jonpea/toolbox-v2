@@ -15,7 +15,7 @@ function patterndemo
 % # |F(XYZ)|: unstructured points where |size(XYZ, 2) == 3|
 %
 
-pattern = @(azimuth, inclination) sx.expand(sin(inclination), azimuth);
+pattern = @(azimuth, inclination, ~) sx.expand(sin(inclination), azimuth);
 
 azimuth = linspace(0, 2*pi, 50);
 inclination = linspace(0, pi, 50);
@@ -30,10 +30,7 @@ axis('equal')
 graphics.axislabels('x', 'y', 'z')
 view(3)
 
-pipeline1 = funfun.comp( ...
-    pattern, 2, ... % discards the radial component
-    @specfun.cart2sphi, ...
-    @elmat.cols);
+pipeline1 = funfun.comp(pattern, @specfun.cart2sphi, @elmat.cols);
 
     function gain = pipeline2(directions)
         directions = num2cell(directions, 1);

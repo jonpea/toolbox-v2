@@ -3,6 +3,7 @@ function yzg0013d(varargin)
 %% Introduction
 % This script mirrors the |nelib| program implemented in |yzg001.f90|.
 
+%% Optional arguments
 parser = inputParser;
 parser.addParameter('LargeScale', true, @islogical)
 parser.addParameter('Arities', 0 : 2, @isrow)
@@ -10,7 +11,7 @@ parser.addParameter('Fraction', 1.0, @isnumeric)
 parser.addParameter('Reporting', false, @islogical)
 parser.addParameter('Plotting', false, @islogical)
 parser.addParameter('Printing', false, @islogical)
-parser.addParameter('Scene', @scenes.completescene, @datatypes.isfunction)
+parser.addParameter('Scene', @scenes.scene, @datatypes.isfunction)
 parser.addParameter('Serialize', false, @islogical)
 parser.addParameter('StudHeight', 3.0, @isscalar)
 parser.addParameter('XGrid', [], @isvector)
@@ -39,13 +40,11 @@ end
 temp = facevertex.extrude(faces, vertices, [0.0, options.StudHeight]);
 [faces, vertices] = facevertex.fv(temp);
 scene = options.Scene(faces, vertices);
-%scene = axisalignedmultifacet(fvtoaxisalignedbounds(faces, vertices));
 z0 = (0.0 + options.StudHeight)/2;
-
-%%
 materials = struct( ...
     'TransmissionGain', materialsdata(wallmaterials, 1), ...
     'ReflectionGain', materialsdata(wallmaterials, 2));
+
 %%
 if options.Plotting
     ax = axes(figure(1));
@@ -73,30 +72,29 @@ radius = 1.0; % [m]
 direction = funfun.pipe(@horzcat, 2, @pol2cart, apangle, radius);
 codirection = funfun.pipe(@horzcat, 2, @pol2cart, apangle + pi/2, radius);
 [direction(3), codirection(3)] = deal(0.0);
-source = scenes.accesspointtable( ...
-    aporigin, ...
-    'Frame', cat(3, direction, codirection, [0, 0, 1]), ...
-    'Frequency', 2.45d9); % [Hz]
+source.Position = aporigin;
+source.Frame = cat(3, direction, codirection, [0, 0, 1]);
+frequency = 2.45d9; % [Hz]
 
 %%
 % Access point's antenna gain functions
 elevation = 0.0;
-sourcepattern = data.embeddedpattern( ...
+source.Pattern = data.embeddedpattern( ...
     data.loadpattern(fullfile('+data', 'yuen1b.txt'), @elfun.todb), ...
     elevation);
+source.Gain = power.framefunctionnew(source.Pattern, source.Frame);
 if options.Plotting
     
     [azimuth, elevation] = meshgrid(linspace(0, 2*pi, 100)', elevation);
     allangles = points.meshpoints(azimuth, elevation);
-    radius = elfun.fromdb(sourcepattern(allangles));
+    radius = elfun.fromdb(source.Pattern(allangles));
     figure(2), clf('reset')
     polarplot(azimuth, radius, 'b.')
     
     figure(1), hold on
-    temp = power.framefunctionnew(sourcepattern, source.Frame);
     ax = gca;
     graphics.spherical(ax, ...
-        temp, ...
+        source.Gain, ...
         source.Position, ...
         source.Frame, ...
         'EdgeAlpha', 0.1)
@@ -125,8 +123,7 @@ else
     y = 4.0;
 end
 [gridx, gridy, gridz] = meshgrid(x, y, z0);
-sinkorigins = points.meshpoints(gridx, gridy, gridz);
-sink = mobiletable(sinkorigins);
+sink.Position = points.meshpoints(gridx, gridy, gridz);
 
 %%
 if options.Plotting
@@ -138,15 +135,14 @@ end
 
 %% Trace reflection paths
 argumentlist = { % saved to file for later reference
-    imagemethod.reflectionPoints(scene) ...
-    scene.Intersect ...
+    @scene.reflections ...
+    @scene.intersections ...
     scene.NumFacets ...
     source.Position ...
     sink.Position ...
-    ... %scene ...
     'ReflectionArities', options.Arities ...
-    'FreeGain', power.friisfunction(source.Frequency) ...
-    'SourceGain', power.framefunctionnew(sourcepattern, source.Frame) ...
+    'FreeGain', power.friisfunction(frequency) ...
+    'SourceGain', source.Gain ...
     'TransmissionGain', power.isofunction(materials.TransmissionGain) ...
     'ReflectionGain', power.isofunction(materials.ReflectionGain) ...
     'SinkGain', power.isofunction(0.0) ...
@@ -203,7 +199,7 @@ disp(struct2table(distribution))
 
 %%
 if options.Reporting && options.Serialize
-    numinteractions = tabularsize(interactiongains);
+    numinteractions = datatypes.struct.tabular.height(interactiongains);
     if 1e6 < numinteractions
         prompt = sprintf( ...
             'Proceed to save %d rows to .mat file? {yes | no} ', ...
@@ -223,8 +219,8 @@ end
 gridp = reshape(powers, [size(gridx), size(powers, 3)]); %#ok<NASGU>
 save([mfilename, 'powers.mat'], ...
     'gridx', 'gridy', 'gridp', 'scene', ...
-    'argumentlist', 'sourcepattern', 'source')
-%iofun.savebig([mfilename, 'trace.mat'], 'trace')
+    'argumentlist', 'source')
+iofun.savebig([mfilename, 'trace.mat'], 'trace')
 powersum = reshape(sum(powers, 3), size(gridx));
 
 %% Aggregate power at each receiver
