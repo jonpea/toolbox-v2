@@ -325,12 +325,9 @@ cache = struct('FBest', realmax);
         local.downlinks = power.analyze( ...
             @temp.reflections, ...
             @temp.intersections, ...
-            ... imagemethod.reflectionTracer(scene.Model), ...
-            ... scene.Model.Intersect, ...
             scene.Model.NumFacets, ...
             txdata.Position, ...
             rxpositions, ...
-            ... %scene.Model, ...
             'ReflectionArities', 0 : settings.MaxNumReflections, ...
             'FreeGain', power.friisfunction(txdata.Frequency), ...
             'ReflectionGain', makegainfunctions(reflectionpatterns, local.xreflection), ...
@@ -587,4 +584,27 @@ dim = sx.leaddim(a, varargin{:});
 
 values = cat(dim, vmin, vmax);
 indices = cat(dim, imin, imax);
+end
+
+% -------------------------------------------------------------------------
+function c = fvfaces(c)
+%FVFACES "Ragged" faces array for non-homogeneous polygonal patches.
+% See also PATCH.
+
+narginchk(1, 1)
+
+if isnumeric(c) && ismatrix(c)
+    return
+end
+
+assert(iscell(c) && isvector(c))
+assert(~any(cellfun(@isempty, c)))
+assert(all(cellfun(@isrow, c)))
+
+maxnumcolumns = max(cellfun(@(a) size(a, 2), c));
+    function a = pad(a)
+        a(:, end + 1 : maxnumcolumns) = nan;
+    end
+c = cell2mat(cellfun(@pad, c(:), 'UniformOutput', false));
+
 end
