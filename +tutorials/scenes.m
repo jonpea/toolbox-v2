@@ -4,13 +4,14 @@
 clear
 fontsize = 12;
 figureindex = 1;
+scale = 0.4;
 
 %% Helper functions
 assertequal = @(a, b) assert(norm(a - b, inf) < 1e-12); % "equal arrays?"
 assertzero = @(a) assertequal(a, 0); % "zero array?"
 normrows = @(a) sqrt(sum(a.^2, 2)); % Euclidean norm of each row
 dotrows = @(a, b) dot(a, b, 2); % dot product of each pair of rows
-showtable = @(varargin) tabulardisp(struct(varargin{:})); % pretty-print a tabular struct
+showtable = @(varargin) disp(struct2table(struct(varargin{:}))); % pretty-print a tabular struct
 rowstotext = @(a) cellfun(@mat2str, num2cell(a, 2), 'UniformOutput', false); % convert rows to text
 
 %% Two dimensional model
@@ -22,9 +23,9 @@ ytick = [0.0, 2.0, 4.0]; % [m]
 vertices = [x(:), y(:)];
 %%
 % Vertex coordinates in tabular form
-tabulardisp(struct( ...
+showtable( ...
     'VertexIndex', (1 : size(vertices, 1))', ...
-    'VertexCoordinates', vertices))
+    'VertexCoordinates', vertices)
 
 %%
 % and in graphical form.
@@ -32,9 +33,9 @@ fig = figure(figureindex);
 clf(fig, 'reset')
 ax = axes(fig); 
 hold(ax, 'on')
-plotpoints(ax, vertices, '.')
-labelpoints(ax, vertices, 'FontSize', fontsize, 'Color', 'red')
-labelaxes(ax, 'x', 'y')
+points.plot(ax, vertices, '.')
+points.text(ax, vertices, 'FontSize', fontsize, 'Color', 'red')
+graphics.axislabels(ax, 'x', 'y')
 axis(ax, 'equal')
 axis(ax, [xtick(1) - 1, xtick(end) + 1, ytick(1) - 1, ytick(end) + 1])
 
@@ -48,21 +49,25 @@ showtable( ...
     'FaceVertices', faces)
 
 %%
+model = facevertex.fv(faces, vertices);
+
+%%
 % MATLAB's own |patch| function employs the face-vertex respresentation
 % directly.
 patch(ax, ...
     'Faces', faces, ...
     'Vertices', vertices);
-labelfacets(ax, faces, vertices, 'FontSize', fontsize, 'Color', 'blue')
+points.text(ax, ...
+    facevertex.reduce(@mean, model), ...
+    'FontSize', fontsize, 'Color', 'blue')
 
 %%
-% Function |fvtotangents| returns an alternative representation, comprising
-% one vertex in each face (|origin|) and a free vector (|tangent{:}|)
-% joining the vertex pair. 
-[origin, tangent] = fvtotangents(faces, vertices);
-%% 
-% The latter is a cell array to accommodate the three-dimensional case. 
-tangent = tangent{:};
+% Function |facevertex.tangents| returns an alternative representation,
+% comprising one vertex in each face (|origin|) and a free vector
+% (|tangent{:}|) joining the vertex pair. 
+origin = facevertex.origin(model);
+tangent = facevertex.tangents(model);
+normal = facevertex.faceNormal(model);
 
 %%
 % The advertised properties are easily confirmed:
@@ -89,26 +94,18 @@ assertequal(second - first, tangent)
 % conventionally associated with the polar angle of zero, and it is with
 % this angle that we associate facet normals in antenna patterns for
 % electromagnetic simulations.
-[frame, map] = fvframes(origin, tangent);
+map = facevertex.faceMap(model);
 
 %%
-% Let's confirm |frame|'s advertised properties:
-axis1 = frame(:, :, 1);
-axis2 = frame(:, :, 2);
-assertzero(dotrows(axis1, axis2)) % orthogonality
-assertzero(normrows(axis1) - ones) % unit norm
-assertzero(normrows(axis2) - ones) % unit norm
-assertequal(axis2, tangent./normrows(tangent)) % unit tangent
-
-%%
-plotframes(ax, origin, frame, 0.2, 'Color', 'blue')
+points.quiver(ax, origin, tangent, scale, 'Color', 'blue')
+points.quiver(ax, origin, normal, scale, 'Color', 'blue')
 
 %%
 % The properties of |map| are best demonstrated with an example: Let's
 % generate points located, say, three quarters of the way along each face.
 specifiedlocal = 0.75;
 xglobal = origin + specifiedlocal*tangent; 
-plotpoints(xglobal, 'o')
+points.plot(xglobal, 'o')
 
 %%
 % Local coordinates are computed as the contraction of |map| with the
@@ -125,19 +122,19 @@ assertequal(xlocal, specifiedlocal)
 showtable( ...
     'Index', (1 : size(faces, 1))', ...
     'Faces', faces, ...
-    'Normal', frame(:, :, 1), ...
-    'Tangent', frame(:, :, 2))
+    'Normal', normal, ...
+    'Tangent', tangent)
 
 %%
-% Clear workspace except for...
-clearexcept faces vertices ax fontsize ... floor plan and
-    assertequal assertzero dotrows normrows rowstotext showtable % helpers
+% Clear workspace except for floor plan and helper functions
+clear fig figureindex first map normal origin ...
+    second specifiedlocal tangent x xglobal xlocal xtick y ytick 
 
 %% Three dimensional model
 % To demonstrate the representation of three-dimensional scenes, let's
 % extrude our existing two-dimensional plan in the vertical direction.
 studheight = 3.0; % [m]
-model = extrudeplan(faces, vertices, 0.0, studheight);
+model = facevertex.extrude(model, [0.0, studheight]);
 
 %%
 % The result is the familiar face-vertex representation:
@@ -169,34 +166,40 @@ patch(ax, ...
     'FaceAlpha', 0.05, ...
     'EdgeAlpha', 0.3, ...
     'FaceColor', 'blue');
-labelpoints(ax, model.Vertices, 'FontSize', fontsize, 'Color', 'red')
-labelfacets(ax, model.Faces, model.Vertices, 'FontSize', fontsize, 'Color', 'blue')
-labelaxes(ax, 'x', 'y', 'z')
+points.text(ax, model.Vertices, 'FontSize', fontsize, 'Color', 'red')
+points.text(ax, ...
+    facevertex.reduce(@mean, model), ...
+    'FontSize', fontsize, 'Color', 'blue')
+graphics.axislabels(ax, 'x', 'y', 'z')
 axis(ax, 'equal')
 rotate3d(ax, 'on')
 view(ax, -60, 30)
 
 %% 
 % Add a floor and ceiling to the extruded model.
-floor = true; % "include floor facet?"
-ceiling = true; % "include ceiling facet?"
-[faces, vertices] = capfacevertex(model, floor, ceiling);
+model.Faces(end + 1, :) = facevertex.cap(@min, 3, model);
+model.Faces(end + 1, :) = facevertex.cap(@max, 3, model);
+
 %%
 % The additional face(s) are added to the bottom (final two rows) of
 % |model.Faces|. Here, they are highlighted in a different color.
 patch(ax, ...
-    'Faces', faces(end - 1 : end, :), ... % surfaces of floor & ceiling
-    'Vertices', vertices, ...
+    'Faces', model.Faces(end - 1 : end, :), ... % surfaces of floor & ceiling
+    'Vertices', model.Vertices, ...
     'FaceAlpha', 0.05, ...
     'EdgeAlpha', 0.3, ...
     'FaceColor', 'red');
-labelpoints(ax, vertices, 'FontSize', fontsize, 'Color', 'red')
-labelfacets(ax, faces, vertices, 'FontSize', fontsize, 'Color', 'blue')
+points.text(ax, model.Vertices, 'FontSize', fontsize, 'Color', 'red')
+points.text(ax, ...
+    facevertex.reduce(@mean, model), ...
+    'FontSize', fontsize, 'Color', 'blue')
 
 %%
 % In three dimensions, a frame defines a *pair* of orthogonal tangential
 % directions (first two axes) and a normal direction (third axis).
-[origin, tangents] = fvtotangents(faces, vertices);
+origin = facevertex.origin(model);
+normal = facevertex.faceNormal(model);
+[tangent{1 : 2}] = facevertex.tangents(model);
 
 %%
 % NB. The association of |frame(:, :, 3)| with the normal direction (cf.
@@ -205,24 +208,12 @@ labelfacets(ax, faces, vertices, 'FontSize', fontsize, 'Color', 'blue')
 % conventionally associated with angle of inclination zero, and it is with
 % this angle that we associate facet normals in antenna patterns for
 % electromagnetic simulations.
-[frame, map] = fvframes(origin, tangents{:});
+map = facevertex.faceMap(model);
 
 %%
-% Verify advertised properties of |frame|:
-axis1 = frame(:, :, 1);
-axis2 = frame(:, :, 2);
-axis3 = frame(:, :, 3);
-assertzero(dotrows(axis1, axis2)) % orthogonality
-assertzero(dotrows(axis1, axis3)) % orthogonality
-assertzero(dotrows(axis2, axis3)) % orthogonality
-assertzero(normrows(axis1) - ones) % unit norm
-assertzero(normrows(axis2) - ones) % unit norm
-assertzero(normrows(axis3) - ones) % unit norm
-assertequal(axis1, tangents{1}./normrows(tangents{1})) % unit tangent
-assertequal(axis2, tangents{2}./normrows(tangents{2})) % unit tangent
-
-%%
-plotframes(ax, origin, frame, 0.2, 'Color', 'blue')
+points.quiver(ax, origin, normal, scale, 'Color', 'red')
+points.quiver(ax, origin, tangent{1}, scale, 'Color', 'blue')
+points.quiver(ax, origin, tangent{2}, scale, 'Color', 'blue')
 
 %%
 % Coordinate maps work in the same way as in the two-dimensional model.
@@ -232,10 +223,10 @@ plotframes(ax, origin, frame, 0.2, 'Color', 'blue')
 % generate points located, say, three quarters of the way along each face.
 specifiedlocal = [0.5, 0.75];
 xglobal = origin + ...
-    specifiedlocal(1)*tangents{1} + ...
-    specifiedlocal(2)*tangents{2}; 
-plotpoints(xglobal, 'o')
-plotvectors(origin, xglobal - origin, 0)
+    specifiedlocal(1)*tangent{1} + ...
+    specifiedlocal(2)*tangent{2}; 
+points.plot(xglobal, 'o')
+points.quiver(origin, xglobal - origin, 0)
 
 %%
 % Local coordinates are computed as the contraction of |map| with the
@@ -247,7 +238,7 @@ xlocal = [
     ];
 %%
 showtable( ...
-    'FaceIndex', (1 : size(faces, 1))', ...    
+    'FaceIndex', (1 : size(model.Faces, 1))', ...    
     'Global', xglobal, ...
     'Local', xlocal)
 assertequal(xlocal(:, 1), specifiedlocal(1))
@@ -261,14 +252,15 @@ showtable( ...
 %%
 % Summary of face data for final scene scene:
 showtable( ...
-    'Index', (1 : size(faces, 1))', ...
-    'Faces', {rowstotext(faces)}, ...
-    'Tangent1', frame(:, :, 1), ...
-    'Tangent2', frame(:, :, 2), ...
-    'Normal', frame(:, :, 3))
+    'Index', (1 : size(model.Faces, 1))', ...
+    'Faces', {rowstotext(model.Faces)}, ...
+    'Tangent1', tangent{1}, ...
+    'Tangent2', tangent{2}, ...
+    'Normal', normal)
 
 %% Computation of the global-to-local mapping coefficients
-clearexcept ax assertequal assertzero dotrows normrows
+clear faces fontsize map model normal offset origin rowstotext ...
+    s showtable specifiedlocal studheight tangent vertices xglobal xlocal
 
 %%
 % Start with a completely random set of origins and tangent
@@ -281,13 +273,7 @@ tangent2 = random();
 specifiedlocal = [0.25, 0.75];
 
 % Check that |fvframes| doesn't rely on orthogonal tangents
-[frame, map] = fvframes(origin, tangent1, tangent2);
-axis1 = frame(:, :, 1);
-axis2 = frame(:, :, 2);
-axis3 = frame(:, :, 3);
-assertzero(dotrows(axis1, axis2))
-assertzero(dotrows(axis1, axis3))
-assertzero(dotrows(axis2, axis3))
+map = facevertex.faceMapFromTangents(tangent1, tangent2);
 
 xglobal = origin + ...
     specifiedlocal(1)*tangent1 + ...
@@ -300,19 +286,9 @@ xlocal2 = dotrows(map(:, :, 2), offset);
 assertequal(specifiedlocal(1), xlocal1)
 assertequal(specifiedlocal(2), xlocal2)
 
-[frame1, r11] = unit(tangent1);
+[frame1, r11] = matfun.unit(tangent1, 2);
 r12 = dotrows(tangent2, frame1);
-[frame2, r22] = unit(tangent2 - frame1.*r12);
-
-assertequal(frame(:, :, 1), frame1)
-assertequal(frame(:, :, 2), frame2)
-
-% Verify our orthogonal-triangular (QR) decomposition
-assertequal(tangent1, frame1.*r11)
-assertequal(tangent2, frame1.*r12 + frame2.*r22)
-assertequal(normrows(frame1), ones)
-assertequal(normrows(frame2), ones)
-assertequal(dotrows(frame1, frame2), zeros)
+[frame2, r22] = matfun.unit(tangent2 - frame1.*r12, 2);
 
 %%
 % At this point, we have established:
@@ -339,10 +315,3 @@ xlocal1 = z1./r11 - z2.*r12./(r11.*r22);
 xlocal2 =           z2./r22;
 assertequal(specifiedlocal(1), xlocal1)
 assertequal(specifiedlocal(2), xlocal2)
-
-%%
-function [u, vnorm] = unit(v)
-% Unit vectors and lengths.
-vnorm = sqrt(sum(v.^2, 2)); % lengths
-u = v./vnorm; % coefficients of normalized vectors
-end

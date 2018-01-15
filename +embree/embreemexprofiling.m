@@ -18,7 +18,7 @@ perturb = @(a) a + 1e-5*(rand(size(a)) - 0.5);
 numfloors = 3;
 numrays = 150000;
 studheight = 3.0;
-structured = false;
+structured = true;
 scale = 2.0;
 
 rng('default')
@@ -75,7 +75,7 @@ gen = @(a, b, n) a + (1 : n)*(b - a)/(n + 1);
 azimuth = gen(0, 2*pi, ceil(sqrt(numrays)));
 inclination = gen(0, pi, floor(sqrt(numrays)));
 [azimuth, inclination] = ndgrid(azimuth, inclination);
-direction = sphericaltocartesian(azimuth, inclination, 1.0);
+direction = funfun.pipe(@cell2mat, 3, @specfun.sphi2cart, azimuth, inclination, 1.0);
 %direction = repmat([0 0 -1], numrays, 1);
 numraysnew = size(direction, 1);
 % NB: "median" (cf. "mean" produces interesting results)

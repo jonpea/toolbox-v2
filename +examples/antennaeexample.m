@@ -1,7 +1,5 @@
 function antennaeexample
 %% ANTENNAEXAMPLE Demonstrates visualization of antennae patterns.
-import elmat.ncols
-import elmat.nrows
 
     function size = fontsize
         size = 15;
@@ -62,14 +60,14 @@ zenith = matfun.unit([
     +1,  1;
     -1, -1;
     ], 2);
-frames = cat(3, zenith, matfun.perp(zenith, 2));
+frames = cat(3, zenith, specfun.perp(zenith, 2));
 
 %%
 % Associates the antenna pattern with each frame
 pattern1 = @(phi) phi/(2*pi);
 pattern2 = @(phi) 1 - phi/(2*pi);
 unitcircle = power.isofunction(1.0);
-gainpattern = power.framefunctionnew({ ...
+gainpattern = power.framefunction({ ...
     power.polarpattern(pattern1) ...
     power.polarpattern(pattern2) ...
     }, frames, ...
@@ -114,7 +112,7 @@ frames = cat(3, zenith, cozenith, specfun.cross(zenith, cozenith));
 % Sanity check
 pattern1 = @(phi, theta) sx.expand(phi, theta)/(2*pi);
 pattern2 = @(phi, theta) sx.expand(theta, phi)/pi;
-gainpattern = power.framefunctionnew({ ...
+gainpattern = power.framefunction({ ...
     power.sphericalpattern(pattern1) ...
     power.sphericalpattern(pattern2) ...
     ... loadpattern('refl_TE_Wall_3_1GHz.txt', @todb, @wrapquadrant) ...

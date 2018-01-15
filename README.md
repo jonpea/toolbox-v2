@@ -21,7 +21,7 @@
 
 ### Installation
 
-The toolbox has been developed on Windows: If you are interested in another platform, please do make contct.
+The toolbox has been developed on Windows: If you are interested in another platform, please do make contact.
 
 1. Clone the source repository.
 ```matlab

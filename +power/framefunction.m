@@ -1,4 +1,4 @@
-function evaluator = framefunctionnew(functions, frames, facetofunction)
+function evaluator = framefunction(functions, frames, facetofunction)
 
 narginchk(2, 3)
 

@@ -82,7 +82,7 @@ elevation = 0.0;
 source.Pattern = data.embeddedpattern( ...
     data.loadpattern(fullfile('+data', 'yuen1b.txt'), @elfun.todb), ...
     elevation);
-source.Gain = power.framefunctionnew(source.Pattern, source.Frame);
+source.Gain = power.framefunction(source.Pattern, source.Frame);
 if options.Plotting
     
     [azimuth, elevation] = meshgrid(linspace(0, 2*pi, 100)', elevation);

@@ -1,2 +1,2 @@
-function n = nvertices(fv)
-n = size(fv.Vertices, 1);
+function n = nvertices(varargin)
+n = size(facevertex.vertices(varargin{:}), 1);

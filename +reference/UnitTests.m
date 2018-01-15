@@ -68,6 +68,10 @@ classdef UnitTests < matlab.unittest.TestCase
             testcase.verifySize(tangent, [numfaces, twodimensions])
             testcase.verifySize(map, [numfaces, twodimensions])
             
+            % ****
+            map2 = facevertex.faceMap(faces, vertices);
+            testcase.verifyEqual(map, map2);
+            
             testcase.verifyEqual( ...
                 normrows(normal), ...
                 ones(numfaces, 1, classname), ...
@@ -131,6 +135,10 @@ classdef UnitTests < matlab.unittest.TestCase
             testcase.verifySize(tangents, [numfaces, threedimensions, threedimensions - 1])
             testcase.verifySize(map, [numfaces, threedimensions, threedimensions - 1])
             
+            % ****
+            map2 = facevertex.faceMap(faces, vertices);
+            testcase.verifyEqual(map, map2);
+
             testcase.verifyEqual( ...
                 normrows(normal), ...
                 ones(numfaces, 1, classname), ...
@@ -202,6 +210,10 @@ classdef UnitTests < matlab.unittest.TestCase
             testcase.verifySize(normal, [numfaces, threedimensions])
             testcase.verifySize(tangents, [numfaces, threedimensions, threedimensions - 1])
             testcase.verifySize(map, [numfaces, threedimensions, threedimensions - 1])
+
+            % ****
+            map2 = facevertex.faceMap(faces, vertices);
+            testcase.verifyEqual(map, map2);
 
             testcase.verifyEqual( ...
                 normrows(normal), ...

@@ -1,2 +1,2 @@
-function rununittests
+function runUnitTests
 unittest.runsuite(?reference.UnitTests)

@@ -74,7 +74,7 @@ frequency = 2.45d9; % [Hz]
 %%
 % Access point's antenna gain functions
 source.Pattern = data.loadpattern(fullfile('+data', 'yuen1b.txt'), @elfun.todb);
-source.Gain = power.framefunctionnew(source.Pattern, source.Frame);
+source.Gain = power.framefunction(source.Pattern, source.Frame);
 if options.Plotting
     
     allangles = linspace(0, 2*pi, 100);
