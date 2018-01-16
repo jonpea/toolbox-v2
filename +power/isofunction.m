@@ -4,10 +4,6 @@ if nargin < 1 || isempty(gain)
     gain = 0.0;
 end
 
-if isstruct(gain)
-    gain = gain.Gain;
-end
-
 gain = gain(:);
 
 if isscalar(gain)

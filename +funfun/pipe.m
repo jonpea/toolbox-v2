@@ -1,4 +1,4 @@
-function varargout = pipe(head, varargin)
+function varargout = pipe(varargin)
 %PIPE Function composition.
 %   [Y1,Y2,..] = PIPE(OUTER,INNER,X1,X2,..) is equivalent to
 %   the composition
@@ -9,8 +9,9 @@ function varargout = pipe(head, varargin)
 %           [T1,T2,..,TN] = INNER(X1,X2,..);
 %           [Y1,Y2,..] = OUTER(T1,T2,..,TN).
 %
-%   PIPE({F1,N1,F2,N2,...FK,NK,G},X1,X2,..) composes the inner function 
-%   G and outer functions F1,..,NK with input arities N1,..,NK, respectively.
+%   PIPE({FK,NK,...F1,N1,F0,X1,X2,..) composes the inner function 
+%   F0 and outer functions F1,..,FK with input arities N1,..,NK,
+%   respectively, cf. "FK(... F1(F0(X1,X2,..)))".
 %
 %   NB: This function should *not* be confused with built-in COMPOSE,
 %   which converts data into formatted string arrays and has nothing 
@@ -31,29 +32,26 @@ function varargout = pipe(head, varargin)
 
 narginchk(1, nargin)
 
-if iscell(head)
-    impl = @pipeMany;
-    fouter = head{1};
+import datatypes.isfunction
+
+if iscell(varargin{1})
+    % General form: Accommodating a function handle in the 
+    % "argument list" i.e. one that is not part of the composition
+    list = varargin{1};
+    varargin(1) = [];
 else
-    impl = @pipeTwo;
-    fouter = head;
+    % Fluent form: No cell  braces required in the common case that 
+    % the first element in the argument list is not a function handle
+    last = find(cellfun(@isfunction, varargin), 1, 'last');
+    assert(~isempty(last))
+    list = varargin(1 : last);
+    varargin = varargin(last + 1 : end);
 end
 
-nout = arguments.nargoutfor(fouter, nargout);
-
-[varargout{1 : nout}] = impl(head, varargin{:});
-
-% -------------------------------------------------------------------------
-function varargout = pipeTwo(fouter, varargin)
-[numout, finner, varargin] = arguments.parsefirst(@isnumeric, 1, 1, varargin{:});
-[temporary{1 : numout}] = feval(finner, varargin{:});
-[varargout{1 : nargout}] = feval(fouter, temporary{:});
-
-% -------------------------------------------------------------------------
-function varargout = pipeMany(list, varargin)
-
-assert(iscell(list))
-assert(~isempty(list))
+if isempty(list) || ~all(cellfun(@isfunction, list([1, end])))
+    error(contracts.msgid(mfilename, 'BadFunctionList'), ...
+        'First argument must be a function handle or a cell array')
+end
 
 % Insert "1" between every consecutive pair of functions
 % e.g. {@f, 2, @g, @h} becomes {@f, 2, @g, 1, @h}

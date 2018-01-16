@@ -52,6 +52,10 @@ classdef UnitTests < matlab.unittest.TestCase
             % Rotation is through the angle specified
             verifyEqual(subspace(preimage(:), image(:)), angle) % Cosine Rule
         end
+      
+        function insertTest(testCase)
+            
+        end
         
     end
     

@@ -14,14 +14,33 @@ function a = insert(a, loc, b)
 %
 %   In case (2), LOC must not contain duplicate elements.
 %
+%   Examples:
+%   >> elmat.insert([1 2 3], 1, 0)
+%   ans =
+%        0     1     2     3
+%   >> elmat.insert([1 2 3], 3, 0)
+%   ans =
+%        1     2     0     3
+%   >> elmat.insert([1 2 3], 4, 0)
+%   ans =
+%        1     2     3     0
+%   >> elmat.insert([2 4 6], [1 2 3], [100 300 500])
+%   ans =
+%      100     2   300     4   500     6
+%   >> elmat.insert({2 4 6}, [1 2 3], {100 300 500})
+%   ans =
+%     1×6 cell array
+%     Columns 1 through 6
+%       {[100]}  {[2]}  {[300]}  {[4]}  {[500]}  {[6]}
+%
 %   See also ACCUMARRAY, RESHAPE, SUB2IND, IND2SUB.
 
 narginchk(3, 3)
 
 if isnumeric(loc)
     % Must sort before cumulative offsets are added [**]
-    [loc, p] = sort(loc(:));
-    b = b(p); % preserve correspondence
+    [loc, permutation] = sort(loc(:));
+    b = b(permutation); % preserve correspondence
 else
     assert(islogical(loc))
     assert(numel(loc) == numel(a))
@@ -30,7 +49,7 @@ end
 
 assert(numel(loc) == numel(b) || isscalar(b))
 
-newloc = loc(:)' + cumsum(0 : numel(loc) - 1); % [**] cumulative offsets
+newloc = loc(:)' + (0 : numel(loc) - 1); % [**] cumulative offsets
 newlength = numel(a) + numel(b);
 oldloc = setdiff(1 : newlength, newloc);
 

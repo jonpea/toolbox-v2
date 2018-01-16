@@ -36,6 +36,17 @@ assert(ndebug || all(ismember(unique(facetofunction), 1 : numel(functions))))
         % Angles relative to local frame
         angles = cartesiantoangularnew(localdirections);
 
+        tol = 1e-12;
+        switch size(directions, 2)
+            case 2
+                [x, y] = elmat.cols(localdirections);
+                assert(norm(cart2pol(x, y) - angles) < tol)
+            case 3
+                [x, y, z] = elmat.cols(localdirections);
+                [azimuth, inclination] = specfun.cart2sphi(x, y, z);
+                assert(norm([azimuth, inclination] - angles) < tol)
+        end
+        
         gain = funfun.indexedunary( ...
             functions, ...
             facetofunction(faceindices), ...
@@ -51,7 +62,7 @@ end
 function result = isfvframe(f)
 %ISFVFRAME True for unit frames stored by rows.
 % See also FVFRAMES.
-unit = 1.0;
+unit = ones('like', f);
 tol = eps(10*unit); % relative to 1.0
 result = ...
     isnumeric(f) ...

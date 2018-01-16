@@ -12,4 +12,4 @@ function fun = comp(varargin)
 %   See also PIPE.
 
 outer = varargin;
-fun = @(varargin) funfun.pipe(outer, varargin{:});
+fun = @(varargin) funfun.pipe(outer{:}, varargin{:});
