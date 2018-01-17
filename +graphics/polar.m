@@ -80,7 +80,7 @@ handles = arrayfun(@display, 1 : size(origins, 1), 'UniformOutput', false);
         circle = transform(angles.Radius);
         
         % Evauate target function on global direction vectors
-        radius = fun(id, circle);
+        radius = fun(repmat(id, size(circle, 1), 1), circle);
         radius = abs(radius); % TODO: Is this sensible?
         
         % Evaluate contours in global
@@ -127,7 +127,7 @@ handles = arrayfun(@displaycontours, 1 : size(origins, 1), 'UniformOutput', fals
         directions = globaldirection(directionslocal);
         
         % Evaluate target function on global direction vectors
-        radial = reshape(fun(id, directions), gridshape);
+        radial = reshape(fun(repmat(id, size(directions, 1), 1), directions), gridshape);
         radial = abs(radial); % TODO: Is this sensible?
         
         % Evaluate "planar contours" from (3D) radial values

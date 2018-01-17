@@ -79,39 +79,30 @@ frequency = 2.45d9; % [Hz]
 %%
 % Access point's antenna gain functions
 [~, source.Pattern] = data.loadpattern(fullfile('+data', 'yuen1b.txt'), @elfun.todb);
-% elevation = 0.0;
-% source.Pattern = data.embeddedpattern( ...
-%     data.loadpattern(fullfile('+data', 'yuen1b.txt'), @elfun.todb), ...
-%     elevation);
-
-source.Gain = antennae.multipattern( ...
-    antennae.localfunction(source.Pattern, source.Frame, @specfun.cart2sphi, 1));
+% source.Gain = antennae.dispatch( ...
+%     antennae.orthofunction(source.Pattern, source.Frame, @specfun.cart2sphi, 1));
+source.Gain = antennae.dispatch( ...
+    source.Pattern, ...
+    1, ... % maps only entity to only pattern
+    antennae.orthocontext(source.Frame, @specfun.cart2sphi, 1));
 
 %%
 if options.Plotting
     
     azimuth = linspace(0, 2*pi, 1000);
-    x = cos(azimuth);
-    y = sin(azimuth);
-    z = zeros(size(x));
-    radius = source.Gain(ones(size(x)), [x(:), y(:), z(:)]);
-    radius = elfun.fromdb(radius);
-    figure(10), clf
-    polarplot(azimuth, radius)
-    
-    % [azimuth, elevation] = meshgrid(linspace(0, 2*pi, 100)', elevation);
-    % allangles = points.meshpoints(azimuth, elevation);
-    % radius = elfun.fromdb(source.Pattern(allangles));
-    % figure(2), clf('reset')
-    % polarplot(azimuth, radius, 'b.')
+    radius = source.Gain( ...
+        ones(size(azimuth)), ...
+        [cos(azimuth(:)), sin(azimuth(:)), zeros(size(azimuth(:)))]);
+    figure(2), clf('reset')
+    polarplot(azimuth, elfun.fromdb(radius))    
     
     figure(1), hold on
     ax = gca;
-    % antennae.spherical(ax, ...
-    %     source.Pattern, ...
-    %     source.Position, ...
-    %     source.Frame, ...
-    %     'EdgeAlpha', 0.1)
+    graphics.spherical(ax, ...
+        source.Gain, ...
+        source.Position, ...
+        source.Frame, ...
+        'EdgeAlpha', 0.1)
     graphics.axislabels(ax, 'x', 'y', 'z')
     colormap(ax, jet)
     colorbar(ax)

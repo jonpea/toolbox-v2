@@ -6,7 +6,7 @@ function varargout = spherical(varargin)
 
 % Preconditions
 assert(isgraphics(ax))
-assert(datatypes.isfunction(fun))
+assert(datatypes.isfunction(fun) || isobject(fun))
 assert(ismatrix(origins))
 assert(ndims(frames) == 3)
 assert(ismember(size(origins, 2), 2 : 3))
@@ -44,7 +44,7 @@ theta = angles.Inclination(:)'; % 1-by-n
         r = angles.Radius(id, phi, theta); % m-by-n
         % ... expressed in global cartesian coordinates
         [x, y, z, c] = surfdata( ...
-            @(direction) fun(id, direction), ...
+            @(direction) fun(repmat(id, size(direction, 1), 1), direction), ...
             origins(id, :), ...
             frames(id, :, :), ...
             phi, theta, r);
