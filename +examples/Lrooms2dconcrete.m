@@ -41,15 +41,8 @@ fontsize = 8;
 %% Two dimensional model
 mm2m = @(x) x/1000;
 studheight = mm2m(3300);
-roomwidth = mm2m(3200);
-numyticks = numrooms + 1;
-% xtick = linspace(0, roomwidth, 2);
-% ytick = linspace(0, roomwidth*numrooms, numyticks);
-% xtick = linspace(0,roomwidth*5,6);
-% ytick = linspace(0,roomwidth*5,6);
 model2d.Faces= [1,6;7,12;1,7;2,8;3,9;4,10;5,11;6,12;1,2;7,8;13,14;15,16;17,18;19,20;1,19;2,20;21,22;21,23];
 model2d.Vertices= [0,0;0,3.2;0,6.4;0,9.6;0,12.8;0,16;3.2,0;3.2,3.2;3.2,6.4;3.2,9.6;3.2,12.8;3.2,16;6.4,0;6.4,3.2;9.6,0;9.6,3.2;12.8,0;12.8,3.2;16,0;16,3.2;4.8,4.8;4.8,11.2;11.2,4.800];
-
 % Additional "orphan" index for floor and ceiling
 model2d.Vertices(end + 1, :) = [16, 16];
 
@@ -63,30 +56,35 @@ patch( ...
     'EdgeColor', 'black');
 points.text(facevertex.reduce(@mean, model2d), 'Color', 'blue')
 points.text(model2d.Vertices, 'Color', 'red')
-% xticks(faces)
-% yticks(vertices)
 view(2)
 axis tight, axis equal
 
 
 %% Three dimensional model
 wallmodel3d = facevertex.extrude(model2d, [0, studheight]);
-wallmodel3d.Faces(end + 1, :) = facevertex.cap(@min, 3, wallmodel3d);
-wallmodel3d.Faces(end + 1, :) = facevertex.cap(@max, 3, wallmodel3d);
+% wallmodel3d.Faces(end + 1, :) = facevertex.cap(@min, 3, wallmodel3d);
+% wallmodel3d.Faces(end + 1, :) = facevertex.cap(@max, 3, wallmodel3d);
 scene = scenes.scene(wallmodel3d.Faces, wallmodel3d.Vertices);
+
+facetofunctionmap = [ones(size(scene.Frame, 1) - 2, 1); 2; 2];
+
 %%
 figure(1), clf, hold on
 patch( ...
-    'Faces', wallmodel3d.Faces(1 : end - 2, :), ...
+    'Faces', wallmodel3d.Faces(facetofunctionmap == 1, :), ...
     'Vertices', wallmodel3d.Vertices, ...
     'FaceAlpha', 0.05, ...
     'EdgeAlpha', 0.3, ...
+    'LineWidth', 2, ...
+    'EdgeColor', 'blue', ...
     'FaceColor', 'blue');
 patch( ...
-    'Faces', wallmodel3d.Faces(end - 1 : end, :), ...
+    'Faces', wallmodel3d.Faces(facetofunctionmap == 2, :), ...
     'Vertices', wallmodel3d.Vertices, ...
     'FaceAlpha', 0.05, ...
     'EdgeAlpha', 0.3, ...
+    'LineWidth', 5, ...
+    'EdgeColor', 'red', ...
     'FaceColor', 'red');
 points.text(wallmodel3d.Vertices, 'FontSize', fontsize, 'Color', 'red')
 points.text(facevertex.reduce(@mean, wallmodel3d), 'FontSize', fontsize, 'Color', 'blue')
@@ -103,22 +101,23 @@ view(60, 5)
 [xmax, ymax, zmax] = elmat.cols(max(wallmodel3d.Vertices, [], 1));
 x = linspace(xmin + delta, xmax - delta, numsamplesx);
 y = linspace(ymin + delta, ymax - delta, numsamplesy);
-z = affine(zmin, zmax, zquantile);
+z = specfun.affine(zmin, zmax, zquantile);
 % [gridx, gridy, gridz] = meshgrid(x, y, z);
 % sink.Origin = [gridx(:), gridy(:), gridz(:)];
-[sink.Origin, gridx, gridy] = gridpoints(x, y, z);
+[gridx, gridy, gridz] = meshgrid(x, y, z);
+sink.Origin = [gridx(:), gridy(:), gridz(:)];
 sink.Gain = 0.0;
-sink = tabularnormalize(sink);
-assert(istabular(sink))
 
 %% Sources
 inplanepoint = @(s, t) [
-    affine(xmin, xmax, s), ...
-    affine(ymin, ymax, t), ... % NB: With respect to *first* room
-    affine(zmin, zmax, zquantile)
+    specfun.affine(xmin, xmax, s), ...
+    specfun.affine(ymin, ymax, t), ... % NB: With respect to *first* room
+    specfun.affine(zmin, zmax, zquantile)
     ];
 source.Origin = inplanepoint(xquantile, yquantile); % [m]
-source.Frame = frame([1, 1, 0], [1, -1, 0]);
+v1 = [1, 1, 0];
+v2 = [1, -1, 0];
+source.Frame = cat(3, matfun.unit(v1), matfun.unit(v2), matfun.unit(cross(v1, v2)));
 if multisource
     source.Origin(2, :) = inplanepoint(1 - xquantile, 1 - yquantile);
     source.Origin(3, :) = inplanepoint(1 - xquantile, 0.8*yquantile);
@@ -127,37 +126,30 @@ if multisource
 end
 source.Gain = 1.0d0; % [dBW]
 source.Frequency = 1d9; % [Hz]
-source = tabularnormalize(source);
-assert(istabular(source))
+
 %%
-plotpoints(source.Origin, '.', 'Color', 'red', 'MarkerSize', 20)
-plotvectors(source.Origin, source.Frame(:, :, 1), 0, 'Color', 'green') % out-of-plane
-plotvectors(source.Origin, source.Frame(:, :, 2), 0, 'Color', 'blue')
-plotvectors(source.Origin, source.Frame(:, :, 3), 0, 'Color', 'red') % "zenith" (in-plane)
+points.plot(source.Origin, '.', 'Color', 'red', 'MarkerSize', 20)
+points.quiver(source.Origin, source.Frame(:, :, 1), 0, 'Color', 'green') % out-of-plane
+points.quiver(source.Origin, source.Frame(:, :, 2), 0, 'Color', 'blue')
+points.quiver(source.Origin, source.Frame(:, :, 3), 0, 'Color', 'red') % "zenith" (in-plane)
 if size(sink.Origin, 1) < 100
-    plotpoints(sink.Origin, '.', 'Color', rgbgray, 'MarkerSize', 10)
+    points.plot(sink.Origin, '.', 'Color', rgbgray, 'MarkerSize', 10)
 end
 rotate3d on
 
 %% Source antennae gain functions
 makepattern = @(name, varargin) ...
-    loadpattern(fullfile('data', name), varargin{:});
+    data.loadpattern(fullfile('+data', name), varargin{:});
 [pattern.source, interpolant.source] = ...
-    makepattern('isotropic_one.txt', @todb);
-%makepattern('farfield_patch_centre_cavitywall_timber_extract.txt', @todb);
+    makepattern('isotropic_one.txt', @elfun.todb);
 [pattern.reflection, interpolant.reflection] = ...
-    makepattern('Wall1_TM_refl_1GHz.txt', @todb, @wrapquadrant);
-%     makepattern('isotropic_tiny.txt', @todb, @wrapquadrant);
-    
+    makepattern('Wall1_TM_refl_1GHz.txt', @elfun.todb, @specfun.wrapquadrant);
 [pattern.transmission, interpolant.transmission] = ...
-    makepattern('Wall1_TM_trans_1GHz.txt', @todb, @wrapquadrant);
-%     makepattern('isotropic_one.txt', @todb, @wrapquadrant);
-
+    makepattern('Wall1_TM_trans_1GHz.txt', @elfun.todb, @specfun.wrapquadrant);
 [pattern.concretereflection, interpolant.concretereflection] = ...
-    makepattern('concrete_TE_refl_1GHz.txt', @todb, @wrapquadrant);
-
+    makepattern('concrete_TE_refl_1GHz.txt', @elfun.todb, @specfun.wrapquadrant);
 [pattern.concretetransmission, interpolant.concretetransmission] = ...
-    makepattern('concrete_TE_trans_1GHz.txt', @todb, @wrapquadrant);
+    makepattern('concrete_TE_trans_1GHz.txt', @elfun.todb, @specfun.wrapquadrant);
 
 %%
 figure(2), clf
@@ -166,92 +158,150 @@ cosphi = cos(phi);
 cophi = pi/2 - phi;
 numphi = numel(phi);
 sourceframe = source.Frame(1, :, :);
-for i = 1 : numphi
-    
-    % A complete circle in the x-y plane
-    theta = linspace(0, 2*pi, 5000);
-    %theta = paren(cartesiantoangular(sourceframe(:, :, 3)), 2);
-    
-    dx = cos(theta);
-    dy = sin(theta);
-    dz = repmat(tan(phi(i)), size(dx));
-    dglobal = [dx(:), dy(:), dz(:)];
-    [globalangles, globalradii] = cartesiantoangular(dglobal);
-    assert(norm(globalangles(:, 1) - cophi(i)) < tol)
-    assert(std(globalradii) < tol)
-    
-    dlocal = applytranspose(sourceframe, dglobal);
-    [localangles, ~] = cartesiantoangular(dlocal);
-    
-    sourceradii = fromdb(pattern.source(localangles));
-    reflectionradii = fromdb(pattern.reflection(localangles));
-    transmissionradii = fromdb(pattern.transmission(localangles));
-    
-    
-    concretereflectionradii = fromdb(pattern.concretereflection(localangles));
-    concretetransmissionradii = fromdb(pattern.concretetransmission(localangles));
-    
-    makeplot = @(row, radii, name) {
-        subplot(5, numphi, (row - 1)*numphi + i);
-        void(@() hold('on'));
-        plotpoints(angulartocartesian(globalangles, radii));
-        plotpoints(angulartocartesian(globalangles, 1.0)); % slice through unit sphere at current elevation
-        plotvectors([0 0 0], cosphi(i)*sourceframe(:, :, 3), 0, 'r'); % "zenith" = lobe direction
-        plotvectors([0 0 0], cosphi(i)*sourceframe(:, :, 1), 0, 'b'); % complement in xy-plane
-        title(sprintf('%s/%.2g^\\circ', name, rad2deg(phi(i))));
-        view(2);
-        void(@() grid('on'));
-        void(@() axis('equal'));
-        void(@() drawnow);
-        };
-    makeplot(1, sourceradii, 's');
-    makeplot(2, reflectionradii, 'r');
-    makeplot(3, transmissionradii, 't');
-    makeplot(4, concretereflectionradii, 'crr');
-    makeplot(5, concretetransmissionradii, 'crt');
-    
-    
-    
-end
+
+% ----->>
+subplot(2, 3, 1)
+graphics.spherical( ...
+    power.framefunction(pattern.source, source.Frame), ...
+    source.Origin, ...
+    source.Frame, ...
+    'Azimuth', linspace(0, 2*pi, 200), ...
+    'Inclination', linspace(0, pi, 100), ...
+    'EdgeAlpha', 0.1, ...
+    'FaceAlpha', 1.0)
+axis equal
+
+subplot(2, 3, 2)
+graphics.spherical( ...
+    power.framefunction(pattern.reflection, source.Frame), ...
+    source.Origin, ...
+    source.Frame, ...
+    'Azimuth', linspace(0, 2*pi, 200), ...
+    'Inclination', linspace(0, pi, 100), ...
+    'EdgeAlpha', 0.1, ...
+    'FaceAlpha', 1.0)
+axis equal
+
+subplot(2, 3, 3)
+graphics.spherical( ...
+    power.framefunction(pattern.transmission, source.Frame), ...
+    source.Origin, ...
+    source.Frame, ...
+    'Azimuth', linspace(0, 2*pi, 200), ...
+    'Inclination', linspace(0, pi, 100), ...
+    'EdgeAlpha', 0.1, ...
+    'FaceAlpha', 1.0)
+axis equal
+
+subplot(2, 3, 4)
+graphics.spherical( ...
+    power.framefunction(pattern.concretetransmission, source.Frame), ...
+    source.Origin, ...
+    source.Frame, ...
+    'Azimuth', linspace(0, 2*pi, 200), ...
+    'Inclination', linspace(0, pi, 100), ...
+    'EdgeAlpha', 0.1, ...
+    'FaceAlpha', 1.0)
+axis equal
+
+subplot(2, 3, 5)
+graphics.spherical( ...
+    power.framefunction(pattern.concretereflection, source.Frame), ...
+    source.Origin, ...
+    source.Frame, ...
+    'Azimuth', linspace(0, 2*pi, 200), ...
+    'Inclination', linspace(0, pi, 100), ...
+    'EdgeAlpha', 0.1, ...
+    'FaceAlpha', 1.0)
+axis equal
+
+% % <<-----
+% for i = 1 : numphi
+%     
+%     % A complete circle in the x-y plane
+%     theta = linspace(0, 2*pi, 5000);
+%     %theta = paren(cartesiantoangular(sourceframe(:, :, 3)), 2);
+%     
+%     dx = cos(theta);
+%     dy = sin(theta);
+%     dz = repmat(tan(phi(i)), size(dx));
+%     dglobal = [dx(:), dy(:), dz(:)];
+%     [globalangles, globalradii] = cartesiantoangular(dglobal);
+%     assert(norm(globalangles(:, 1) - cophi(i)) < tol)
+%     assert(std(globalradii) < tol)
+%     
+%     dlocal = applytranspose(sourceframe, dglobal);
+%     [localangles, ~] = cartesiantoangular(dlocal);
+%     
+%     sourceradii = fromdb(pattern.source(localangles));
+%     reflectionradii = fromdb(pattern.reflection(localangles));
+%     transmissionradii = fromdb(pattern.transmission(localangles));
+%     
+%     
+%     concretereflectionradii = fromdb(pattern.concretereflection(localangles));
+%     concretetransmissionradii = fromdb(pattern.concretetransmission(localangles));
+%     
+%     makeplot = @(row, radii, name) {
+%         subplot(5, numphi, (row - 1)*numphi + i);
+%         void(@() hold('on'));
+%         points.plot(angulartocartesian(globalangles, radii));
+%         points.plot(angulartocartesian(globalangles, 1.0)); % slice through unit sphere at current elevation
+%         points.quiver([0 0 0], cosphi(i)*sourceframe(:, :, 3), 0, 'r'); % "zenith" = lobe direction
+%         points.quiver([0 0 0], cosphi(i)*sourceframe(:, :, 1), 0, 'b'); % complement in xy-plane
+%         title(sprintf('%s/%.2g^\\circ', name, rad2deg(phi(i))));
+%         view(2);
+%         void(@() grid('on'));
+%         void(@() axis('equal'));
+%         void(@() drawnow);
+%         };
+%     makeplot(1, sourceradii, 's');
+%     makeplot(2, reflectionradii, 'r');
+%     makeplot(3, transmissionradii, 't');
+%     makeplot(4, concretereflectionradii, 'crr');
+%     makeplot(5, concretetransmissionradii, 'crt');
+%     
+% end
 
 % %% Gain patterns
 % gainfunctions = struct( ...
 %     'Source', framefunction(pattern.source, source.Frame), ...
 %     'Reflection', framefunction(pattern.reflection, scene.Frame), ...
 %     'Transmission', framefunction(pattern.transmission, scene.Frame), ...
-%     'Sink', isofunction(sink.Gain), ...
-%     'Free', friisfunction(source.Frequency));
+%     'Sink', power.isofunction(sink.Gain), ...
+%     'Free', power.friisfunction(source.Frequency));
 
 %% Trace reflection paths
 starttime = tic;
-facetofunctionmap = [ones(size(scene.Frame, 1) - 2, 1); 2; 2];
-reflectiongains = framefunction( ...
+reflectiongains = power.framefunction( ...
     {pattern.reflection, pattern.concretereflection}, ...
     scene.Frame, ...
     facetofunctionmap);
-transmissiongains = framefunction( ...
+transmissiongains = power.framefunction( ...
     {pattern.transmission, pattern.concretetransmission}, ...
     scene.Frame, ...
     facetofunctionmap);
-dlinks = analyze( ...
-    source.Origin, sink.Origin, scene, ...
+dlinks = power.analyze( ...
+    @scene.reflections, ...
+    @scene.intersections, ...
+    scene.NumFacets, ...
+    source.Origin, sink.Origin, ...
     'ReflectionArities', arities, ...
-    'FreeGain', friisfunction(source.Frequency), ...
-    'SourceGain', framefunction(pattern.source, source.Frame), ...
+    'FreeGain', power.friisfunction(source.Frequency), ...
+    'SourceGain', power.framefunction(pattern.source, source.Frame), ...
     'ReflectionGain', reflectiongains, ...
     'TransmissionGain', transmissiongains, ...
-    'SinkGain', isofunction(sink.Gain), ...
+    'SinkGain', power.isofunction(sink.Gain), ...
     'Reporting', reporting); 
 powers = dlinks.PowerComponentsWatts;
 % %[powers, ~, tracestats, trace] = tracescenenew( ...
 % [powers, ~, trace] = tracescenenew( ...
 %     source.Origin, sink.Origin, scene, ...
 %     'PathArities', arities, ...
-%     'FreeGain', friisfunction(source.Frequency), ...
-%     'SourceGain', framefunction(pattern.source, source.Frame), ...
+%     'FreeGain', power.friisfunction(source.Frequency), ...
+%     'SourceGain', power.framefunction(pattern.source, source.Frame), ...
 %     'ReflectionGain', reflectiongains, ...
 %     'TransmissionGain', transmissiongains, ...
-%     'SinkGain', isofunction(sink.Gain), ...
+%     'SinkGain', power.isofunction(sink.Gain), ...
 %     'Reporting', reporting); 
 tracetime = toc(starttime);
 fprintf('============== tracescene: %g sec ==============\n', tracetime)
@@ -259,11 +309,11 @@ fprintf('============== tracescene: %g sec ==============\n', tracetime)
 % powers2 = tracescenenew( ...
 %     source.Origin, sink.Origin, scene, ...
 %     'ReflectionArities', arities, ...
-%     'FreeGain', friisfunction(source.Frequency), ...
-%     'SourceGain', framefunction(pattern.source, source.Frame), ...
+%     'FreeGain', power.friisfunction(source.Frequency), ...
+%     'SourceGain', power.framefunction(pattern.source, source.Frame), ...
 %     'ReflectionGain', reflectiongains, ...
 %     'TransmissionGain', transmissiongains, ...
-%     'SinkGain', isofunction(sink.Gain), ...
+%     'SinkGain', power.isofunction(sink.Gain), ...
 %     'Reporting', reporting);
 % 
 % compare(powers, powers2)
@@ -335,7 +385,7 @@ end
 %         trace.Data.ObjectIndex(sinkindices), ...
 %         interactiongains.Power(sinkindices));
 %     power = reshape(power, size(gridx));
-%     powerdb = todb(power);
+%     powerdb = elfun.todb(power);
 %     powerdbscale = max(powerdb(:)) - min(powerdb(:));
 %     
 %     % if ~inputyesno('Plot gain surface?') %#ok<UNRCH>
@@ -344,7 +394,7 @@ end
 %     
 %     %%
 %     figure(1)
-%     %contour(gridx, gridy, todb(power), 25, 'Fill', 'off', 'ShowText', 'off')
+%     %contour(gridx, gridy, elfun.todb(power), 25, 'Fill', 'off', 'ShowText', 'off')
 %     surf(gridx, gridy, powerdb, 'EdgeAlpha', 0.0, 'FaceAlpha', 1.0)
 %     set(gca, 'DataAspectRatio', [1.0, 1.0, powerdbscale]) % ** for use with meshc **
 %     %title('Gain at Receivers (dBW)')
@@ -360,14 +410,14 @@ fprintf('============ total elapsed time: %g sec ============\n', toc(t0))
 
 figure(3), clf, colormap(jet)
 numarities = numel(arities);
-powersdb = todb(powers);
+powersdb = elfun.todb(powers);
 for i = 1 : numarities + 1
     subplot(1, 1 + numarities, i), hold on
     if i <= numarities
         temp = powersdb(:, 1, i);
         titlestring = sprintf('arity %d', arities(i));
     else
-        temp = todb(sum(powers, 3));
+        temp = elfun.todb(sum(powers, 3));
         titlestring = 'total';
     end
     temp = reshape(temp, size(gridx)); % 1st transmitter only
@@ -398,7 +448,7 @@ for i = 1 : numarities + 1
     save totalpower.mat totalpower
 end
 
-
+save(mfilename)
 
 return
 

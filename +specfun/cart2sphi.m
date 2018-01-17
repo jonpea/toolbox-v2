@@ -16,5 +16,5 @@ function [azimuth, inclination, r] = cart2sphi(x, y, z)
 
 narginchk(3, 3)
 
-[azimuth, elevation, r] = cart2sph(x, y, z);
-inclination = pi/2 - elevation;
+[azimuth, elevation, r] = specfun.cart2sph(x, y, z);
+inclination = specfun.elinc(elevation);

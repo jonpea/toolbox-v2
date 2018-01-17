@@ -20,4 +20,4 @@ function [azimuth, alpha, r] = sphi(azimuth, beta, r)
 
 %   See also CART2SPHI, SPHI2CART.
 
-alpha = pi/2 - beta;
+alpha = elinc(beta);

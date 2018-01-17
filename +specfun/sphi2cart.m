@@ -1,5 +1,5 @@
-function [x, y, z] = sphi2cart(azimuth, inclination, r)
-%SPH2CART Transform spherical (inclination form) to Cartesian coordinates.
+function [x, y, z] = sphi2cart(azimuth, inclination, radius)
+%SPHI2CART Transform spherical (inclination form) to Cartesian coordinates.
 %   [X,Y,Z] = SPHPT2CART(PHI,THETA,R) transforms corresponding elements of
 %   data stored in spherical coordinates (azimuth PHI, inclination THETA,
 %   radius R) to Cartesian coordinates X,Y,Z.  
@@ -17,8 +17,8 @@ function [x, y, z] = sphi2cart(azimuth, inclination, r)
 narginchk(2, 3)
 
 if nargin < 3
-    r = ones('like', azimuth);
+    radius = ones('like', azimuth);
 end
 
-elevation = pi/2 - inclination;
-[x, y, z] = sph2cart(azimuth, elevation, r);
+elevation = specfun.elinc(inclination);
+[x, y, z] = sph2cart(azimuth, elevation, radius);

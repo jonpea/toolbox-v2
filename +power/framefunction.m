@@ -43,8 +43,10 @@ assert(ndebug || all(ismember(unique(facetofunction), 1 : numel(functions))))
                 assert(norm(cart2pol(x, y) - angles) < tol)
             case 3
                 [x, y, z] = elmat.cols(localdirections);
-                [azimuth, inclination] = specfun.cart2sphi(x, y, z);
-                assert(norm([azimuth, inclination] - angles) < tol)
+                % NB: This tests no longer applies as 
+                % angles are now wrapped to their principle values
+                %[azimuth, inclination] = specfun.cart2sphi(x, y, z);
+                %assert(norm([azimuth, inclination] - angles) < tol)
         end
         
         gain = funfun.indexedunary( ...
