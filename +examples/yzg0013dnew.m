@@ -68,22 +68,23 @@ end
 %% Access point
 apangle = deg2rad(200); % [rad]
 aporigin = [13.0, 6.0, z0]; % [m]
-radius = 1.0; % [m]
-direction = funfun.pipe(@horzcat, 2, @pol2cart, apangle, radius);
-codirection = funfun.pipe(@horzcat, 2, @pol2cart, apangle + pi/2, radius);
-[direction(3), codirection(3)] = deal(0.0);
 source.Position = aporigin;
-source.Frame = cat(3, direction, codirection, [0, 0, 1]);
+source.Frame = cat(3, ...
+    [funfun.pipe(@horzcat, 2, @specfun.circ2cart, apangle), 0.0], ...
+    [funfun.pipe(@horzcat, 2, @specfun.circ2cart, apangle + pi/2), 0.0], ...
+    [0, 0, 1]);
 frequency = 2.45d9; % [Hz]
 
 %%
 % Access point's antenna gain functions
-[~, source.Pattern] = data.loadpattern(fullfile('+data', 'yuen1b.txt'), @elfun.todb);
-% source.Gain = antennae.dispatch( ...
-%     antennae.orthofunction(source.Pattern, source.Frame, @specfun.cart2sphi, 1));
+antennafilename = fullfile('+data', 'yuen1b.txt');
+dbtype(antennafilename, '1:5')
+%%
+columns = data.loadcolumns(antennafilename, '%f %f');
+source.Pattern = griddedInterpolant( ...
+    deg2rad(columns.phi), elfun.todb(columns.gain));
 source.Gain = antennae.dispatch( ...
-    source.Pattern, ...
-    1, ... % maps only entity to only pattern
+    source.Pattern, 1, ...
     antennae.orthocontext(source.Frame, @specfun.cart2sphi, 1));
 
 %%
@@ -94,12 +95,14 @@ if options.Plotting
         ones(size(azimuth)), ...
         [cos(azimuth(:)), sin(azimuth(:)), zeros(size(azimuth(:)))]);
     figure(2), clf('reset')
-    polarplot(azimuth, elfun.fromdb(radius))    
+    polarplot(azimuth, elfun.fromdb(radius), 'LineWidth', 2.0)
+    title('Antenna gain in global coordinates')
     
-    figure(1), hold on
+    figure(1)
     ax = gca;
+    hold(ax, 'on')
     graphics.spherical(ax, ...
-        source.Gain, ...
+        @(varargin) elfun.fromdb(source.Gain(varargin{:})), ...
         source.Position, ...
         source.Frame, ...
         'EdgeAlpha', 0.1)

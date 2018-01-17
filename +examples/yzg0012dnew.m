@@ -64,22 +64,22 @@ end
 %% Access point
 apangle = deg2rad(200); % [rad]
 aporigin = [13.0, 6.0]; % [m]
-radius = 1.0; % [m]
-direction = funfun.pipe(@horzcat, 2, @pol2cart, apangle, radius);
-codirection = funfun.pipe(@horzcat, 2, @pol2cart, apangle + pi/2, radius);
 source.Position = aporigin;
-source.Frame = cat(3, direction, codirection);
+source.Frame = cat(3, ...
+    funfun.pipe(@horzcat, 2, @specfun.circ2cart, apangle), ...
+    funfun.pipe(@horzcat, 2, @specfun.circ2cart, apangle + pi/2));
 frequency = 2.45d9; % [Hz]
 
 %%
 % Access point's antenna gain functions
-[~, source.Pattern] = data.loadpattern(fullfile('+data', 'yuen1b.txt'), @elfun.todb);
-% source.Gain = antennae.dispatch( ...
-%     antennae.orthofunction(source.Pattern, source.Frame, @specfun.cart2circ, 1), ...
-%     1);
+antennafilename = fullfile('+data', 'yuen1b.txt');
+dbtype(antennafilename, '1:5')
+%%
+columns = data.loadcolumns(antennafilename, '%f %f');
+source.Pattern = griddedInterpolant( ...
+    deg2rad(columns.phi), elfun.todb(columns.gain));
 source.Gain = antennae.dispatch( ...
-    source.Pattern, ...
-    1, ... % maps only entity to only pattern
+    source.Pattern, 1, ...
     antennae.orthocontext(source.Frame, @specfun.cart2circ));
 
 %%
@@ -90,17 +90,25 @@ if options.Plotting
         ones(size(azimuth)), ...
         [cos(azimuth(:)) sin(azimuth(:))]);
     figure(2), clf('reset')
-    polarplot(azimuth, elfun.fromdb(radius))
+    polarplot(azimuth, elfun.fromdb(radius), 'LineWidth', 2.0)
+    title('Antenna gain in global coordinates')
     
-    figure(1), hold on
-    graphics.polar( ...
+    figure(1)
+    ax = gca;
+    hold(ax, 'on')
+    graphics.polar(ax, ...
         @(varargin) elfun.fromdb(source.Gain(varargin{:})), ...
         source.Position, ...
         source.Frame, ...
         'Azimuth', azimuth, ...
-        'Color', 'red')    
-    axis equal
-    grid on
+        'Color', 'red')
+    graphics.axislabels(ax, 'x', 'y')
+    colormap(ax, jet)
+    colorbar(ax)
+    axis(ax, 'equal')
+    grid(ax, 'on')
+    rotate3d(ax, 'on')
+    view(ax, 3)
     
 end
 
