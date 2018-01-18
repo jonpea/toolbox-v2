@@ -1,0 +1,328 @@
+%% Simplest 2.5D test case with "n" rooms
+function Lrooms2dconcreteNew(numrooms, varargin)
+
+if nargin < 1 || isempty(numrooms)
+    numrooms = 4;
+end
+assert(isscalar(numrooms) && isnumeric(numrooms))
+
+%%
+parser = inputParser;
+parser.addParameter('Arities', 0 : 2, @isvector)
+parser.addParameter('Reporting', false, @islogical)
+parser.addParameter('NumSamplesX', 200, @isscalar)
+parser.addParameter('NumSamplesY', 400, @isscalar)
+parser.addParameter('QuantileX', 0.1, @isscalar)
+parser.addParameter('QuantileY', 0.9, @isscalar)
+parser.addParameter('QuantileZ', 0.0, @isscalar)
+parser.addParameter('Delta', 1e-3, @isscalar)
+parser.addParameter('GainThreshold', -20, @isscalar)
+parser.parse(varargin{:})
+options = parser.Results;
+
+%% Configuration
+arities = options.Arities;
+reporting = options.Reporting;
+xquantile = options.QuantileX;
+yquantile = options.QuantileY;
+zquantile = options.QuantileZ;
+numsamplesx = options.NumSamplesX;
+numsamplesy = options.NumSamplesY;
+delta = options.Delta; % spacing of sink points from exterior wall
+gainthreshold = options.GainThreshold; % cut-off around sources
+
+%%
+t0 = tic;
+tol = 1e-12;
+fontsize = 8;
+
+%% Two dimensional model
+mm2m = @(x) x/1000;
+studheight = mm2m(3300);
+fv2D.Faces= [1,6;7,12;1,7;2,8;3,9;4,10;5,11;6,12;1,2;7,8;13,14;15,16;17,18;19,20;1,19;2,20;21,22;21,23];
+fv2D.Vertices= [0,0;0,3.2;0,6.4;0,9.6;0,12.8;0,16;3.2,0;3.2,3.2;3.2,6.4;3.2,9.6;3.2,12.8;3.2,16;6.4,0;6.4,3.2;9.6,0;9.6,3.2;12.8,0;12.8,3.2;16,0;16,3.2;4.8,4.8;4.8,11.2;11.2,4.800];
+fv2D.Vertices(end + 1, :) = [16.0, 16.0]; % corner vertex required by "cap()"
+gibIndices = 1 : 16;
+concreteIndices = 17 : 18;
+
+%%
+figure(1), clf
+patch( ...
+    'Faces', fv2D.Faces, ...
+    'Vertices', fv2D.Vertices, ...
+    'FaceColor', 'blue', ...
+    'FaceAlpha', 0.2, ...
+    'EdgeColor', 'black');
+points.text(facevertex.reduce(@mean, fv2D), 'Color', 'red')
+points.text(fv2D.Vertices, 'Color', 'blue')
+view(2)
+axis tight, axis equal
+
+%% Three dimensional model
+extruded = facevertex.extrude(fv2D, [0.0, studheight]);
+fv3D = capfacevertex(extruded, true, true);
+
+extruded.Faces(end + 1, :) = facevertex.cap(@min, 3, extruded);
+extruded.Faces(end + 1, :) = facevertex.cap(@max, 3, extruded);
+fv3D2 = extruded;
+assert(isequal(fv3D.Vertices, fv3D2.Vertices))
+assert(isequal(fv3D.Faces(1 : 16, :), fv3D2.Faces(1 : 16, :)))
+
+scene = scenes.scene(fv3D.Faces, fv3D.Vertices);
+%%
+figure(1), clf, hold on
+patch( ...
+    'Faces', fv3D.Faces(1 : end - 2, :), ...
+    'Vertices', fv3D.Vertices, ...
+    'FaceAlpha', 0.05, ...
+    'EdgeAlpha', 0.3, ...
+    'FaceColor', 'blue');
+patch( ...
+    'Faces', fv3D.Faces(end - 1 : end, :), ...
+    'Vertices', fv3D.Vertices, ...
+    'FaceAlpha', 0.05, ...
+    'EdgeAlpha', 0.3, ...
+    'FaceColor', 'red');
+points.text(fv3D.Vertices, 'FontSize', fontsize, 'Color', 'red')
+points.text(facevertex.reduce(@mean, fv3D), 'FontSize', fontsize, 'Color', 'blue')
+graphics.axislabels('x', 'y', 'z')
+axis equal
+rotate3d on
+points.quiver(scene.Origin, scene.Frame(:, :, 1), 0.2, 'Color', 'red')
+points.quiver(scene.Origin, scene.Frame(:, :, 2), 0.2, 'Color', 'green')
+points.quiver(scene.Origin, scene.Frame(:, :, 3), 0.2, 'Color', 'blue')
+view(30, 65)
+
+%% Sinks
+[xmin, ymin, zmin] = elmat.cols(min(fv3D.Vertices, [], 1));
+[xmax, ymax, zmax] = elmat.cols(max(fv3D.Vertices, [], 1));
+x = linspace(xmin + delta, xmax - delta, numsamplesx);
+y = linspace(ymin + delta, ymax - delta, numsamplesy);
+z = specfun.affine(zmin, zmax, zquantile);
+[sink.Origin, gridx, gridy] = points.meshpoints({x, y, z});
+
+%% Sources
+inplanepoint = @(s, t) [
+    specfun.affine(xmin, xmax, s), ...
+    specfun.affine(ymin, ymax, t), ... % NB: With respect to *first* room
+    specfun.affine(zmin, zmax, zquantile)
+    ];
+source.Origin = inplanepoint(xquantile, yquantile); % [m]
+source.Gain = 1.0d0; % [dBW]
+source.Frequency = 1d9; % [Hz]
+
+%%
+points.plot(source.Origin, '.', 'Color', 'red', 'MarkerSize', 20)
+rotate3d on
+
+%% Source antennae gain functions
+makepattern = @(name) loadpattern(fullfile('+data', name), @elfun.todb);
+
+%% Trace reflection paths
+starttime = tic;
+
+% Incorrect! :-(
+facetofunctionmap = [ones(size(scene.Frame, 1) - 2, 1); 2; 2];
+% Correct replacement :-)
+%facetofunctionmap = [ones(size(scene.Frame, 1) - 4, 1); 2; 2; 2; 2];
+
+reflectiongains = antennae.dispatch({
+    makepattern('Wall1_TM_refl_1GHz.txt') ... % gib/reflection
+    makepattern('concrete_TE_refl_1GHz.txt') ... % concrete/reflection
+    }, ...
+    facetofunctionmap, ...
+    antennae.orthocontext(scene.Frame, @specfun.cart2uqsphi));
+
+transmissiongains = antennae.dispatch({
+    makepattern('Wall1_TM_trans_1GHz.txt') ... % gib/transmission
+    makepattern('concrete_TE_trans_1GHz.txt') ... % concrete/transmission
+    }, ...
+    facetofunctionmap, ...
+    antennae.orthocontext(scene.Frame, @specfun.cart2uqsphi));
+
+dlinks = power.analyze( ...
+    @scene.reflections, ...
+    @scene.intersections, ...
+    scene.NumFacets, ...
+    source.Origin, ...
+    sink.Origin, ...
+    'ReflectionArities', arities, ...
+    'FreeGain', power.friisfunction(source.Frequency), ...
+    'SourceGain', power.isofunction(0.0), ... % [dB]
+    'ReflectionGain', reflectiongains, ...
+    'TransmissionGain', transmissiongains, ...
+    'SinkGain', power.isofunction(0.0), ... % [dB]
+    'Reporting', reporting);
+
+powers = dlinks.PowerComponentsWatts;
+
+tracetime = toc(starttime);
+
+fprintf('============== tracescene: %g sec ==============\n', tracetime)
+
+%% Compute gains and display table of interactions
+if reporting
+    starttime = tic;
+    interactiongains = computegain(trace);
+    powertime = toc(starttime);
+    fprintf('============== computegain: %g sec ==============\n', powertime)
+    
+    assert(istabular(interactiongains))
+    
+    %% Distribution of interaction nodes
+    disp('From stored interaction table')
+    tabulardisp(interactionstatistics(trace.Data.InteractionType))
+    
+    %% Distribution of received power
+    [gainstats, powertable] = gainstatistics(interactiongains);
+    tabulardisp(gainstats)
+    
+    %%
+    issink = interactiongains.InteractionType == interaction.Sink;
+    assert(isequalfp( ...
+        elfun.fromdb(interactiongains.TotalGain(issink)), ...
+        interactiongains.Power(issink)))
+    assert(isequalfp(powers, powertable, tol))
+    disp('calculated powers do match :-)')
+    
+    %%
+    fprintf('\nTiming\n______\n')
+    fprintf(' computing nodes: %g sec\n', tracetime)
+    fprintf(' computing gains: %g sec\n', powertime)
+    fprintf('   all processes: %g sec\n', toc(t0))
+    
+end
+
+%% Power distributions
+aritypower = squeeze(sum(sum(powers, 1), 2)); % total power at each arity
+totalpower = sum(aritypower);
+relativepower = aritypower ./ totalpower;
+select = arities(:) + 1;
+disp(array2table( ...
+    [arities(:), aritypower(select), 100*relativepower(select)], ...
+    'VariableNames', {'Arity', 'Power', 'RelativePower'}))
+
+%% Aggregate power at each receiver
+if isvector(gridx) || isvector(gridy)
+    return
+end
+
+%%
+fprintf('============ total elapsed time: %g sec ============\n', toc(t0))
+
+figure(3), clf, colormap(jet)
+numarities = numel(arities);
+powersdb = elfun.todb(powers);
+for i = 1 : numarities + 1
+    subplot(1, 1 + numarities, i), hold on
+    if i <= numarities
+        temp = powersdb(:, 1, i);
+        titlestring = sprintf('arity %d', arities(i));
+    else
+        temp = elfun.todb(sum(powers, 3));
+        titlestring = 'total';
+    end
+    temp = reshape(temp, size(gridx)); % 1st transmitter only
+    surf(gridx, gridy, temp, ...
+        'EdgeAlpha', 0.0', 'FaceAlpha', 0.9)
+    caxis([min(temp(:)), min(max(temp(:)), gainthreshold)])
+    contour(gridx, gridy, temp, 10, 'Color', 'white', 'LineWidth', 1)
+    title(titlestring)
+    patch( ...
+        'Faces', fv3D.Faces(1 : end - 2, :), ...
+        'Vertices', fv3D.Vertices, ...
+        'FaceAlpha', 0.05, ...
+        'EdgeAlpha', 0.3, ...
+        'FaceColor', 'blue');
+    patch( ...
+        'Faces', fv3D.Faces(end - 1 : end, :), ...
+        'Vertices', fv3D.Vertices, ...
+        'FaceAlpha', 0.05, ...
+        'EdgeAlpha', 0.3, ...
+        'FaceColor', 'red');
+    view(2)
+    axis equal
+    axis tight
+    axis off
+    rotate3d on
+    colorbar('Location', 'southoutside')
+    totalpower = reshape(sum(powers, 3), size(gridx));
+    save totalpower.mat totalpower
+end
+
+save(mfilename)
+
+end
+
+% -------------------------------------------------------------------------
+function [model, vertices] = capfacevertex(model, floor, ceiling, axisaligned)
+
+narginchk(1, 4)
+if nargin < 2 || isempty(floor)
+    floor = true;
+end
+if nargin < 3 || isempty(ceiling)
+    ceiling = false;
+end
+if nargin < 4 || isempty(axisaligned)
+    axisaligned = false;
+end
+assert(ismember('Faces', fieldnames(model)))
+assert(ismember('Vertices', fieldnames(model)))
+assert(size(model.Vertices, 2) == 3)
+assert(isscalarlogical(floor))
+assert(isscalarlogical(ceiling))
+
+columns = num2cell(model.Vertices, 1);
+extremes = num2cell([
+    cellfun(@min, columns);
+    cellfun(@max, columns);
+    ], 1);
+[temp{1 : 3}] = ndgrid(extremes{:});
+temp = cellfun(@(x) x(:), temp, 'UniformOutput', false);
+temp = cell2mat(temp);
+lowervertices = temp([1 3 4 2], :); % anticlockwise from lower south-west corner
+uppervertices = temp([5 6 8 7], :); % clockwise from upper south-west corner
+[lowerfound, lowerfacevertices] = ismember(lowervertices, model.Vertices, 'rows');
+[upperfound, upperfacevertices] = ismember(uppervertices, model.Vertices, 'rows');
+assert(~axisaligned || (all(lowerfound) && all(upperfound)), ...
+    'Plan does not appear to be axis-aligned and rectangular.')
+if floor
+    newlowervertexids = size(model.Vertices, 1) + (1 : sum(~lowerfound));
+    lowerfacevertices(~lowerfound) = newlowervertexids;
+    model.Faces(end + 1, :) = lowerfacevertices(:)';
+    model.Vertices(newlowervertexids, :) = lowervertices(~lowerfound, :);
+end
+if ceiling
+    newuppervertexids = size(model.Vertices, 1) + (1 : sum(~upperfound));
+    upperfacevertices(~upperfound) = newuppervertexids;
+    model.Faces(end + 1, :) = upperfacevertices(:)';
+    model.Vertices(newuppervertexids, :) = uppervertices(~upperfound, :);
+end
+
+if nargout == 2
+    % Return individual fields
+    vertices = model.Vertices;
+    model = model.Faces;
+end
+
+end
+
+function result = isscalarlogical(x)
+result = isscalar(x) && islogical(x);
+end
+
+% -------------------------------------------------------------------------
+function interpolant = loadpattern(filename, transform)
+assert(ischar(filename))
+numcolumns = numel(data.scanheader(filename));
+assert(ismember(numcolumns, 2 : 3))
+columns = data.loadcolumns(filename, '%f %f %f');
+[phi, theta, gain] = points.fullgrid.ungrid( ...
+    columns.phi, columns.theta, columns.gain);
+interpolant = griddedInterpolant({
+    deg2rad(phi), ... % azimuthal angle from x-axis
+    deg2rad(theta) ... % inclination from the z-axis
+    }, ...
+    transform(gain));
+end

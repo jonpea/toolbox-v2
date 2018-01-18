@@ -8,12 +8,13 @@ narginchk(1, nargin)
 
 if nargin == 1
     if iscell(varargin{1})
-        assert( ...
-            all(cellfun(@isvector, varargin)), ...
-            'Expected cell array to contain grid vectors.')
         % ... for grid matrices from the grid vectors
         gridvectors = varargin{:};
-        varargin = cell(size(gridvectors));
+        assert(all(cellfun(@isvector, gridvectors)), ...
+            'Expected cell array to contain grid vectors.')
+        assert(ismember(numel(gridvectors), 2 : 3), ...
+            'Expected two or three grid vectors')
+        varargin = cell(1, numel(gridvectors));
         [varargin{:}] = meshgrid(gridvectors{:});
     end
 end
