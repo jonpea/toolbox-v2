@@ -42,7 +42,7 @@ parser.addParameter('Figure', 1, @isscalar) % integer
 parser.addParameter('GridPlot', false, @islogical) % true | false
 parser.addParameter('GridPlotDensity', 80, @(n) isscalar(n) && 2 <= n)
 parser.addParameter('FigFileName', '', @ischar)
-parser.addParameter('Scene', @scenes.scene, @isfunction)
+parser.addParameter('Scene', @scenes.Scene, @isfunction)
 parser.parse(varargin{:})
 
 %%

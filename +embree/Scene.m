@@ -1,4 +1,4 @@
-classdef scene < scenes.scene
+classdef Scene < scenes.Scene
     
     properties (SetAccess = public, Hidden = true)
         RayBuffers
@@ -27,7 +27,7 @@ classdef scene < scenes.scene
     
     methods (Access = public)
         
-        function obj = scene(faces, vertices, raycapacity, hitcapacity)
+        function obj = Scene(faces, vertices, raycapacity, hitcapacity)
             
             narginchk(2, 4)
             
@@ -40,7 +40,7 @@ classdef scene < scenes.scene
             end
             
             % Invoke superclass constructor
-            obj@scenes.scene(faces, vertices)
+            obj@scenes.Scene(faces, vertices)
             
             obj.Deleted = false;
             obj.Faces = faces;
@@ -64,7 +64,7 @@ classdef scene < scenes.scene
             obj.Deleted = true;
         end
         
-        function hits = intersections(obj, origins, directions, faceindices)
+        function hits = transmissions(obj, origins, directions, faceindices)
             import contracts.ndebug
             narginchk(4, 4)
             assert(ndebug || isequal(size(origins), size(directions)))

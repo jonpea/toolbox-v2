@@ -1,12 +1,7 @@
 function [indices, points] = imagemethod( ...
     intersect, mirror, sequence, xfirst, xlast)
 %IMAGEMETHOD Reflection path through specified facet sequence.
-% [INDICES,POINTS] = IMAGEMETHOD(@INTERSECT,@MIRROR,SEQ,XFIRST,XLAST)
-% where
-%  INTERSECT(ORIGIN,DIRECTION,TNEAR,TFAR,FACEID) computes the 
-%  XFIRST and XLAST have identical sizes
-%  XFIRST(I,:) are coordinates of the origin of the (I)th pairing
-%  XLAST(I,:) are coordinates of the terminus of the (I)th pairing
+% [INDICES,POINTS] = IMAGEMETHOD(@INTERSECT,@MIRROR,SEQ,XFIRST,XLAST).
 
 import contracts.ndebug
 import datatypes.isfunction

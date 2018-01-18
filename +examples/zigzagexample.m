@@ -4,8 +4,7 @@
 clear
 
 %%
-scenefactory = @embree.embreescene;
-%scenefactory = @scenes.completescene;
+scenefactory = @scenes.Scene;
 
 %%
 numsegments = 6;
@@ -36,12 +35,7 @@ faceindices(1 : 2 : end) = top;
 faceindices(2 : 2 : end) = bottom;
 
 scene = scenefactory(faces, vertices);
-[pairindices, pathpoints] = rayoptics.imagemethod( ...
-    scene.IntersectFacet, ...
-    scene.Mirror, ...
-    faceindices, ...
-    sourcepoints, ...
-    sinkpoints);
+[pairindices, pathpoints] = scene.reflections(sourcepoints, sinkpoints, faceindices);
 
 %%
 arrayfun( ...

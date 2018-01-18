@@ -16,7 +16,7 @@ rowstotext = @(a) cellfun(@mat2str, num2cell(a, 2), 'UniformOutput', false); % c
 
 %% Two dimensional model
 % We start with _vertex_ coordinates. Note that vertices 
-% need not lie on a regular cartesian grid/lattice.
+% are not required to lie on a regular cartesian grid/lattice.
 xtick = [0.0, 3.0]; % [m]
 ytick = [0.0, 2.0, 4.0]; % [m]
 [x, y] = meshgrid(xtick, ytick);

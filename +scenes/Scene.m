@@ -1,4 +1,4 @@
-classdef scene < handle
+classdef Scene < handle
     
     properties (SetAccess = immutable, Hidden = true)
         % These members are transposed/permuted for Mex function
@@ -32,22 +32,22 @@ classdef scene < handle
     
     methods (Access = public)
         
-        function obj = scene(faces, vertices, buffersize)
+        function obj = Scene(faces, vertices, buffersize)
             
             narginchk(2, 3)
             
             if nargin < 3 || isempty(buffersize)
                 % Default buffer capacity
-                % NB: This value must be >1 because the MATLAB runtime 
-                % appears to reallocate scalars during calls to Mex
-                % functions (naturally, we need the buffer to remain 
-                % undisturbed throughout the call).
+                % NB [**]: This value must be >1 because the MATLAB runtime
+                % (in R2017b) appears to reallocate scalars during calls
+                % to Mex functions (naturally, we need the buffer to
+                % remain undisturbed throughout the call).
                 buffersize = 2;
             end
             
             assert(min(faces(:)) >= 1)
             assert(max(faces(:)) <= size(vertices, 1))
-            assert(1 < buffersize, 'Initial capacity *must* exceed 1.')
+            assert(1 < buffersize, 'Initial capacity *must* exceed 1.') % see [**]
             
             numdimensions = size(vertices, 2);
             assert(ismember(numdimensions, 2 : 3));
@@ -62,8 +62,14 @@ classdef scene < handle
             
             [origins, normals, unittangents, offsettolocalmaps] = reference.frames(faces, vertices);
             offsets = specfun.dot(normals, origins, 2);
-                        
+            
             % Private members
+            % NB: Transposition is required so that elements in each
+            % point/vector (which are rows in the original arrays) are
+            % contiguous in memory, in the interests of efficiency and
+            % simple implementation in the Mex/C++ back-end.
+            % Bear in mind that the permutation is performed only once,
+            % whereas the array might be accessed many times.
             obj.FaceOriginsTransposed = origins';
             obj.FaceNormalsTransposed = normals';
             obj.FaceOffsetsTransposed = offsets';
@@ -74,15 +80,13 @@ classdef scene < handle
             obj.Origin = origins;
             obj.UnitNormal = normals;
             obj.UnitOffset = offsets;
-            obj.Frame = cat(3, normals, unittangents);            
-            %obj.IntersectFacet = @obj.intersectfacet;
-            %obj.Intersect = @obj.intersectpaths;
-            %obj.Mirror = @obj.mirror;
+            obj.Frame = cat(3, normals, unittangents);
             obj.NumFacets = size(origins, 1);
-                       
+            
         end
         
-        function [pairindices, pathPoints] = reflections(obj, sourcePoints, sinkPoints, faceIndices)
+        function [pairindices, pathPoints] = ...
+                reflections(obj, sourcePoints, sinkPoints, faceIndices)
             narginchk(4, 4)
             [pairindices, pathPoints] = rayoptics.imagemethod( ...
                 @obj.intersectfacet, ...
@@ -92,7 +96,7 @@ classdef scene < handle
                 sinkPoints);
         end
         
-        function hits = intersections(obj, origins, directions, faceindices)
+        function hits = transmissions(obj, origins, directions, faceindices)
             narginchk(4, 4)
             import contracts.ndebug
             assert(ndebug || isequal(size(origins), size(directions)))
@@ -106,23 +110,35 @@ classdef scene < handle
             end
             hits = obj.extractHits();
         end
-
+        
     end
     
-    methods (Access = private)
+    methods (Access = public)
         
-        function mirrorpoints = mirror(obj, points, faceid)
+        function mirrored = mirror(obj, points, faceid)
             %MIRROR Mirrors all points through a single specified facet.
             narginchk(3, 3)
             assert(isscalar(faceid))
-            normal = obj.FaceNormalsTransposed(:, faceid);
+            normal = obj.FaceNormalsTransposed(:, faceid).';
             offset = obj.FaceOffsetsTransposed(faceid);
-            normal = normal(:)';
-            % NB: The formula below is valid only if all normal 
+            % NB: The formula below is valid only if all normal
             % vectors have unit length. If this is not true, then the
             % expression should be divided by "dot(normal, normal, 2)".
-            alpha = (offset - sum(normal.*points, 2)); 
-            mirrorpoints = points + 2*alpha.*normal;
+            alpha = (offset - sum(normal.*points, 2));
+            mirrored = points + 2*alpha.*normal;
+        end
+        
+        function mirrored = project(obj, points, faceid)
+            %PROJECT Projects all points onto a single specified facet.
+            narginchk(3, 3)
+            assert(isscalar(faceid))
+            normal = obj.FaceNormalsTransposed(:, faceid).';
+            offset = obj.FaceOffsetsTransposed(faceid);
+            % NB: The formula below is valid only if all normal
+            % vectors have unit length. If this is not true, then the
+            % expression should be divided by "dot(normal, normal, 2)".
+            alpha = (offset - sum(normal.*points, 2));
+            mirrored = points - alpha.*normal;
         end
         
         function hits = intersectfacet(obj, origins, directions, faceid)
@@ -215,7 +231,7 @@ classdef scene < handle
             
             % State variables are loop indices
             % NB: These C/C++ indices start at zero
-            [face_loop_id, ray_loop_id] = deal(mex.mexindex(0));            
+            [face_loop_id, ray_loop_id] = deal(mex.mexindex(0));
             
             % To calculate number of hits from offsets
             oldoffset = obj.Offset;

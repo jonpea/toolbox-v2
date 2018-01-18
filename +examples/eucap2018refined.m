@@ -363,7 +363,7 @@ parser.addParameter('AccessPoints', 17:18, @(indices) all(iswithin(indices, 1, 1
 parser.addParameter('SINRThreshold', 10, @(x) isscalar(x) && 0 < x)
 % Image method
 parser.addParameter('Arities', 0 : 1, @isrow)
-parser.addParameter('Scene', @completescene, @isfunction)
+parser.addParameter('Scene', @scenes.Scene, @datatypes.isfunction)
 parser.addParameter('Reporting', false, @islogical)
 parser.addParameter('Verbosity', 0, @isscalar)
 % Scene geometry
@@ -371,7 +371,7 @@ parser.addParameter('AccessPointHeight', 2.0, @isscalar) % [m]
 parser.addParameter('DoorHeight', 2.2, @isscalar) % [m]
 parser.addParameter('StudHeight', 3.0, @isscalar) % [m]
 % Visualization
-parser.addParameter('Axes', @newaxes, @isfunction)
+parser.addParameter('Axes', @newaxes, @datatypes.isfunction)
 parser.addParameter('Plotting', true, @islogical)
 parser.addParameter('Figure', 1, @isscalar)
 parser.addParameter('FontSize', 10, @isscalar)
