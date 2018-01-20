@@ -8,7 +8,7 @@ function varargout = spherical(varargin)
 assert(isgraphics(ax))
 assert(datatypes.isfunction(fun) || isobject(fun))
 assert(ismatrix(origins))
-assert(ndims(frames) == 3)
+assert(ndims(frames) <= 3) % "size(x,3) == 1 <=> ndims(x) == 2"
 assert(ismember(size(origins, 2), 2 : 3))
 assert(size(origins, 2) == size(frames, 2))
 assert(size(origins, 2) == size(frames, 3))

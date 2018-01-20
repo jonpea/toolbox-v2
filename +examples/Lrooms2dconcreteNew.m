@@ -44,6 +44,7 @@ fig.Visible = 'off'; % hide figure...
 newtab = graphics.tabbedfigure(fig, 'Visible', 'on'); % ... until first use
     function ax = newaxes(tabtitle)
         ax = axes(newtab(tabtitle));
+        hold(ax, 'on')
     end
 
 %% Two dimensional model
@@ -57,7 +58,6 @@ concreteIndices = 17 : 18;
 
 %%
 ax = newaxes('Scene 2D');
-hold(ax, 'on')
 patch(ax, ...
     'Faces', fv2D.Faces, ...
     'Vertices', fv2D.Vertices, ...
@@ -66,37 +66,39 @@ patch(ax, ...
     'EdgeColor', 'black');
 points.text(ax, facevertex.reduce(@mean, fv2D), 'Color', 'red')
 points.text(ax, fv2D.Vertices, 'Color', 'blue')
-axis(ax, 'tight')
-axis(ax, 'equal')
+axis(ax, 'equal', 'tight')
 view(ax, 2)
 
 %% Three dimensional model
+[fv3Dold.Faces, fv3Dold.Vertices] = ...
+    extrudeplan(fv2D.Faces, fv2D.Vertices, 0.0, studheight);
 fv3D = facevertex.extrude(fv2D, [0.0, studheight]);
-fv3Dold = capfacevertex(fv3D, true, true);
-
-fv3D.Faces(end + 1, :) = facevertex.cap(@min, 3, fv3D);
-fv3D.Faces(end + 1, :) = facevertex.cap(@max, 3, fv3D);
+fv3Dold = capfacevertex(fv3Dold, true, true);
+% fv3D.Faces(end + 1, :) = facevertex.cap(@min, 3, fv3D);
+% fv3D.Faces(end + 1, :) = facevertex.cap(@max, 3, fv3D);
+gibIndices(end + (1 : 2)) = 19 : 20;
 
 assert(isequal(fv3Dold.Vertices, fv3D.Vertices))
 assert(isequal(fv3Dold.Faces(1 : 16, :), fv3D.Faces(1 : 16, :)))
 
-scene = scenes.Scene(fv3Dold.Faces, fv3Dold.Vertices);
+%fv3Dold.Faces = fv3D.Faces; % <<<<<<<<<<<<<<< CHECK!!!
+
+scene = scenes.Scene(fv3Dold.Faces, fv3D.Vertices);
 %%
 ax = newaxes('Scene 3D');
-hold(ax, 'on')
 patch(ax, ...
-    'Faces', fv3Dold.Faces(1 : end - 2, :), ...
-    'Vertices', fv3Dold.Vertices, ...
+    'Faces', fv3Dold.Faces(gibIndices, :), ...
+    'Vertices', fv3D.Vertices, ...
     'FaceAlpha', 0.05, ...
     'EdgeAlpha', 0.3, ...
     'FaceColor', 'blue');
 patch(ax, ...
-    'Faces', fv3Dold.Faces(end - 1 : end, :), ...
-    'Vertices', fv3Dold.Vertices, ...
+    'Faces', fv3Dold.Faces(concreteIndices, :), ...
+    'Vertices', fv3D.Vertices, ...
     'FaceAlpha', 0.05, ...
     'EdgeAlpha', 0.3, ...
     'FaceColor', 'red');
-points.text(ax, fv3Dold.Vertices, 'FontSize', fontsize, 'Color', 'red')
+points.text(ax, fv3D.Vertices, 'FontSize', fontsize, 'Color', 'red')
 points.text(ax, facevertex.reduce(@mean, fv3Dold), 'FontSize', fontsize, 'Color', 'blue')
 graphics.axislabels(ax, 'x', 'y', 'z')
 axis(ax, 'equal')
@@ -107,8 +109,8 @@ points.quiver(ax, scene.Origin, scene.Frame(:, :, 3), 0.2, 'Color', 'blue')
 view(ax, 30, 65)
 
 %% Sinks
-[xmin, ymin, zmin] = elmat.cols(min(fv3Dold.Vertices, [], 1));
-[xmax, ymax, zmax] = elmat.cols(max(fv3Dold.Vertices, [], 1));
+[xmin, ymin, zmin] = elmat.cols(min(fv3D.Vertices, [], 1));
+[xmax, ymax, zmax] = elmat.cols(max(fv3D.Vertices, [], 1));
 x = linspace(xmin + delta, xmax - delta, numsamplesx);
 y = linspace(ymin + delta, ymax - delta, numsamplesy);
 z = specfun.affine(zmin, zmax, zquantile);
@@ -140,6 +142,10 @@ sourcegain = power.isofunction(0.0);
 facetofunctionmap = [ones(size(scene.Frame, 1) - 2, 1); 2; 2];
 % Correct replacement :-)
 %facetofunctionmap = [ones(size(scene.Frame, 1) - 4, 1); 2; 2; 2; 2];
+% facetofunctionmap2 = zeros(size(scene.Frame, 1), 1);
+% facetofunctionmap2(gibIndices, 1) = 1;
+% facetofunctionmap2(concreteIndices, 1) = 2;
+% assert(isequal(facetofunctionmap, facetofunctionmap2))
 
 reflectiongains = antennae.dispatch({
     makepattern('Wall1_TM_refl_1GHz.txt') ... % gib/reflection
@@ -163,7 +169,6 @@ frames = [frame; frame];
 
     function show(title, origin, frame, gain)
         ax = newaxes(title);
-        hold(ax, 'on')
         axis(ax, 'equal')
         grid(ax, 'on')
         graphics.axislabels(ax, 'x', 'y', 'z')
@@ -171,25 +176,22 @@ frames = [frame; frame];
         colorbar(ax)
         rotate3d(ax, 'on')
         plotaxes(ax, origin, frame)
-        if false
-            graphics.spherical(ax, ...
-                funfun.comp(@elfun.fromdb, 1, gain), ...
-                origin, ...
-                frame, ...
-                'Azimuth', linspace(0, 2*pi), ...
-                'Inclination', linspace(0, pi), ...
-                'EdgeAlpha', 0.1, ...
-                'FaceAlpha', 1.0)
-            view(ax, 70, 40)
-        else
-            graphics.polar(ax, ...
-                funfun.comp(@elfun.fromdb, 1, gain), ...
-                origin, ...
-                frame, ...
-                'Inclination', (0 : 0.1 : 1.0)*pi, ...
-                'LineWidth', 2.0);
-            view(2)
-        end
+        ax = subplot(1, 2, 1);
+        graphics.spherical(ax, ...
+            funfun.comp(@elfun.fromdb, 1, gain), ...
+            origin, frame, ...
+            'Azimuth', linspace(0, 2*pi), ...
+            'Inclination', linspace(0, pi), ...
+            'EdgeAlpha', 0.1, ...
+            'FaceAlpha', 1.0)
+        view(ax, 70, 40)
+        ax = subplot(1, 2, 2);
+        graphics.polar(ax, ...
+            funfun.comp(@elfun.fromdb, 1, gain), ...
+            origin, frame, ...
+            'Inclination', linspace(0, pi, 100), ...
+            'LineWidth', 1.0);
+        view(3)
     end
 
 %% 
@@ -273,47 +275,43 @@ end
 %%
 fprintf('============ total elapsed time: %g sec ============\n', toc(t0))
 
-figure(3), clf, colormap(jet)
+ax = newaxes('Gain (dBw)');
 numarities = numel(arities);
-powersdb = elfun.todb(powers);
 for i = 1 : numarities + 1
-    subplot(1, 1 + numarities, i), hold on
+    ax = subplot(1, 1 + numarities, i); hold on
     if i <= numarities
-        temp = powersdb(:, 1, i);
+        temp = powers(:, 1, i);
         titlestring = sprintf('arity %d', arities(i));
     else
-        temp = elfun.todb(sum(powers, 3));
+        temp = sum(powers, 3);
         titlestring = 'total';
     end
-    temp = reshape(temp, size(gridx)); % 1st transmitter only
-    surf(gridx, gridy, temp, ...
+    temp = reshape(elfun.todb(temp), size(gridx)); 
+    surf(ax, gridx, gridy, temp, ...
         'EdgeAlpha', 0.0', 'FaceAlpha', 0.9)
-    caxis([min(temp(:)), min(max(temp(:)), gainthreshold)])
-    contour(gridx, gridy, temp, 10, 'Color', 'white', 'LineWidth', 1)
-    title(titlestring)
-    patch( ...
+    caxis(ax, [min(temp(:)), min(max(temp(:)), gainthreshold)])
+    contour(ax, gridx, gridy, temp, 10, 'Color', 'white', 'LineWidth', 1)
+    title(ax, titlestring)
+    patch(ax, ...
         'Faces', fv3Dold.Faces(1 : end - 2, :), ...
-        'Vertices', fv3Dold.Vertices, ...
+        'Vertices', fv3D.Vertices, ...
         'FaceAlpha', 0.05, ...
         'EdgeAlpha', 0.3, ...
         'FaceColor', 'blue');
-    patch( ...
+    patch(ax, ...
         'Faces', fv3Dold.Faces(end - 1 : end, :), ...
-        'Vertices', fv3Dold.Vertices, ...
+        'Vertices', fv3D.Vertices, ...
         'FaceAlpha', 0.05, ...
         'EdgeAlpha', 0.3, ...
         'FaceColor', 'red');
-    view(2)
-    axis equal
-    axis tight
-    axis off
-    rotate3d on
-    colorbar('Location', 'southoutside')
-    totalpower = reshape(sum(powers, 3), size(gridx));
-    save totalpower.mat totalpower
+    view(ax, 2)
+    axis(ax, 'equal', 'off', 'tight')
+    rotate3d(ax, 'on')
+    colormap(ax, jet)
+    colorbar(ax, 'Location', 'southoutside')
 end
 
-% save(mfilename)
+%save(mfilename)
 
 end
 
@@ -373,6 +371,56 @@ end
 
 function result = isscalarlogical(x)
 result = isscalar(x) && islogical(x);
+end
+
+% -------------------------------------------------------------------------
+function [faces, vertices] = extrudeplan(faces, vertices, lower, upper)
+%EXTRUDEPLAN Extruison of a 2D plan in face-vertex repsentation.
+% [FF,VV]=EXTRUDEPLAN(F,V,LOWER,UPPER) extrudes a set of 2D line segments
+% with face-vertex representation F-V into a set of 3D quadrilaterals with
+% representation FF-VV spanning the range from LOWER to UPPER in the
+% vertical direction. 
+% EXTRUDEPLAN(F,V,HEIGHT) with non-zero scalar HEIGHT is equivalent 
+% to EXTRUDEPLAN(F,V,0.0,HEIGHT). 
+% See also EXTRUDEPATCH
+
+narginchk(2, 4)
+
+switch nargin
+    case 2 % default span
+        lower = 0.0;
+        upper = 1.0;
+    case 3 % given height
+        assert(lower ~= 0)
+        upper = lower;
+        lower = 0.0;
+end
+
+assert(size(faces, 2) == 2)
+assert(isscalar(lower))
+assert(isscalar(upper))
+assert(lower ~= upper)
+
+if upper < lower 
+    [lower, upper] = deal(upper, lower);
+end
+
+numvertices = size(vertices, 1);
+
+vertices = [
+    vertices, repmat(lower, numvertices, 1);
+    vertices, repmat(upper, numvertices, 1);
+    ];
+
+faces = [
+    faces, ...
+    fliplr(faces) + numvertices
+    ];
+
+if nargout == 1
+    faces = struct('Faces', faces, 'Vertices', vertices);
+end
+
 end
 
 % -------------------------------------------------------------------------
