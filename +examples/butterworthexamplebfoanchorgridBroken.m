@@ -1,4 +1,4 @@
-function butterworthexamplebfoanchorgrid(varargin)
+function butterworthexamplebfoanchorgridBroken(varargin)
 % Optimization of anchor calcuations to correct angle-dependent attenuation
 % coefficients (calculated from plane waves in CST Studio) with constant
 % offsets to reduce mismatch with a small numbe rof empirical measurements.
@@ -42,7 +42,7 @@ parser.addParameter('Figure', 1, @isscalar) % integer
 parser.addParameter('GridPlot', false, @islogical) % true | false
 parser.addParameter('GridPlotDensity', 80, @(n) isscalar(n) && 2 <= n)
 parser.addParameter('FigFileName', '', @ischar)
-parser.addParameter('Scene', @scenes.Scene, @datatypes.isfunction)
+parser.addParameter('Scene', @scenes.Scene, @isfunction)
 parser.parse(varargin{:})
 
 %%
@@ -57,10 +57,10 @@ end
 
 %% Prepare tabbed graphics window
 settings.Figure = figure(settings.Figure);
-if ~isempty(settings.FigFileName)
-    cleaner = onCleanup(@() ...
-        savefig(settings.Figure, settings.FigFileName, 'compact'));
-end
+% % if ~isempty(settings.FigFileName)
+% %     cleaner = onCleanup(@() ...
+% %         savefig(settings.Figure, settings.FigFileName, 'compact'));
+% % end
 clf(settings.Figure, 'reset')
 set(settings.Figure, ...
     'Name', sprintf('%d-reflected rays', settings.MaxNumReflections), ...
@@ -154,10 +154,11 @@ delta = 0.0;
 lower = lower + delta*widths;
 upper = upper - delta*widths;
 numpoints = ceil(widths./min(widths)*settings.NumPoints);
-rxgridpoints = gridpoints( ...
+[gridx, gridy, gridz] = meshgrid( ...
     linspace(lower(1), upper(1), numpoints(1)), ...
     linspace(lower(2), upper(2), numpoints(2)), ...
     linspace(lower(3), upper(3), numpoints(3)));
+rxgridpoints = points.meshpoints(gridx, gridy, gridz);
 
 %%
 rxdata = struct( ...
@@ -197,11 +198,11 @@ fprintf('Measurements not recorded @ rx: %s\n', mat2str(nanrows))
 % NB: Uniform initital values of -5.0 with TM coefficients 
 % to produce the most interesting/plausible fitted corrections
 bfosettings = datatypes.cell2table({
-    'Description',           'XLower',  'XUpper',  'X0';
-    'GibReflection',            -inf,      0.0,    -1.0; %-4.6;
-    'ConcreteReflection',       -inf,      0.0,    -1.0; %-4.8;
-    'GibTransmission',          -inf,      0.0,    -1.0; %-3.3;
-    'ConcreteTransmission',     -inf,      0.0,    -1.0; %-0.0;
+    'Description',          'XLower', 'XUpper',  'X0';
+    'GibReflection',            -inf,      0.0,  -1.0; %-4.6;
+    'ConcreteReflection',       -inf,      0.0,  -1.0; %-4.8;
+    'GibTransmission',          -inf,      0.0,  -1.0; %-3.3;
+    'ConcreteTransmission',     -inf,      0.0,  -1.0; %-0.0;
     });
 disp(bfosettings)
 
@@ -229,7 +230,7 @@ facetofunctionmap = arrayfun(@paneltofunctionindex, scene.PanelType);
             @(varargin) pattern(varargin{:}) + offset, ...
             patterns(:), num2cell(offsets(:)), ...
             'UniformOutput', false);
-        fun = framefunctionnew(offsetpatterns, ...
+        fun = power.framefunction(offsetpatterns, ...
             scene.Model.Frame, facetofunctionmap);
     end
 
@@ -249,10 +250,10 @@ transmissionpatterns = cellfun(@loadquadpattern, transmissionfiles, 'UniformOutp
         function decorate(ax, patternname, local)
             local.standardorigin = zeros(1, 3);
             local.standardframe = reshape(eye(3), 1, 3, 3);
-            local.framefunction = framefunctionnew( ...
+            local.framefunction = power.framefunction( ...
                 loadquadpattern(patternname), ...
                 local.standardframe);
-            plotradialintensity(ax, ...
+            graphics.spherical(ax, ...
                 local.framefunction, ...
                 local.standardorigin, ...
                 local.standardframe, ...
@@ -302,7 +303,7 @@ assert(~any(ops.vec(isnan(meanmeasured(settings.RoomIndices, :)))), ...
 
 %%
 cache = struct('FBest', realmax);
-    function value = objective(x, local)
+    function value = objective(x, local)        
         local.computed = compute(x, rxdata.Grid);
         local.meancomputed = meangain(rxdata.Grid, local.computed);
         local.difference = local.meancomputed - meanmeasured;
@@ -314,15 +315,17 @@ cache = struct('FBest', realmax);
             cache.FBest = value;
             cache.XBest = x;
         end
-        save('..\objective.mat', 'x', 'local', 'value', 'rxdata')
+        s = load('..\objective.mat');
+        norm(s.x - x)
+        norm(s.rxdata.Grid - rxdata.Grid)
+        norm(s.local.computed - local.computed)
+        return
     end
 
     function [gain, components] = compute(x, rxpositions, local)
         assert(numel(x) == 4)
         local.xreflection = x(1 : 2); % "[gib, concrete]" reflection
         local.xtransmission = x(3 : 4); % "[gib, concrete]" transmission
-        % local.downlinks = analyze( ...
-        %     txdata.Position, rxpositions, scene.Model, ...
         temp = scene.Model; % necessary work-around: MATLAB doesn't like "@scene.Model.reflections"
         local.downlinks = power.analyze( ...
             @temp.reflections, ...
@@ -334,12 +337,9 @@ cache = struct('FBest', realmax);
             'FreeGain', power.friisfunction(txdata.Frequency), ...
             'ReflectionGain', makegainfunctions(reflectionpatterns, local.xreflection), ...
             'TransmissionGain', makegainfunctions(transmissionpatterns, local.xtransmission));
-            ... 'NDEBUG', true, ...
-            ... 'SPMD', isscalar(parallel.currentpool), ...
-            ... 'Verbosity', settings.Verbosity);
         gain = local.downlinks.PowerDBW;
         components = elfun.todb(local.downlinks.PowerComponentsWatts);
-        save('..\compute.mat', 'local', 'gain', 'components', 'scene')
+        s = load('..\compute.mat');
     end
 
 % Note Well: BFO doesn't like @"mfilename"/objective, so there
@@ -410,7 +410,7 @@ fprintf('max. relative error = %s\n', mat2strfp(infnorm(relabserror)))
     end
 
 %%
-colorscale = minmax([meanmeasured(:); meancomputed(:)])';
+colorscale = minmax([meanmeasured(:); meancomputed(:)]);
 comparepoints(centroids, meanmeasured, 'Gain (dB)', colorscale)
 %%
 comparepoints(centroids, meancomputed, 'GainRT (dB)', colorscale)
@@ -510,13 +510,14 @@ clear component downlinks extends makepoints points3d
                 'EdgeColor', color, ...
                 'LineWidth', width)
         end
-        drawwalls(data.panel.ConcreteWall, 'red', 2)
-        drawwalls(data.panel.GibWall, 'magenta', 1)
-        drawwalls(data.panel.GlassWindow, 'cyan', 2)
-        drawwalls(data.panel.WoodenDoor, 'yellow', 1)
-        drawwalls(data.panel.SteelDoor, 'black', 1)
-        drawwalls(data.panel.Floor, 'green', 1, 0.0)
-        drawwalls(data.panel.Ceiling, 'blue', 1, 0.0)
+        import data.panel
+        drawwalls(panel.ConcreteWall, 'red', 2)
+        drawwalls(panel.GibWall, 'magenta', 1)
+        drawwalls(panel.GlassWindow, 'cyan', 2)
+        drawwalls(panel.WoodenDoor, 'yellow', 1)
+        drawwalls(panel.SteelDoor, 'black', 1)
+        drawwalls(panel.Floor, 'green', 1, 0.0)
+        drawwalls(panel.Ceiling, 'blue', 1, 0.0)
         points.text(rxdata.Position - local.shift, 'Color', graphics.rgb.gray)
         points.text(ax, txdata.Position - local.shift, local.labels)
         points.plot(ax, rxdata.Position(settings.RxIndices, :), 'kx', 'MarkerSize', 12, 'LineWidth', 2)
@@ -577,315 +578,6 @@ end
 end
 
 % -------------------------------------------------------------------------
-function [points, varargout] = gridpoints(varargin)
-%GRIDPOINTS Matrix of grid points from grid vectors.
-% See also NDGRID.
-
-narginchk(1, nargin)
-
-% Unless at least one of the arguments is already a matrix...
-if all(cellfun(@isvector, varargin))
-    % ... for grid matrices from the grid vectors
-    [varargin{:}] = meshgrid(varargin{:});
-end
-
-% Pack grid matrices into the columns of the the points matrix
-% i.e. containing the coordinates of one point per row
-points = cell2mat(cellfun(@(x) x(:), varargin, 'UniformOutput', false));
-
-assert(size(points, 2) == nargin) % invariant
-
-if 1 < nargout
-    % Return grid matrices if requested
-    varargout = varargin;
-end
-
-end
-
-% -------------------------------------------------------------------------
-function evaluator = framefunctionnew(functions, frames, facetofunction)
-
-narginchk(2, 3)
-
-if ~iscell(functions)
-    functions = {functions};
-end
-
-if nargin < 3 || isempty(facetofunction)
-    assert(isscalar(functions))
-    facetofunction = ones(size(frames, 1), 1);
-end
-
-% Preconditions
-% assert(isfvframe(frames))
-assert(iscell(functions))
-assert(all(cellfun(@datatypes.isfunction, functions)))
-assert(all(ismember(unique(facetofunction), 1 : numel(functions))))
-
-    function gain = evaluate(faceindices, directions)
-
-        assert(isvector(faceindices))
-        assert(ismatrix(directions))
-                
-        % Transform global Cartesian coordinates
-        % to those relative to faces' local frames
-        localdirections = applytranspose( ...
-            frames(faceindices, :, :), directions);
-        
-        % Angles relative to local frame
-        angles = cartesiantoangularnew(localdirections);
-
-        gain = indexedunary( ...
-            functions, ...
-            facetofunction(faceindices), ...
-            angles);
-        
-        try
-            s = load('..\evaluate.mat'); %#ok<NASGU>
-            return
-        catch
-        end
-    end
-
-evaluator = @evaluate;
-
-end
-
-% -------------------------------------------------------------------------
-function varargout = plotradialintensity(varargin)
-
-[ax, fun, origins, frames, varargin] = axisforplot(3, varargin{:});
-
-% Preconditions
-assert(isgraphics(ax))
-assert(datatypes.isfunction(fun))
-assert(ismatrix(origins))
-assert(ndims(frames) == 3)
-assert(ismember(size(origins, 2), 2 : 3))
-assert(size(origins, 2) == size(frames, 2))
-assert(size(origins, 2) == size(frames, 3))
-
-[origins, frames] = unsingleton(origins, frames);
-[numantennae, numdirections] = size(origins);
-
-% Invariants
-assert(numdirections == 3)
-assert(size(frames, 1) == numantennae)
-assert(size(frames, 2) == numdirections)
-assert(size(frames, 3) == numdirections)
-
-% Parse optional arguments
-parser = inputParser;
-parser.addParameter('Azimuth', linspace(0, 2*pi), @isvector) % default for 3D case only
-parser.addParameter('Inclination', linspace(0, pi), @isvector)
-parser.addParameter('Radius', @unitradius, @isfunction)
-parser.KeepUnmatched = true;
-parser.parse(varargin{:})
-angles = parser.Results;
-options = parser.Unmatched;
-if ismember('CData', fieldnames(options))
-    warning([mfilename, ':CDataIsSet'], ...
-        'Field ''CData'' is set but will be over-ridden.')
-end
-
-% Sampling points in local spherical coordinates...
-phi = angles.Azimuth(:); % m-by-1
-theta = angles.Inclination(:)'; % 1-by-n
-    function handle = display(id)
-        r = angles.Radius(id, phi, theta); % m-by-n
-        % ... expressed in global cartesian coordinates
-        [x, y, z, c] = surfdata( ...
-            @(direction) fun(id, direction), ...
-            origins(id, :), ...
-            frames(id, :, :), ...
-            phi, theta, r);
-        handle = surf(ax, x, y, z, setfield(options, 'CData', c)); %#ok<SFLD>
-    end
-handles = arrayfun(@display, 1 : numantennae, 'UniformOutput', false);
-
-if 0 < nargout
-    varargout = {handles};
-end
-
-end
-
-function [x, y, z, c] = surfdata(fun, origins, frames, phi, theta, r)
-
-% Elevation from xy-plane
-thetabar = pi/2 - theta;
-
-% Direction vectors from sampling surface to local
-% origin expressed in local spherical coordinates
-[dx0, dy0, dz0] = sph2cart(phi, thetabar, r);
-dxyz0 = [dx0(:), dy0(:), dz0(:)];
-
-% Directions expressed in global cartesian coordinates
-dxyz = globalpoints(frames, dxyz0);
-
-shape = [numel(phi), numel(theta)];
-assert(isequal(size(dx0), shape)) % invariant
-
-% Intensities (color) values
-% NB: We choose not to normalize each row of the direction vector because
-% the sampling surface may contain points at the origin (e.g. a 3D plot of
-% antenna lobes is likely to have points of very small or zero length).
-% Normalising would introduce NaNs in this benign case.
-c = reshape(fun(dxyz), shape);
-
-% Global cartesian coordinates
-% i.e. "global axes at global origin"
-xyz = origins + dxyz;
-    function result = globalcartesian(i)
-        result = reshape(xyz(:, i), shape);
-    end
-x = globalcartesian(1);
-y = globalcartesian(2);
-z = globalcartesian(3);
-
-end
-
-function r = unitradius(~, azimuth, inclination)
-% First input argument (unused) corresponds to "index".
-r = ones(sx.size(azimuth, inclination), 'like', azimuth);
-end
-
-% -------------------------------------------------------------------------
-function varargout = axisforplot(n, varargin)
-% See also AXESCHECK.
-
-narginchk(1, nargin)
-assert(isscalar(n) && 0 <= n && n <= numel(varargin))
-nargoutchk(1 + n, nargout)
-
-if 2 <= nargin && isequal(isaxes(varargin{1}), true) % scalar!
-    assert(1 < nargin)
-    ax = varargin{1};
-    varargin(1) = [];
-else
-    ax = gca;    
-end
-first = varargin(1 : n);
-rest = varargin(n + 1 : end);
-
-varargout = {ax, first{:}, rest}; %#ok<CCAT>
-end
-
-% -------------------------------------------------------------------------
-function result = isaxes(obj)
-result = isgraphics(obj, 'axes');
-end
-
-% -------------------------------------------------------------------------
-function [a, b] = unsingleton(a, b)
-a = extend(a, b);
-b = extend(b, a);
-    function a = extend(a, b)
-        if size(a, 1) == 1
-            a = repmat(a, size(b, 1), 1);
-        end
-    end
-end
-
-% -------------------------------------------------------------------------
-function xglobal = globalpoints(frames, xlocal)
-xglobal = apply(frames, xlocal);
-
-    function y = apply(a, x)
-        % See also APPLYTRANSPOSE
-        % Note that A(K,I,J) contains the "row I, column J".
-        
-        narginchk(2, 2)
-        
-        if size(a, 1) == 1
-            % Explicit singleton expansion on first dimension
-            a = repmat(a, size(x, 1), 1);
-        end
-        
-        shape = size(a);
-        assert(shape(1) == size(x, 1))
-        assert(shape(2) == size(x, 2))
-        
-        % NB: Specification of the second dimension is essential
-        % because e.g.
-        %     >> size(reshape(zeros(0, 1, 2), 0, []))
-        %     ans =
-        %          0     0
-        % i.e. "0x0" rather than "0x2".
-        x = reshape(x, size(x, 1), 1, size(x, 2));
-        y = reshape(sum(bsxfun(@times, a, x), 3), shape(1), shape(2));
-        %y = reshape(sum(a.*x, 2), shape(1), shape(2));
-    end
-
-end
-
-% -------------------------------------------------------------------------
-function y = applytranspose(a, x)
-%APPLYTRANSPOSE Apply transpose of square matrices to vectors.
-% APPLYTRANSPOSE(A,X) computes SQUEEZE(A(K,:,:))'*SQUEEZE(X(K,:))'
-% for each K in 1:SIZE(X,1).
-% Note that A(K,I,J) contains the "row I, column J".
-
-narginchk(2, 2)
-
-if size(a, 1) == 1
-    % Explicit singleton expansion on first dimension
-    a = repmat(a, size(x, 1), 1);
-end
-
-shape = size(a);
-assert(shape(1) == size(x, 1))
-assert(shape(2) == size(x, 2))
-
-% NB: Specification of the second dimension is essential 
-% because e.g. 
-%     >> size(reshape(zeros(0, 1, 2), 0, []))
-%     ans =
-%          0     0
-% i.e. "0x0" rather than "0x2".
-y = reshape(sum(bsxfun(@times, a, x), 2), shape(1), shape(2));
-%y = reshape(sum(a.*x, 2), shape(1), shape(2));
-
-end
-
-% -------------------------------------------------------------------------
-function result = indexedunary(functions, funofrow, x, varargin)
-%INDEXEDUNARY Evaluate functionals of one row-indexed argument.
-
-narginchk(3, nargin)
-assert(iscell(functions))
-if isscalar(funofrow)
-    funofrow = repmat(funofrow, size(x, 1), 1);
-end
-assert(size(x, 1) == numel(funofrow))
-assert(ndims(x) <= 4)
-
-result = zeros(size(x, 1), 1);
-    function apply(fun, rows)
-        result(rows, :) = fun(x(rows, :, :, :), varargin{:});
-    end
-rowsoffun = invertindices(funofrow, numel(functions));
-cellfun(@apply, functions(:), rowsoffun(:));
-
-end
-
-% -------------------------------------------------------------------------
-function inverted = invertindices(indices, numgroups)
-narginchk(1, 2)
-if nargin == 2
-    shape = [numgroups, 1];
-else
-    shape = [];
-end
-indexrange = 1 : numel(indices);
-inverted = accumarray(indices(:), indexrange(:), shape, @(a) {a(:)});
-if isempty(indices)
-    % Corner case: If the input list is empty, then accumarray 
-    % doesn't realize that the result should be a cell array (of empties)
-    inverted = repmat({zeros(0, 1)}, size(inverted));
-end
-end
-
-% -------------------------------------------------------------------------
 function [values, indices] = minmax(a, varargin)
 %MINMAX Smallest and largest components.
 % See also MIN, MAX.
@@ -898,7 +590,6 @@ dim = sx.leaddim(a, varargin{:});
 
 values = cat(dim, vmin, vmax);
 indices = cat(dim, imin, imax);
-
 end
 
 % -------------------------------------------------------------------------
@@ -923,6 +614,3 @@ maxnumcolumns = max(cellfun(@(a) size(a, 2), c));
 c = cell2mat(cellfun(@pad, c(:), 'UniformOutput', false));
 
 end
-
-% -------------------------------------------------------------------------
-

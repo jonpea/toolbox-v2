@@ -241,7 +241,7 @@ set(gcf, 'PaperOrientation', 'landscape')
 view(-35, 25)
 
 %%
-if ~options.Printing
+if options.Printing
     % Printing to file is *very* time-consuming
     printnow = @(prefix) ...
         print('-dpdf', '-bestfit', ...

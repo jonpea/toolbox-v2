@@ -36,6 +36,16 @@ t0 = tic;
 tol = 1e-12;
 fontsize = 8;
 
+fig = figure(1);
+clf(fig, 'reset')
+fig.Name = mfilename;
+fig.NumberTitle = 'off';
+fig.Visible = 'off'; % hide figure...
+newtab = graphics.tabbedfigure(fig, 'Visible', 'on'); % ... until first use
+    function ax = newaxes(tabtitle)
+        ax = axes(newtab(tabtitle));
+    end
+
 %% Two dimensional model
 mm2m = @(x) x/1000;
 studheight = mm2m(3300);
@@ -46,56 +56,59 @@ gibIndices = 1 : 16;
 concreteIndices = 17 : 18;
 
 %%
-figure(1), clf
-patch( ...
+ax = newaxes('Scene 2D');
+hold(ax, 'on')
+patch(ax, ...
     'Faces', fv2D.Faces, ...
     'Vertices', fv2D.Vertices, ...
     'FaceColor', 'blue', ...
     'FaceAlpha', 0.2, ...
     'EdgeColor', 'black');
-points.text(facevertex.reduce(@mean, fv2D), 'Color', 'red')
-points.text(fv2D.Vertices, 'Color', 'blue')
-view(2)
-axis tight, axis equal
+points.text(ax, facevertex.reduce(@mean, fv2D), 'Color', 'red')
+points.text(ax, fv2D.Vertices, 'Color', 'blue')
+axis(ax, 'tight')
+axis(ax, 'equal')
+view(ax, 2)
 
 %% Three dimensional model
-extruded = facevertex.extrude(fv2D, [0.0, studheight]);
-fv3D = capfacevertex(extruded, true, true);
+fv3D = facevertex.extrude(fv2D, [0.0, studheight]);
+fv3Dold = capfacevertex(fv3D, true, true);
 
-extruded.Faces(end + 1, :) = facevertex.cap(@min, 3, extruded);
-extruded.Faces(end + 1, :) = facevertex.cap(@max, 3, extruded);
-fv3D2 = extruded;
-assert(isequal(fv3D.Vertices, fv3D2.Vertices))
-assert(isequal(fv3D.Faces(1 : 16, :), fv3D2.Faces(1 : 16, :)))
+fv3D.Faces(end + 1, :) = facevertex.cap(@min, 3, fv3D);
+fv3D.Faces(end + 1, :) = facevertex.cap(@max, 3, fv3D);
 
-scene = scenes.Scene(fv3D.Faces, fv3D.Vertices);
+assert(isequal(fv3Dold.Vertices, fv3D.Vertices))
+assert(isequal(fv3Dold.Faces(1 : 16, :), fv3D.Faces(1 : 16, :)))
+
+scene = scenes.Scene(fv3Dold.Faces, fv3Dold.Vertices);
 %%
-figure(1), clf, hold on
-patch( ...
-    'Faces', fv3D.Faces(1 : end - 2, :), ...
-    'Vertices', fv3D.Vertices, ...
+ax = newaxes('Scene 3D');
+hold(ax, 'on')
+patch(ax, ...
+    'Faces', fv3Dold.Faces(1 : end - 2, :), ...
+    'Vertices', fv3Dold.Vertices, ...
     'FaceAlpha', 0.05, ...
     'EdgeAlpha', 0.3, ...
     'FaceColor', 'blue');
-patch( ...
-    'Faces', fv3D.Faces(end - 1 : end, :), ...
-    'Vertices', fv3D.Vertices, ...
+patch(ax, ...
+    'Faces', fv3Dold.Faces(end - 1 : end, :), ...
+    'Vertices', fv3Dold.Vertices, ...
     'FaceAlpha', 0.05, ...
     'EdgeAlpha', 0.3, ...
     'FaceColor', 'red');
-points.text(fv3D.Vertices, 'FontSize', fontsize, 'Color', 'red')
-points.text(facevertex.reduce(@mean, fv3D), 'FontSize', fontsize, 'Color', 'blue')
-graphics.axislabels('x', 'y', 'z')
-axis equal
-rotate3d on
-points.quiver(scene.Origin, scene.Frame(:, :, 1), 0.2, 'Color', 'red')
-points.quiver(scene.Origin, scene.Frame(:, :, 2), 0.2, 'Color', 'green')
-points.quiver(scene.Origin, scene.Frame(:, :, 3), 0.2, 'Color', 'blue')
-view(30, 65)
+points.text(ax, fv3Dold.Vertices, 'FontSize', fontsize, 'Color', 'red')
+points.text(ax, facevertex.reduce(@mean, fv3Dold), 'FontSize', fontsize, 'Color', 'blue')
+graphics.axislabels(ax, 'x', 'y', 'z')
+axis(ax, 'equal')
+rotate3d(ax, 'on')
+points.quiver(ax, scene.Origin, scene.Frame(:, :, 1), 0.2, 'Color', 'red')
+points.quiver(ax, scene.Origin, scene.Frame(:, :, 2), 0.2, 'Color', 'green')
+points.quiver(ax, scene.Origin, scene.Frame(:, :, 3), 0.2, 'Color', 'blue')
+view(ax, 30, 65)
 
 %% Sinks
-[xmin, ymin, zmin] = elmat.cols(min(fv3D.Vertices, [], 1));
-[xmax, ymax, zmax] = elmat.cols(max(fv3D.Vertices, [], 1));
+[xmin, ymin, zmin] = elmat.cols(min(fv3Dold.Vertices, [], 1));
+[xmax, ymax, zmax] = elmat.cols(max(fv3Dold.Vertices, [], 1));
 x = linspace(xmin + delta, xmax - delta, numsamplesx);
 y = linspace(ymin + delta, ymax - delta, numsamplesy);
 z = specfun.affine(zmin, zmax, zquantile);
@@ -121,6 +134,8 @@ makepattern = @(name) loadpattern(fullfile('+data', name), @elfun.todb);
 %% Trace reflection paths
 starttime = tic;
 
+sourcegain = power.isofunction(0.0);
+
 % Incorrect! :-(
 facetofunctionmap = [ones(size(scene.Frame, 1) - 2, 1); 2; 2];
 % Correct replacement :-)
@@ -140,6 +155,54 @@ transmissiongains = antennae.dispatch({
     facetofunctionmap, ...
     antennae.orthocontext(scene.Frame, @specfun.cart2uqsphi));
 
+%% Visualization
+origin = [0 0 0];
+origins = [-2 0 0; 2 0 0];
+frame = cat(3, [1 0 0], [0 1 0], [0 0 1]);
+frames = [frame; frame];
+
+    function show(title, origin, frame, gain)
+        ax = newaxes(title);
+        hold(ax, 'on')
+        axis(ax, 'equal')
+        grid(ax, 'on')
+        graphics.axislabels(ax, 'x', 'y', 'z')
+        colormap(ax, jet)
+        colorbar(ax)
+        rotate3d(ax, 'on')
+        plotaxes(ax, origin, frame)
+        if false
+            graphics.spherical(ax, ...
+                funfun.comp(@elfun.fromdb, 1, gain), ...
+                origin, ...
+                frame, ...
+                'Azimuth', linspace(0, 2*pi), ...
+                'Inclination', linspace(0, pi), ...
+                'EdgeAlpha', 0.1, ...
+                'FaceAlpha', 1.0)
+            view(ax, 70, 40)
+        else
+            graphics.polar(ax, ...
+                funfun.comp(@elfun.fromdb, 1, gain), ...
+                origin, ...
+                frame, ...
+                'Inclination', (0 : 0.1 : 1.0)*pi, ...
+                'LineWidth', 2.0);
+            view(2)
+        end
+    end
+
+%% 
+% Antenna gain pattern:
+show('Source', origin, frame, sourcegain)
+%%
+% Reflection gain patterns for gib and concrete:
+show('Reflection', origins, frames, reflectiongains)
+%%
+% Transmission gain patterns for gib and concrete:
+show('Transmission', origins, frames, transmissiongains)
+
+%%
 dlinks = power.analyze( ...
     @scene.reflections, ...
     @scene.transmissions, ...
@@ -148,7 +211,7 @@ dlinks = power.analyze( ...
     sink.Origin, ...
     'ReflectionArities', arities, ...
     'FreeGain', power.friisfunction(source.Frequency), ...
-    'SourceGain', power.isofunction(0.0), ... % [dB]
+    'SourceGain', sourcegain, ... % [dB]
     'ReflectionGain', reflectiongains, ...
     'TransmissionGain', transmissiongains, ...
     'SinkGain', power.isofunction(0.0), ... % [dB]
@@ -229,14 +292,14 @@ for i = 1 : numarities + 1
     contour(gridx, gridy, temp, 10, 'Color', 'white', 'LineWidth', 1)
     title(titlestring)
     patch( ...
-        'Faces', fv3D.Faces(1 : end - 2, :), ...
-        'Vertices', fv3D.Vertices, ...
+        'Faces', fv3Dold.Faces(1 : end - 2, :), ...
+        'Vertices', fv3Dold.Vertices, ...
         'FaceAlpha', 0.05, ...
         'EdgeAlpha', 0.3, ...
         'FaceColor', 'blue');
     patch( ...
-        'Faces', fv3D.Faces(end - 1 : end, :), ...
-        'Vertices', fv3D.Vertices, ...
+        'Faces', fv3Dold.Faces(end - 1 : end, :), ...
+        'Vertices', fv3Dold.Vertices, ...
         'FaceAlpha', 0.05, ...
         'EdgeAlpha', 0.3, ...
         'FaceColor', 'red');
@@ -250,7 +313,7 @@ for i = 1 : numarities + 1
     save totalpower.mat totalpower
 end
 
-save(mfilename)
+% save(mfilename)
 
 end
 
@@ -325,4 +388,36 @@ interpolant = griddedInterpolant({
     deg2rad(theta) ... % inclination from the z-axis
     }, ...
     transform(gain));
+end
+
+% -------------------------------------------------------------------------
+function size = fontsize
+size = 15;
+end
+
+function labelaxis(ax, origins, frames, direction, local)
+local.axisscale = 1.5;
+local.labelscale = 1.6;
+local.format = graphics.untex('$\mathbf{e}_{%u,%u}$');
+points.quiver(ax, ...
+    origins, local.axisscale*frames(:, :, direction), ...
+    0, ... % no scaling
+    'Color', graphics.rgb.gray(0.5), ...
+    'LineWidth', 2)
+points.text(ax, ...
+    origins + local.labelscale*frames(:, :, direction), ...
+    compose(local.format, elmat.index(origins, 1), direction), ...
+    'Interpreter', 'latex', ...
+    'FontSize', fontsize);
+end
+
+function plotaxes(ax, origins, frames)
+points.text(ax, ...
+    origins, ...
+    compose( ...
+    graphics.untex('$\mathbf{o}_%d$'), elmat.index(origins, 1)), ...
+    'Interpreter', 'latex', 'FontSize', fontsize)
+for i = 1 : elmat.ncols(origins)
+    labelaxis(ax, origins, frames, i);
+end
 end
