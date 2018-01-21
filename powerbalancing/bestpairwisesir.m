@@ -93,3 +93,7 @@ assert(best_SIR_dB == sirmin)
 
 % BS_SIR_dB    % for displaying during testing
 % best_SIR_dB  % for displaying during testing
+
+% -------------------------------------------------------------------------
+
+

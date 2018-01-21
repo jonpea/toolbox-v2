@@ -14,11 +14,15 @@ function varargout = quiver(varargin)
 %
 %   See also QUIVER, PLOT.
 
-[~, xyz, ~] = arguments.parsefirst(@datatypes.isaxes, gca, 1, varargin{:});
+[ax, xyz, uvw, varargin] = ...
+    arguments.parsefirst(@datatypes.isaxes, gca, 2, varargin{:});
 
 assert(ismatrix(xyz))
 assert(isnumeric(xyz))
 assert(ismember(size(xyz, 2), 2 : 3))
+
+% Expand singleton row dimension in either array
+[xyz, uvw] = sx.expand(xyz, uvw, 1);
 
 switch size(xyz, 2)
     case 2
@@ -27,4 +31,4 @@ switch size(xyz, 2)
         plotter = @quiver3;
 end
 
-[varargout{1 : nargout}] = binary(plotter, varargin{:});
+[varargout{1 : nargout}] = binary(plotter, ax, xyz, uvw, varargin{:});

@@ -640,11 +640,11 @@ assert(all(ismember(unique(facetofunction), 1 : numel(functions))))
             facetofunction(faceindices), ...
             angles);
         
-        try
-            s = load('..\evaluate.mat'); %#ok<NASGU>
-            return
-        catch
-        end
+%         try
+%             s = load('..\evaluate.mat'); %#ok<NASGU>
+%             return
+%         catch
+%         end
     end
 
 evaluator = @evaluate;
@@ -925,4 +925,105 @@ c = cell2mat(cellfun(@pad, c(:), 'UniformOutput', false));
 end
 
 % -------------------------------------------------------------------------
+function varargout = cartesiantoangularnew(xyz)
+%CARTESIANTOANGULAR Transform Cartesian to spherical coordinates.
+% See also CART2SPH, SPH2CART
 
+narginchk(1, 1)
+nargoutchk(0, 2)
+
+numdimensions = size(xyz, 2);
+assert(ismember(numdimensions, 2 : 3))
+
+callbacks = {@convert2d, @convert3d};
+convert = callbacks{numdimensions - 1};
+[varargout{1 : max(1, nargout)}] = convert(xyz);
+end
+
+% -------------------------------------------------------------------------
+function [angle, radius] = convert2d(xy)
+[x, y] = dealcell(num2cell(xy, 1));
+angle = atan2(y, x); % azimuth
+if nargout == 2
+    radius = hypot(x, y);
+end
+end
+
+% -------------------------------------------------------------------------
+function [angles, radius] = convert3d(xyz)
+[x, y, z] = dealcell(num2cell(xyz, 1));
+hypotxy = hypot(x, y);
+angles = [
+    atan2(y, x), ... % azimuth
+    0.5*pi - atan2(z, hypotxy) % inclination
+    ];
+if nargout == 2
+    radius = hypot(hypotxy, z);
+end
+end
+
+% -------------------------------------------------------------------------
+function varargout = dealcell(c)
+assert(iscell(c))
+varargout = c;
+end
+
+% -------------------------------------------------------------------------
+function result = isequalfp(actual, expected, tol)
+%ISEQUALFP True if arrays are numerically equal in finite precision.
+% ISEQUALFP(A,B,TOL) returns true if every element of
+%     ABS(A - B) < TOL.*(ABS(B) + 1)
+% is true. TOL may have the same size as A and B or it may be scalar.
+%
+% NB: Arrays A and B should have identical size and class; unlike
+% ISEQUAL, ISEQUALFP will not silently return false if these differ.
+%
+% ISEQUALFP(A,B) uses 10*EPS(class(B)) for TOL.
+%
+% See also ISEQUAL, EPS.
+
+narginchk(2, 3)
+
+if nargin < 3 || isempty(tol)
+    tol = 10*eps(class(expected));
+end
+
+assert(isequal(class(actual), class(expected)))
+assert(isequal(size(actual), size(expected)))
+assert(isscalar(tol) || isequal(size(tol), size(expected)))
+
+% Ignore nan's common to both arrays
+mask = isnan(actual) & isnan(expected);
+
+scale = abs(expected) + ones('like', expected);
+comparisons = abs(actual - expected) < tol.*scale;
+result = all(comparisons(~mask));
+end
+
+% -------------------------------------------------------------------------
+function [in, on] = polygonpartition(indices, vertices, points)
+
+narginchk(3, nargin)
+assert(iscell(indices))
+assert(all(cellfun(@isnumeric, indices)))
+assert(size(vertices, 2) == 2)
+assert(size(points, 2) == 2)
+
+    function [in, on] = query(indices)
+        [in, on] = inpolygon( ...
+            points(:, 1), ...
+            points(:, 2), ...
+            vertices(indices, 1), ...
+            vertices(indices, 2));
+    end
+
+[in, on] = cellfun(@query, indices, 'UniformOutput', false);
+
+in = flatten(in);
+on = flatten(on);
+
+end
+
+function a = flatten(c)
+a = cellfun(@(row) row(:)', c, 'UniformOutput', false);
+end

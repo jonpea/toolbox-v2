@@ -14,9 +14,10 @@ settings = parse(varargin{:});
 perturb = @(a) a + 1e-3*(rand(size(a)) - 0.5);
 
 %%
-dbtype panel
+dbtype +examples/panel.m
 
 %% Scene geometry and material properties
+import examples.panel
 facets = datatypes.cell2table({
     'Material'     'Gain'   'FaceAlpha'   'FaceColor'            'LineWidth'
     panel.Steel     -3       0.1           graphics.rgb.black     2

@@ -1,10 +1,5 @@
 %% Simplest 2.5D test case with "n" rooms
-function Lrooms2dconcreteNew(numrooms, varargin)
-
-if nargin < 1 || isempty(numrooms)
-    numrooms = 4;
-end
-assert(isscalar(numrooms) && isnumeric(numrooms))
+function Lrooms2dconcreteNew(varargin)
 
 %%
 parser = inputParser;
@@ -36,16 +31,8 @@ t0 = tic;
 tol = 1e-12;
 fontsize = 8;
 
-fig = figure(1);
-clf(fig, 'reset')
-fig.Name = mfilename;
-fig.NumberTitle = 'off';
-fig.Visible = 'off'; % hide figure...
-newtab = graphics.tabbedfigure(fig, 'Visible', 'on'); % ... until first use
-    function ax = newaxes(tabtitle)
-        ax = axes(newtab(tabtitle));
-        hold(ax, 'on')
-    end
+newaxes = graphics.tabbedaxes( ...
+    clf(figure(1), 'reset'), 'Name', mfilename, 'NumberTitle', 'off');
 
 %% Two dimensional model
 mm2m = @(x) x/1000;
@@ -205,7 +192,7 @@ show('Reflection', origins, frames, reflectiongains)
 show('Transmission', origins, frames, transmissiongains)
 
 %%
-dlinks = power.analyze( ...
+[dlinks, ~, trace] = power.analyze( ...
     @scene.reflections, ...
     @scene.transmissions, ...
     scene.NumFacets, ...
@@ -228,22 +215,22 @@ fprintf('============== tracescene: %g sec ==============\n', tracetime)
 %% Compute gains and display table of interactions
 if reporting
     starttime = tic;
-    interactiongains = computegain(trace);
+    interactiongains = power.computegain(trace);
     powertime = toc(starttime);
     fprintf('============== computegain: %g sec ==============\n', powertime)
     
-    assert(istabular(interactiongains))
+    assert(datatypes.struct.tabular.istabular(interactiongains))
     
     %% Distribution of interaction nodes
     disp('From stored interaction table')
-    tabulardisp(interactionstatistics(trace.Data.InteractionType))
+    disp(imagemethod.interactionstatistics(trace.Data.InteractionType))
     
     %% Distribution of received power
-    [gainstats, powertable] = gainstatistics(interactiongains);
-    tabulardisp(gainstats)
+    [gainstats, powertable] = power.gainstatistics(interactiongains);
+    disp(struct2table(gainstats))
     
     %%
-    issink = interactiongains.InteractionType == interaction.Sink;
+    issink = interactiongains.InteractionType == imagemethod.interaction.Sink;
     assert(isequalfp( ...
         elfun.fromdb(interactiongains.TotalGain(issink)), ...
         interactiongains.Power(issink)))

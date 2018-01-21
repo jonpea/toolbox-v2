@@ -32,15 +32,8 @@ function antennaeexample
         end
     end
 
-fig = figure(1);
-clf(fig, 'reset')
-fig.Name = mfilename;
-fig.NumberTitle = 'off';
-fig.Visible = 'off'; % hide figure...
-newtab = graphics.tabbedfigure(fig, 'Visible', 'on'); % ... until first use
-    function ax = newaxes(tabtitle)
-        ax = axes(newtab(tabtitle));
-    end
+[newaxes, fig] = graphics.tabbedaxes( ...
+    clf(figure(1), 'reset'), 'Name', mfilename, 'NumberTitle', 'off');
 
 %% Sampling angles
 theta = linspace(0, pi, 20);
