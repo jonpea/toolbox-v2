@@ -11,7 +11,7 @@ function [th, r, z] = cart2pol(x, y, z)
 %   and Z must be the same size (or any of them can be scalar).  TH is
 %   returned in radians.
 %
-%   NB: In contrast to the behavior of the built-in CART2POL, 
+%   <strong>NB</strong>: In contrast to the behavior of the built-in CART2POL, 
 %       TH is wrapped to [0, 2*PI].
 %
 %   See also CART2POL, CART2SPH, SPH2CART, POL2CART.

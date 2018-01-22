@@ -21,7 +21,7 @@ linkoptions = parser.Results;
     reflect, transmit, numfacets, origins, targets, traceoptions);
 
 % Received gain (in dBW): Rows for access points, columns for mobiles
-downlinksDBW = elfun.todb(sum(downlinks, 3));
+downlinksDBW = specfun.todb(sum(downlinks, 3));
 
 % Downlink calculations
 dlinks = power.dlinksinr( ...
@@ -47,7 +47,7 @@ end
 
 % Received gain (in watts), rows for receivers
 uplinkgainwatts = sum(uplinks, 3);
-uplinkgaindbw = elfun.todb(uplinkgainwatts);
+uplinkgaindbw = specfun.todb(uplinkgainwatts);
 
 % Uplink calculations
 ulinks = power.ulinksinr( ...

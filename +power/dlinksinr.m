@@ -15,8 +15,8 @@ assert(isscalar(mdsdb) && mdsdb < 0)
 [signaldb, assignedsource] = max(linkgaindb, [], dim);
 
 interferencewatts = power.linkinterference(linkgaindb, assignedsource, sourcechannel, 2);
-noisewatts = elfun.fromdb(mdsdb);
-interferenceplusnoisedb = elfun.todb(interferencewatts + noisewatts);
+noisewatts = specfun.fromdb(mdsdb);
+interferenceplusnoisedb = specfun.todb(interferencewatts + noisewatts);
 
 result = struct( ...
     'AccessPoint', assignedsource, ...

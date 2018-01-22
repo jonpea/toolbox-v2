@@ -16,8 +16,8 @@ signaldb = linkgaindb(oneperrow);
 signaldb = signaldb(:);
 
 interferencewatts = power.linkinterference(linkgaindb, assignedsource, sourcechannel, 1);
-noisewatts = elfun.fromdb(mdsdb);
-interferenceplusnoisedball = elfun.todb(interferencewatts(:) + noisewatts);
+noisewatts = specfun.fromdb(mdsdb);
+interferenceplusnoisedball = specfun.todb(interferencewatts(:) + noisewatts);
 
 % Store uplink INP of current access poin in all connected mobiles
 inpdb = interferenceplusnoisedball(assignedsource, :);

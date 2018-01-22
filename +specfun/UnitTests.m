@@ -16,6 +16,24 @@ classdef UnitTests < matlab.unittest.TestCase
     
     methods (Test, ParameterCombination = 'exhaustive')
         
+        function todbTest(testCase)
+            import specfun.todb
+            testCase.verifyEqual(todb(1, 100), -20)
+            testCase.verifyEqual(todb(1, 10), -10)
+            testCase.verifyEqual(todb(1), 0)
+            testCase.verifyEqual(todb(10), 10)
+            testCase.verifyEqual(todb(100), 20)
+        end
+        
+        function fromdbTest(testCase)
+            import specfun.fromdb
+            testCase.verifyEqual(fromdb(-20, 100), 1)
+            testCase.verifyEqual(fromdb(-10, 10), 1)
+            testCase.verifyEqual(fromdb(0), 1)
+            testCase.verifyEqual(fromdb(10), 10)
+            testCase.verifyEqual(fromdb(20), 100)
+        end
+        
         function crossStandardTest(testCase, sz1, sz2, sz3, sz4, dim)
             
             % Shape of operand arrays
@@ -137,12 +155,15 @@ classdef UnitTests < matlab.unittest.TestCase
             verifyequal(1.5*half, quarter)
             verifyequal(full, zero)
             
-            % Interval
+            % Identity on the original interval
             interval = linspace(0.0, quarter);
             verifyequal(interval, interval)
             
             % Wrapping
-            verifyequal(interval + quarter, fliplr(interval))
+            verifyequal(interval + 1*quarter, fliplr(interval))
+            verifyequal(interval + 2*quarter, fliplr(interval))
+            verifyequal(interval + 3*quarter, fliplr(interval))
+            verifyequal(interval + 4*quarter, fliplr(interval))
             
         end
         

@@ -221,7 +221,7 @@ facetofunctionmap = arrayfun(@paneltofunctionindex, scene.PanelType);
 
     function pattern = loadquadpattern(filename)
         pattern = data.loadpatternnew(fullfile('+data', filename), ...
-            'OutputTransform', @elfun.todb, ...
+            'OutputTransform', @specfun.todb, ...
             'InputTransform', @specfun.wrapquadrant);
     end
 
@@ -295,7 +295,7 @@ plan.Rooms = data.engineeringtower8rooms; % relative to 2D (not 3D) plan
     end
 
 centroids = averageof(rxdata.Position, rxdata.Position);
-meangain = @(positions, db) elfun.todb(averageof(positions, elfun.fromdb(db)));
+meangain = @(positions, db) specfun.todb(averageof(positions, specfun.fromdb(db)));
 meanmeasured = meangain(rxdata.Position, measured);
 
 assert(~any(ops.vec(isnan(meanmeasured(settings.RoomIndices, :)))), ...
@@ -338,7 +338,7 @@ cache = struct('FBest', realmax);
             'ReflectionGain', makegainfunctions(reflectionpatterns, local.xreflection), ...
             'TransmissionGain', makegainfunctions(transmissionpatterns, local.xtransmission));
         gain = local.downlinks.PowerDBW;
-        components = elfun.todb(local.downlinks.PowerComponentsWatts);
+        components = specfun.todb(local.downlinks.PowerComponentsWatts);
         s = load('..\compute.mat');
     end
 
@@ -539,7 +539,7 @@ local.theta = deg2rad(local.data.theta(local.mask));
 local.gain = local.data.gain(local.mask); % linear scale (not dB)
 [local.theta, local.permutation] = sort(local.theta);
 local.gain = local.gain(local.permutation);
-result = elfun.todb(median(local.gain)); % sum before conversion to dB
+result = specfun.todb(median(local.gain)); % sum before conversion to dB
 %clf, hist(local.gain), title('filename')
 end
 

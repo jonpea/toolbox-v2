@@ -70,6 +70,8 @@ To see the index of supporting scripts:
 
 ## Transmission points
 
+## Recommended practice
+
 ## Contributors
 
 From the Department of Electrical & Computer Engineering at the University of Auckland:
@@ -77,17 +79,35 @@ From the Department of Electrical & Computer Engineering at the University of Au
 - Yuen Zhuang Goh 
 - Michael Neve
 
-## Appendix A: Coordinate systems
+## Appendix A: Geometric primitives
 
-### `cart`
+### Coordinates systems
 
-### `pol`
+|       | Name                         | Coordinates       |
+-----------------------------------------------------------| 
+|`cart` | Cartesian/Rectangular        | `x`, `y`, `z`     |
+|`pol`  | Polar                        | `az`, `r`, `z     |
+|`sph`  | Spherical (elevation form)   | `az`, `el`, `r`   |
+|`sphi` | Spherical (inclination form) | `az`, `inc`, `r`  |
+|`uv`   |                              |                   |
 
-### `sph`
+### Storage formats
 
-### `sphi`
 
-### `uv`
+#### 2-D grid functions
+|            | Name         | Description                                |
+--------------------------------------------------------------------------
+| `f(X,Y)`   | full grid    | `X` and `Y` are matrices of identical size |
+| `f({x,y})` | grid vectors | `x` and `y` are vectors                    |
+| `f(xy)`    | unstructured | `xy` is a matrix with two columns          |
+
+#### 3-D grid functions
+|              | Name         | Description                                    |
+--------------------------------------------------------------------------------
+| `f(X,Y,Z)`   | full grid    | `X`, `Y`, `Z` are 2-D arrays of identical size |
+| `f({x,y,z})` | grid vectors | `x`, `y`, `z` are vectors                      |
+| `f(xyz)`     | unstructured | `xyz` is a matrix with three columns           |
+
 
 
 ## Appendix B: File formats
@@ -126,5 +146,3 @@ In `cmake-gui`:
 - ... but clear `EMBREE_TBB_ROOT` (otherwise cmake may select EMBREE_TBB_LIBRARY and EMBREE_TBB_LIBRARY_MALLOC for VC12 rather than VC14)
 - ... and set `EMBREE_TBB_LIBRARY` to e.g. "C:\path\to\tbb2018_20170726oss\lib\intel64\vc14\tbb.lib" (i.e. appropriate for your version of Visual Studio - here vc14 rather than vc12)
 - Similarly, set `EMBREE_TBB_LIBRARY_MALLOC` to e.g. "C:\path\to\tbb2018_20170726oss\lib\intel64\vc14\tbbmalloc.lib"
-
-

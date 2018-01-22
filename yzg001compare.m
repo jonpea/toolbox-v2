@@ -29,7 +29,7 @@ disp(kakapo)
 
 %% Visualize received power
 figure(1), clf, axis equal
-surf(nelib.gridx, nelib.gridy, elfun.todb(nelib.total), 'EdgeAlpha', 0.1)
+surf(nelib.gridx, nelib.gridy, specfun.todb(nelib.total), 'EdgeAlpha', 0.1)
 xlabel('x'), ylabel('y')
 title('Received power (dBw)')
 rotate3d on
@@ -37,7 +37,7 @@ rotate3d on
 %% Maximum relative error for each reflection arity
 relativeerror = @(actual, expected) abs(actual - expected)./abs(expected);
 errorwatts = relativeerror(kakapo.gridp, nelib.gridp);
-errordb = relativeerror(elfun.todb(kakapo.gridp), elfun.todb(nelib.gridp));
+errordb = relativeerror(specfun.todb(kakapo.gridp), specfun.todb(nelib.gridp));
 maxover = @(x, dim) max(x, [], dim);
 maxreduce = @(x) squeeze(maxover(maxover(x, 1), 2));
 maxerrorwatts = maxreduce(errorwatts);
@@ -51,7 +51,7 @@ disp(struct2table(struct( ...
 %% Visualize distribution of relative errors
 figure(2), clf, axis equal
 subplot(1, 1 + size(errorwatts, 3), 1)
-surf(nelib.gridx, nelib.gridy, elfun.todb(nelib.total), 'EdgeAlpha', 0.1)
+surf(nelib.gridx, nelib.gridy, specfun.todb(nelib.total), 'EdgeAlpha', 0.1)
 axis tight, axis off, view(2)
 title('total')
 colorbar('Location', 'southoutside')

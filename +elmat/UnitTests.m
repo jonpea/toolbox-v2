@@ -1,6 +1,8 @@
 classdef UnitTests < matlab.unittest.TestCase
     
     properties (TestParameter)
+        array = {[], 1, 1 : 3}
+        orientation = {'row', 'column'}
     end
     
     methods (Test, ParameterCombination = 'exhaustive')
@@ -31,12 +33,12 @@ classdef UnitTests < matlab.unittest.TestCase
             end
             
             angle = rand;
-            orientation = rand(1, 3); % row vector
+            row = rand(1, 3); % row vector
             
             % NB: Test requires that input is orthogonal to axis of rotation
-            preimage = sum(null(orientation(:)'), 2)';
+            preimage = sum(null(row(:)'), 2)';
             
-            rotor = elmat.rotor3(orientation, angle);
+            rotor = elmat.rotor3(row, angle);
             image = preimage*rotor;
             
             % Rotation matrix is orthogonal
@@ -45,15 +47,24 @@ classdef UnitTests < matlab.unittest.TestCase
             
             % Rotation preserves angle relative to axis of rotation
             verifyEqual( ...
-                dot(orientation, image), ...
-                dot(orientation, preimage))
-            verifyEqual(orientation*rotor, orientation)
+                dot(row, image), ...
+                dot(row, preimage))
+            verifyEqual(row*rotor, row)
             
             % Rotation is through the angle specified
             verifyEqual(subspace(preimage(:), image(:)), angle) % Cosine Rule
         end
-      
-        function insertTest(testCase)
+        
+        function insertTest(testCase, array)
+            
+            import elmat.insert
+            value = 100;
+            array = array(:)';
+            for i = 1 : numel(array) + 1
+                actual = insert(array, i, value);
+                expected = [array(1 : i - 1), value, array(i : end)];
+                testCase.verifyEqual(actual, expected)
+            end
             
         end
         

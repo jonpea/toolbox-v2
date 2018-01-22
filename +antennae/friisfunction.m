@@ -26,8 +26,8 @@ end
 assert(datatypes.isfunction(frequency) || isvector(frequency))
 
     function result = evaluate(id, distance)
-        %result = power.friisgain(distance, elfun.lightspeed./frequency(id), units);
-        result = friis(distance, elfun.lightspeed./frequency(id));
+        %result = power.friisgain(distance, specfun.lightspeed./frequency(id), units);
+        result = friis(distance, specfun.lightspeed./frequency(id));
     end
 
 fun = @evaluate;

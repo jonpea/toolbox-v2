@@ -70,7 +70,7 @@ for i = 1 : 200
     % gain_change_dB and adjust the gain of mobmin up by gain_change_dB
     target_SIR_dB = 0.5*(sirmin + sirmax);
     
-    gam = elfun.fromdb(target_SIR_dB);
+    gam = specfun.fromdb(target_SIR_dB);
     
     KK = (gaa*gbb)/gam - gam*gab*gba;
     

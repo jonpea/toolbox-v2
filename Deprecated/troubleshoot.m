@@ -1,4 +1,4 @@
-import elfun.todb
+import specfun.todb
 
 tol = 1e-13;
 iname = 'yzg0012dinteractions.mat';

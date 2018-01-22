@@ -28,14 +28,14 @@ arityindex = find(s.arities == arity);
 if isempty(arityindex)
     arityindex = numarities + 1;
 end
-powersdb = elfun.todb(s.powers);
+powersdb = specfun.todb(s.powers);
 %for i = 1 : numarities + 1
 ax = subplot(1, 2, i); hold on
 if arityindex <= numarities
     temp = powersdb(:, 1, arityindex);
     titlestring = sprintf('arity %d', arity);
 else
-    temp = elfun.todb(sum(s.powers, 3));
+    temp = specfun.todb(sum(s.powers, 3));
     titlestring = 'total';
 end
 temp = reshape(temp, size(s.gridx)); % 1st transmitter only

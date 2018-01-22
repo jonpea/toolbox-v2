@@ -64,7 +64,7 @@ freegain = gainfunctions.Free(sourceid, totaldistance);
 interactiongain = accumarray( ...
     interactions.Identifier, interactions.InteractionGain);
 totalgain = freegain + interactiongain;
-power = elfun.fromdb(totalgain);
+power = specfun.fromdb(totalgain);
 
 % This function assigns given values to the rows of an array (whose rows
 % are assocated with interactions) corresponding to sink nodes

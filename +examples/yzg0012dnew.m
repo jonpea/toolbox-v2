@@ -77,7 +77,7 @@ dbtype(antennafilename, '1:5')
 %%
 columns = data.loadcolumns(antennafilename, '%f %f');
 source.Pattern = griddedInterpolant( ...
-    deg2rad(columns.phi), elfun.todb(columns.gain));
+    deg2rad(columns.phi), specfun.todb(columns.gain));
 source.Gain = antennae.dispatch( ...
     source.Pattern, 1, ...
     antennae.orthocontext(source.Frame, @specfun.cart2circ));
@@ -90,14 +90,14 @@ if options.Plotting
         ones(size(azimuth)), ...
         [cos(azimuth(:)) sin(azimuth(:))]);
     figure(2), clf('reset')
-    polarplot(azimuth, elfun.fromdb(radius), 'LineWidth', 2.0)
+    polarplot(azimuth, specfun.fromdb(radius), 'LineWidth', 2.0)
     title('Antenna gain in global coordinates')
     
     figure(1)
     ax = gca;
     hold(ax, 'on')
     graphics.polar(ax, ...
-        @(varargin) elfun.fromdb(source.Gain(varargin{:})), ...
+        @(varargin) specfun.fromdb(source.Gain(varargin{:})), ...
         source.Position, ...
         source.Frame, ...
         'Azimuth', azimuth, ...
@@ -181,7 +181,7 @@ if options.Reporting
     %%
     issink = interactiongains.InteractionType == imagemethod.interaction.Sink;
     assert(isequalfp( ...
-        elfun.fromdb(interactiongains.TotalGain(issink)), ...
+        specfun.fromdb(interactiongains.TotalGain(issink)), ...
         interactiongains.Power(issink)))
     
     missingarities = setdiff(0 : max(options.Arities), options.Arities);
@@ -248,7 +248,7 @@ if min(size(gridx)) == 1
 end
 
 %%
-surfc(gridx, gridy, elfun.todb(powersum), 'EdgeAlpha', 0.1)
+surfc(gridx, gridy, specfun.todb(powersum), 'EdgeAlpha', 0.1)
 set(gca, 'DataAspectRatio', [1.0, 1.0, 25])
 title('Gain at Receivers (dBW)')
 rotate3d on

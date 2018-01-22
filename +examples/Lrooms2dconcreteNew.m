@@ -117,11 +117,7 @@ source.Frequency = 1d9; % [Hz]
 points.plot(source.Origin, '.', 'Color', 'red', 'MarkerSize', 20)
 rotate3d on
 
-%% Source antennae gain functions
-makepattern = @(name) loadpattern(fullfile('+data', name), @elfun.todb);
-
-%% Trace reflection paths
-starttime = tic;
+%% Gain functions
 
 sourcegain = power.isofunction(0.0);
 
@@ -133,6 +129,8 @@ facetofunctionmap = [ones(size(scene.Frame, 1) - 2, 1); 2; 2];
 % facetofunctionmap2(gibIndices, 1) = 1;
 % facetofunctionmap2(concreteIndices, 1) = 2;
 % assert(isequal(facetofunctionmap, facetofunctionmap2))
+
+makepattern = @(name) loadpattern(fullfile('+data', name), @specfun.todb);
 
 reflectiongains = antennae.dispatch({
     makepattern('Wall1_TM_refl_1GHz.txt') ... % gib/reflection
@@ -165,7 +163,7 @@ frames = [frame; frame];
         plotaxes(ax, origin, frame)
         ax = subplot(1, 2, 1);
         graphics.spherical(ax, ...
-            funfun.comp(@elfun.fromdb, 1, gain), ...
+            funfun.comp(@specfun.fromdb, 1, gain), ...
             origin, frame, ...
             'Azimuth', linspace(0, 2*pi), ...
             'Inclination', linspace(0, pi), ...
@@ -174,7 +172,7 @@ frames = [frame; frame];
         view(ax, 70, 40)
         ax = subplot(1, 2, 2);
         graphics.polar(ax, ...
-            funfun.comp(@elfun.fromdb, 1, gain), ...
+            funfun.comp(@specfun.fromdb, 1, gain), ...
             origin, frame, ...
             'Inclination', linspace(0, pi, 100), ...
             'LineWidth', 1.0);
@@ -191,7 +189,9 @@ show('Reflection', origins, frames, reflectiongains)
 % Transmission gain patterns for gib and concrete:
 show('Transmission', origins, frames, transmissiongains)
 
-%%
+%% Trace reflection paths
+starttime = tic;
+
 [dlinks, ~, trace] = power.analyze( ...
     @scene.reflections, ...
     @scene.transmissions, ...
@@ -232,7 +232,7 @@ if reporting
     %%
     issink = interactiongains.InteractionType == imagemethod.interaction.Sink;
     assert(isequalfp( ...
-        elfun.fromdb(interactiongains.TotalGain(issink)), ...
+        specfun.fromdb(interactiongains.TotalGain(issink)), ...
         interactiongains.Power(issink)))
     assert(isequalfp(powers, powertable, tol))
     disp('calculated powers do match :-)')
@@ -273,7 +273,7 @@ for i = 1 : numarities + 1
         temp = sum(powers, 3);
         titlestring = 'total';
     end
-    temp = reshape(elfun.todb(temp), size(gridx)); 
+    temp = reshape(specfun.todb(temp), size(gridx)); 
     surf(ax, gridx, gridy, temp, ...
         'EdgeAlpha', 0.0', 'FaceAlpha', 0.9)
     caxis(ax, [min(temp(:)), min(max(temp(:)), gainthreshold)])

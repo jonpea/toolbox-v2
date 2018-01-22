@@ -2,7 +2,8 @@ function db = todb(a, b)
 %TODB Convert to decibel scale.
 %   TODB(P) returns 10*LOG10(P).
 %
-%   TODB(P,Q) returns TODB(P./Q) == 10*LOG10(P./Q) == TODB(P)-TODB(Q).
+%   TODB(P,Q) returns 
+%     TODB(P./Q) == 10*LOG10(P./Q) == TODB(P)-TODB(Q).
 % 
 %   See also FROMDB.
 

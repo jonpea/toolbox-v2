@@ -80,14 +80,14 @@ frequency = 2.45d9; % [Hz]
 % Access point's antenna gain functions
 elevation = 0.0;
 source.Pattern = data.embeddedpattern( ...
-    data.loadpattern(fullfile('+data', 'yuen1b.txt'), @elfun.todb), ...
+    data.loadpattern(fullfile('+data', 'yuen1b.txt'), @specfun.todb), ...
     elevation);
 source.Gain = power.framefunction(source.Pattern, source.Frame);
 if options.Plotting
     
     [azimuth, elevation] = meshgrid(linspace(0, 2*pi, 100)', elevation);
     allangles = points.meshpoints(azimuth, elevation);
-    radius = elfun.fromdb(source.Pattern(allangles));
+    radius = specfun.fromdb(source.Pattern(allangles));
     figure(2), clf('reset')
     polarplot(azimuth, radius, 'b.')
     
@@ -177,7 +177,7 @@ if options.Reporting
     %%
     issink = interactiongains.InteractionType == imagemethod.interaction.Sink;
     assert(isequalfp( ...
-        elfun.fromdb(interactiongains.TotalGain(issink)), ...
+        specfun.fromdb(interactiongains.TotalGain(issink)), ...
         interactiongains.Power(issink)))
     
     missingarities = setdiff(0 : max(options.Arities), options.Arities);
@@ -244,7 +244,7 @@ if min(size(gridx)) == 1
 end
 
 %%
-surfc(gridx, gridy, elfun.todb(powersum), 'EdgeAlpha', 0.1)
+surfc(gridx, gridy, specfun.todb(powersum), 'EdgeAlpha', 0.1)
 set(gca, 'DataAspectRatio', [1.0, 1.0, 25])
 title('Gain at Receivers (dBW)')
 rotate3d on
