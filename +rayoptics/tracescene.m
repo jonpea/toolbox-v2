@@ -258,12 +258,12 @@ uplinks = accumulate(uplinks, gain.Sink + gain.Path);
 
 if settings.Reporting
     
-    import imagemethod.interaction
+    import rayoptics.NodeTypes
     numtransmissions = numel(transmission.FaceIndex);
-    segments.SourceType = repmat(interaction.Source, numPaths, 1);
-    segments.SinkType = repmat(interaction.Sink, numPaths, 1);
-    segments.ReflectionType = repmat(interaction.Reflection, numPaths, numFacesPerPath);
-    transmission.Type = repmat(interaction.Transmission, numtransmissions, 1);
+    segments.SourceType = repmat(NodeTypes.Source, numPaths, 1);
+    segments.SinkType = repmat(NodeTypes.Sink, numPaths, 1);
+    segments.ReflectionType = repmat(NodeTypes.Reflection, numPaths, numFacesPerPath);
+    transmission.Type = repmat(NodeTypes.Transmission, numtransmissions, 1);
     transmission.Blank = blank(transmission.FaceIndex);
     
     import datatypes.struct.tabular.istabular

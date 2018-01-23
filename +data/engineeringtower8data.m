@@ -5,7 +5,7 @@ gain_concrete = -20;
 gain_wall = -3;
 
 header = { 'x1', 'y1', 'x2', 'y2', 'gain' }; %#ok<*NASGU>
-data = num2cell([
+table = num2cell([
     0,     0,    18.5, 0,    gain_glass;  % Exterior glass
     18.5,  0,    18.5, 18.5, gain_glass;
     18.5,  18.5, 0,    18.5, gain_glass;
@@ -51,5 +51,5 @@ data = num2cell([
     0,     4.2,  4.7,  4.2,  gain_wall;
     ], 1);
 
-[faces, vertices] = linestofacevertex(data{1 : 4});
-gains = data{5};
+[faces, vertices] = data.linestofacevertex(table{1 : 4});
+gains = table{5};

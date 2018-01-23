@@ -1,5 +1,5 @@
-classdef interaction < uint8
-    %INTERACTION Enumerates categories of ray-wall interactions.
+classdef NodeTypes < uint8
+    %NODETYPES Enumerates categories of ray-entity interaction nodes.
     % Convertible to UINT8 for use in built-in functions like ACCUMARRAY.
     enumeration
         Reflection(1)

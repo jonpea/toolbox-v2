@@ -11,6 +11,9 @@ function varargout = numcores
 %
 %   See also maxNumCompThreads.
 
+% Note to Maintainer:
+% For further information on FEATURE, see
+% https://undocumentedmatlab.com/blog/undocumented-feature-function
 switch nargout
     case 0
         feature('numcores');

@@ -7,7 +7,7 @@ fprintf('\n')
 
 fprintf('<strong>Environment</strong>\n')
 parallel.numcores
-fprintf('Run <strong>parallel.startparpool(n)</strong> to start <strong>n</strong> workers\n')
+fprintf('Run <strong>parpool</strong> to start parallel pool with default settings\n')
 
 fprintf('\n<strong>Mex-files</strong>\n')
 fprintf('Run <strong>compile</strong> to build mex functions\n')

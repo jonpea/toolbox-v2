@@ -227,7 +227,9 @@ classdef Scene < handle
             assert(ndebug || isscalar(faceid)) % "either ':' or one facet"
             assert(ndebug || sum(obj.Chunks) == obj.Offset)
             
-            [tnear, tfar] = imagemethod.raylimits(class(origins));
+            %[tnear, tfar] = imagemethod.raylimits(class(origins));
+            tnear = zeros('like', origins);
+            tfar = ones('like', origins);
             
             % State variables are loop indices
             % NB: These C/C++ indices start at zero

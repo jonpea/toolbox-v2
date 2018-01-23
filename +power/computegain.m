@@ -1,32 +1,33 @@
-function result = computegain(gainfunctions, interactions)
+function result = computegain(hits, gainFuns)
 
 narginchk(1, 2)
 if nargin == 1
     % Arguments have been packaged into a single struct
-    interactions = gainfunctions.Data;
-    gainfunctions = gainfunctions.Functions;
+    gainFuns = hits.Functions;
+    hits = hits.Data;
 end
-assert(datatypes.struct.tabular.istabular(interactions))
-assert(isstruct(gainfunctions))
+import datatypes.struct.tabular.istabular
+assert(istabular(hits))
+assert(isstruct(gainFuns))
 
-numinteractiontypes = numel(enumeration('imagemethod.interaction'));
+numHitTypes = numel(enumeration('rayoptics.NodeTypes'));
 
 % Partition interactions by type
 % e.g. interactionrows{double(transmission)} returns
 % indices into the rows of the table of interactions
-interactionrows = accumarray( ...
-    double(interactions.InteractionType), ...
-    (1 : numel(interactions.InteractionType))', ...
-    [numinteractiontypes, 1], ...
+hitRowsByType = accumarray( ...
+    double(hits.InteractionType), ...
+    (1 : numel(hits.InteractionType))', ...
+    [numHitTypes, 1], ...
     @(indices) {indices});
 
     function result = evaluate(type)
         % Computes gains for each type of interaction
-        index = imagemethod.interaction(type);
+        index = rayoptics.NodeTypes(type);
         result = feval( ...
-            gainfunctions.(type), ... % function/head
-            interactions.ObjectIndex(interactionrows{index}, :), ... % interaction object
-            interactions.Direction(interactionrows{index}, :)); % ray/beam direction
+            gainFuns.(type), ... % function/head
+            hits.ObjectIndex(hitRowsByType{index}, :), ... % interaction object
+            hits.Direction(hitRowsByType{index}, :)); % ray/beam direction
     end
 
     function result = accululatefor(type, transform)
@@ -34,59 +35,58 @@ interactionrows = accumarray( ...
         % vector with as many rows as there are interactions of all types;
         % rows corresponding to other types of intereactions contain zeros
         result = accumarray( ...
-            interactionrows{imagemethod.interaction(type)}(:), ...
+            hitRowsByType{rayoptics.NodeTypes(type)}(:), ...
             transform(evaluate(type)), ...
-            size(interactions.SegmentIndex)); % previously 'RayIndex'
+            size(hits.SegmentIndex)); % previously 'RayIndex'
     end
 
 % Compute gain associated with individual interactions
-sourcegain = accululatefor('Source', @elfun.identity); % @todb in old version
-reflectiongain = accululatefor('Reflection', @elfun.identity);
-transmissiongain = accululatefor('Transmission', @elfun.identity);
+sourceGain = accululatefor('Source', @elfun.identity); % @todb in old version
+reflectionGain = accululatefor('Reflection', @elfun.identity);
+transmissionGain = accululatefor('Transmission', @elfun.identity);
 
 % Aggregate sparse (with dense storage) vectors into a single column
-interactions.InteractionGain = ...
-    sourcegain + reflectiongain + transmissiongain;
+hits.InteractionGain = ...
+    sourceGain + reflectionGain + transmissionGain;
 
 % Extracts source wavelength for each reflected path
-issource = interactions.InteractionType == imagemethod.interaction.Source;
-issink = interactions.InteractionType == imagemethod.interaction.Sink;
-numpaths = numel(unique(interactions.Identifier));
-assert(sum(issource) == numpaths)
-assert(sum(issink) == numpaths)
-sourceid = interactions.ObjectIndex(issource, :);
+isSource = hits.InteractionType == rayoptics.NodeTypes.Source;
+isSink = hits.InteractionType == rayoptics.NodeTypes.Sink;
+numPaths = numel(unique(hits.Identifier));
+assert(sum(isSource) == numPaths)
+assert(sum(isSink) == numPaths)
+sourceIndex = hits.ObjectIndex(isSource, :);
 
 % Friis free-space gains
-totaldistance = accumarray(interactions.Identifier, interactions.FreeDistance);
-freegain = gainfunctions.Free(sourceid, totaldistance);
+totalDistance = accumarray(hits.Identifier, hits.FreeDistance);
+freeGainByPath = gainFuns.Free(sourceIndex, totalDistance);
 
 % Accumulate gains over paths
-interactiongain = accumarray( ...
-    interactions.Identifier, interactions.InteractionGain);
-totalgain = freegain + interactiongain;
-power = specfun.fromdb(totalgain);
+interactionGainByPath = accumarray(hits.Identifier, hits.InteractionGain); % [dBw]
+totalGainByPath = freeGainByPath + interactionGainByPath;
+power = specfun.fromdb(totalGainByPath);
 
 % This function assigns given values to the rows of an array (whose rows
-% are assocated with interactions) corresponding to sink nodes
-selectsink = interactions.InteractionType == imagemethod.interaction.Sink;
-    function result = assignsinks(values)
-        result = zeros(size(interactions.FreeDistance));
+% are assocated with hits) corresponding to sink nodes
+selectsink = hits.InteractionType == rayoptics.NodeTypes.Sink;
+    function result = assignSinks(values)
+        result = zeros(size(hits.FreeDistance));
         result(selectsink) = values;
     end
 
-interactions.TotalDistance = assignsinks(totaldistance);
-interactions.FreeGain = assignsinks(freegain);
-interactions.PathInteractionGain = assignsinks(interactiongain);
-interactions.TotalGain = assignsinks(totalgain);
-interactions.Power = assignsinks(power);
+hits.TotalDistance = assignSinks(totalDistance);
+hits.FreeGain = assignSinks(freeGainByPath);
+hits.PathInteractionGain = assignSinks(interactionGainByPath);
+hits.TotalGain = assignSinks(totalGainByPath);
+hits.Power = assignSinks(power);
 
-import contracts.ndebug
-assert(ndebug || all(isfinite(interactions.FinalDistance)))
-assert(ndebug || all(isfinite(interactions.TotalDistance)))
-assert(ndebug || isequal(size(interactions.FinalDistance), size(interactions.TotalDistance)))
-assert(ndebug || norm(interactions.FinalDistance - interactions.TotalDistance, inf) < 1e-10)
+% Sanity checks
+assert(all(isfinite(hits.FinalDistance)))
+assert(all(isfinite(hits.TotalDistance)))
+assert(isequal(size(hits.FinalDistance), size(hits.TotalDistance)))
+assert(norm(hits.FinalDistance - hits.TotalDistance, inf) < 1e-10)
 
-result = orderfields(interactions, { ...
+result = orderfields(hits, { ...
     'Identifier'
     'ObjectIndex'
     'InteractionType'
@@ -105,5 +105,7 @@ result = orderfields(interactions, { ...
     'SourceGain'
     'SinkGain'
     });
+
+assert(istabular(result))
 
 end

@@ -29,7 +29,7 @@ gainthreshold = options.GainThreshold; % cut-off around sources
 %%
 t0 = tic;
 tol = 1e-12;
-fontsize = 8;
+%fontsize = 8;
 
 newaxes = graphics.tabbedaxes( ...
     clf(figure(1), 'reset'), 'Name', mfilename, 'NumberTitle', 'off');
@@ -45,6 +45,7 @@ concreteIndices = 17 : 18;
 
 %%
 ax = newaxes('Scene 2D');
+hold(ax, 'on')
 patch(ax, ...
     'Faces', fv2D.Faces, ...
     'Vertices', fv2D.Vertices, ...
@@ -73,6 +74,7 @@ assert(isequal(fv3Dold.Faces(1 : 16, :), fv3D.Faces(1 : 16, :)))
 scene = scenes.Scene(fv3Dold.Faces, fv3D.Vertices);
 %%
 ax = newaxes('Scene 3D');
+hold(ax, 'on')
 patch(ax, ...
     'Faces', fv3Dold.Faces(gibIndices, :), ...
     'Vertices', fv3D.Vertices, ...
@@ -192,66 +194,50 @@ show('Transmission', origins, frames, transmissiongains)
 %% Trace reflection paths
 starttime = tic;
 
-[dlinks, ~, trace] = power.analyze( ...
+[downlinks, ~, trace] = power.analyze( ...
     @scene.reflections, ...
     @scene.transmissions, ...
     scene.NumFacets, ...
     source.Origin, ...
     sink.Origin, ...
     'ReflectionArities', arities, ...
-    'FreeGain', power.friisfunction(source.Frequency), ...
+    'FreeGain', antennae.friisfunction(source.Frequency), ...
     'SourceGain', sourcegain, ... % [dB]
     'ReflectionGain', reflectiongains, ...
     'TransmissionGain', transmissiongains, ...
     'SinkGain', power.isofunction(0.0), ... % [dB]
     'Reporting', reporting);
 
-powers = dlinks.PowerComponentsWatts;
+gains = downlinks.GainComponents;
 
-tracetime = toc(starttime);
+traceTime = toc(starttime);
 
-fprintf('============== tracescene: %g sec ==============\n', tracetime)
+fprintf('============== tracescene: %g sec ==============\n', traceTime)
 
 %% Compute gains and display table of interactions
 if reporting
-    starttime = tic;
-    interactiongains = power.computegain(trace);
-    powertime = toc(starttime);
-    fprintf('============== computegain: %g sec ==============\n', powertime)
-    
-    assert(datatypes.struct.tabular.istabular(interactiongains))
-    
+        
     %% Distribution of interaction nodes
     disp('From stored interaction table')
-    disp(imagemethod.interactionstatistics(trace.Data.InteractionType))
+    disp(struct2table(rayoptics.trace.frequencies(trace)))
     
     %% Distribution of received power
-    [gainstats, powertable] = power.gainstatistics(interactiongains);
-    disp(struct2table(gainstats))
+    [gainStats, gainsFromTrace] = rayoptics.trace.process(trace);
+    disp(struct2table(gainStats))
     
-    %%
-    issink = interactiongains.InteractionType == imagemethod.interaction.Sink;
-    assert(isequalfp( ...
-        specfun.fromdb(interactiongains.TotalGain(issink)), ...
-        interactiongains.Power(issink)))
-    assert(isequalfp(powers, powertable, tol))
+    %% Sanity check
+    assert(isequalfp(gains, gainsFromTrace, tol))
     disp('calculated powers do match :-)')
-    
-    %%
-    fprintf('\nTiming\n______\n')
-    fprintf(' computing nodes: %g sec\n', tracetime)
-    fprintf(' computing gains: %g sec\n', powertime)
-    fprintf('   all processes: %g sec\n', toc(t0))
-    
+        
 end
 
 %% Power distributions
-aritypower = squeeze(sum(sum(powers, 1), 2)); % total power at each arity
-totalpower = sum(aritypower);
-relativepower = aritypower ./ totalpower;
+arityGains = squeeze(sum(sum(gains, 1), 2)); % total power at each arity
+totalGain = sum(arityGains);
+relativeGains = arityGains ./ totalGain;
 select = arities(:) + 1;
 disp(array2table( ...
-    [arities(:), aritypower(select), 100*relativepower(select)], ...
+    [arities(:), arityGains(select), 100*relativeGains(select)], ...
     'VariableNames', {'Arity', 'Power', 'RelativePower'}))
 
 %% Aggregate power at each receiver
@@ -267,10 +253,10 @@ numarities = numel(arities);
 for i = 1 : numarities + 1
     ax = subplot(1, 1 + numarities, i); hold on
     if i <= numarities
-        temp = powers(:, 1, i);
+        temp = gains(:, 1, i);
         titlestring = sprintf('arity %d', arities(i));
     else
-        temp = sum(powers, 3);
+        temp = sum(gains, 3);
         titlestring = 'total';
     end
     temp = reshape(specfun.todb(temp), size(gridx)); 
@@ -430,6 +416,7 @@ function size = fontsize
 size = 15;
 end
 
+% -------------------------------------------------------------------------
 function labelaxis(ax, origins, frames, direction, local)
 local.axisscale = 1.5;
 local.labelscale = 1.6;
@@ -446,6 +433,7 @@ points.text(ax, ...
     'FontSize', fontsize);
 end
 
+% -------------------------------------------------------------------------
 function plotaxes(ax, origins, frames)
 points.text(ax, ...
     origins, ...
@@ -455,4 +443,14 @@ points.text(ax, ...
 for i = 1 : elmat.ncols(origins)
     labelaxis(ax, origins, frames, i);
 end
+end
+
+% -------------------------------------------------------------------------
+function tf = isequalfp(a, b, tol)
+if nargin < 3
+    tol = 1e-12;
+end
+a = a(:);
+b = b(:);
+tf = max(abs(a - b) ./ (0.5*(abs(a) + abs(b)) + 1)) < tol;
 end

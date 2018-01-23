@@ -2,20 +2,19 @@ function result = reflectionstatistics(powers, arities)
 
 narginchk(1, 2)
 if isstruct(powers)
-    powers = powers.PowerComponentsWatts;
+    powers = powers.GainComponents;
 end
-
 if nargin < 2
     arities = 0 : size(powers, 3) - 1;
 end
 
-aritypower = squeeze(sum(sum(powers, 1), 2)); % total power at each arity
-totalpower = sum(aritypower);
-relativepower = aritypower ./ totalpower;
+arityPower = squeeze(sum(sum(powers, 1), 2)); % total power at each arity
+totalPower = sum(arityPower);
+relativePower = arityPower ./ totalPower;
 select = arities(:) + 1;
 result = struct( ...
     'NumReflections', arities(:), ...
-    'PowerWatts', aritypower(select), ...
-    'PowerRelative', relativepower(select), ...
-    'PowerNanoWatts', aritypower(select)/1e-9, ...
-    'PowerRelativePercent', relativepower(select)*100);
+    'PowerWatts', arityPower(select), ...
+    'PowerRelative', relativePower(select), ...
+    'PowerNanoWatts', arityPower(select)/1e-9, ...
+    'PowerRelativePercent', relativePower(select)*100);

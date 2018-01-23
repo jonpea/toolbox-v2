@@ -99,11 +99,12 @@ classdef Scene < scenes.Scene
                 'Increase buffer capacity of %u to accommodate %u rays', ...
                 obj.RayCapacity, numrays)
             
-            foreachray = @(a) repmat(a, numrays, 1);
-            
-            [tnear, tfar] = imagemethod.raylimits(embree.embreereal);
-            tnear = foreachray(tnear);
-            tfar = foreachray(tfar);
+            foreachray = @(a) repmat(cast(a, embree.embreereal), numrays, 1);
+            %[tnear, tfar] = imagemethod.raylimits(embree.embreereal);
+            %tnear = foreachray(tnear);
+            %tfar = foreachray(tfar);
+            tnear = foreachray(0);
+            tfar = foreachray(1);
             
             obj.construct
             obj.allocatebuffers
