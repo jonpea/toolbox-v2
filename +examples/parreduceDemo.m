@@ -1,4 +1,4 @@
-function parreducedemo(numTasks, targetDuration)
+function parreduceDemo(numTasks, targetDuration)
 %% Demonstrates use of parllel reduce function |parreduce|
 
 %%

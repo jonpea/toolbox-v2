@@ -121,7 +121,7 @@ rotate3d on
 
 %% Gain functions
 
-sourcegain = power.isofunction(0.0);
+sourcegain = antennae.isopattern(0.0);
 
 % Incorrect! :-(
 facetofunctionmap = [ones(size(scene.Frame, 1) - 2, 1); 2; 2];
@@ -194,7 +194,7 @@ show('Transmission', origins, frames, transmissiongains)
 %% Trace reflection paths
 starttime = tic;
 
-[downlinks, ~, trace] = power.analyze( ...
+[downlinks, ~, trace] = rayoptics.analyze( ...
     @scene.reflections, ...
     @scene.transmissions, ...
     scene.NumFacets, ...
@@ -205,7 +205,7 @@ starttime = tic;
     'SourceGain', sourcegain, ... % [dB]
     'ReflectionGain', reflectiongains, ...
     'TransmissionGain', transmissiongains, ...
-    'SinkGain', power.isofunction(0.0), ... % [dB]
+    'SinkGain', antennae.isopattern(0.0), ... % [dB]
     'Reporting', reporting);
 
 gains = downlinks.GainComponents;

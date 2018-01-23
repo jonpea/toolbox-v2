@@ -21,7 +21,7 @@ hitRowsByType = accumarray( ...
     [numHitTypes, 1], ...
     @(indices) {indices});
 
-    function result = evaluate(type)
+    function result = evaluateGainDBW(type)
         % Computes gains for each type of interaction
         index = rayoptics.NodeTypes(type);
         result = feval( ...
@@ -30,20 +30,20 @@ hitRowsByType = accumarray( ...
             hits.Direction(hitRowsByType{index}, :)); % ray/beam direction
     end
 
-    function result = accululatefor(type, transform)
+    function result = accululateFor(type)
         % Accumulates gains of a given interaction type into a column
         % vector with as many rows as there are interactions of all types;
         % rows corresponding to other types of intereactions contain zeros
         result = accumarray( ...
             hitRowsByType{rayoptics.NodeTypes(type)}(:), ...
-            transform(evaluate(type)), ...
+            evaluateGainDBW(type), ...
             size(hits.SegmentIndex)); % previously 'RayIndex'
     end
 
 % Compute gain associated with individual interactions
-sourceGain = accululatefor('Source', @elfun.identity); % @todb in old version
-reflectionGain = accululatefor('Reflection', @elfun.identity);
-transmissionGain = accululatefor('Transmission', @elfun.identity);
+sourceGain = accululateFor('Source'); 
+reflectionGain = accululateFor('Reflection');
+transmissionGain = accululateFor('Transmission');
 
 % Aggregate sparse (with dense storage) vectors into a single column
 hits.InteractionGain = ...
@@ -59,26 +59,27 @@ sourceIndex = hits.ObjectIndex(isSource, :);
 
 % Friis free-space gains
 totalDistance = accumarray(hits.Identifier, hits.FreeDistance);
-freeGainByPath = gainFuns.Free(sourceIndex, totalDistance);
+freeGainByPathDBW = gainFuns.Free(sourceIndex, totalDistance);
 
 % Accumulate gains over paths
-interactionGainByPath = accumarray(hits.Identifier, hits.InteractionGain); % [dBw]
-totalGainByPath = freeGainByPath + interactionGainByPath;
-power = specfun.fromdb(totalGainByPath);
+interactionGainByPathDBW = accumarray( ...
+    hits.Identifier, ...
+    hits.InteractionGain); % [dBW]
+totalGainByPathDBW = freeGainByPathDBW + interactionGainByPathDBW;
 
 % This function assigns given values to the rows of an array (whose rows
 % are assocated with hits) corresponding to sink nodes
-selectsink = hits.InteractionType == rayoptics.NodeTypes.Sink;
+selectSink = hits.InteractionType == rayoptics.NodeTypes.Sink;
     function result = assignSinks(values)
-        result = zeros(size(hits.FreeDistance));
-        result(selectsink) = values;
+        result = zeros(size(hits.FreeDistance), 'like', values);
+        result(selectSink) = values;
     end
 
 hits.TotalDistance = assignSinks(totalDistance);
-hits.FreeGain = assignSinks(freeGainByPath);
-hits.PathInteractionGain = assignSinks(interactionGainByPath);
-hits.TotalGain = assignSinks(totalGainByPath);
-hits.Power = assignSinks(power);
+hits.FreeGain = assignSinks(freeGainByPathDBW);
+hits.PathInteractionGain = assignSinks(interactionGainByPathDBW);
+hits.TotalGainDBW = assignSinks(totalGainByPathDBW);
+hits.TotalGain = assignSinks(specfun.fromdb(totalGainByPathDBW));
 
 % Sanity checks
 assert(all(isfinite(hits.FinalDistance)))
@@ -94,8 +95,8 @@ result = orderfields(hits, { ...
     'TotalDistance'
     'FreeGain'
     'PathInteractionGain'
-    'TotalGain'
-    'Power'
+    'TotalGainDBW' % previously 'TotalGain'
+    'TotalGain' % previously 'Power'
     'SegmentIndex' % previously 'RayIndex'
     'Parameter' % previously 'RayParameter'
     'Position' % previously 'IntersectionPoint'

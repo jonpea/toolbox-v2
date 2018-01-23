@@ -14,7 +14,7 @@ assert(isscalar(mdsdb) && mdsdb < 0)
 % For each sampling point, maximize received power over access points
 [signalDBW, assignedSource] = max(linkGainDB, [], dim);
 
-interferenceWatts = power.linkinterference( ...
+interferenceWatts = linkInterference( ...
     linkGainDB, assignedSource, sourceChannel, 2);
 noiseWatts = specfun.fromdb(mdsdb);
 interferencePlusNoiseDB = specfun.todb(interferenceWatts + noiseWatts);

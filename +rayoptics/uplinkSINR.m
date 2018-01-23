@@ -15,8 +15,8 @@ onePerRow = sub2ind(size(linkGainDB), allRows(:), assignedSource(:));
 signalDB = linkGainDB(onePerRow);
 signalDB = signalDB(:);
 
-interferenceWatts = ...
-    power.linkinterference(linkGainDB, assignedSource, sourceChannel, 1);
+interferenceWatts = linkInterference( ...
+    linkGainDB, assignedSource, sourceChannel, 1);
 noiseWatts = specfun.fromdb(mdsdb);
 interferencePlusNoiseDBAll = ...
     specfun.todb(interferenceWatts(:) + noiseWatts);

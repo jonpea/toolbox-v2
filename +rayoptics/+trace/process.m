@@ -1,17 +1,17 @@
 function [stats, powerTable, gainTable] = process(trace)
 
-hits = power.computegain(trace);
+hits = rayoptics.trace.computegain(trace);
 
 isReflection = hits.InteractionType == rayoptics.NodeTypes.Reflection;
 pathNumReflections = accumarray(hits.Identifier, isReflection);
-pathPower = accumarray(hits.Identifier, hits.Power);
+pathGain = accumarray(hits.Identifier, hits.TotalGain);
 [numReflectionsUnique, ~, map] = unique(pathNumReflections);
-totalPower = accumarray(map, pathPower);
+totalGain = accumarray(map, pathGain); % Watts/Watt
 
 stats = struct( ...
     'NumReflections', numReflectionsUnique, ...
-    'TotalPower', totalPower, ...
-    'RelativePower', totalPower/sum(totalPower));
+    'Gain', totalGain, ...
+    'RelativeGain', totalGain/sum(totalGain));
 
 isSink = hits.InteractionType == rayoptics.NodeTypes.Sink;
 isSource = hits.InteractionType == rayoptics.NodeTypes.Source;
@@ -36,5 +36,5 @@ pathFreeGainDBW = accumarray( ...
 pathGainDBW = pathFreeGainDBW + pathNodeGainDBW;
 
 subscripts = [pathSinkIndex, pathSourceIndex, pathNumReflections + 1];
-powerTable = accumarray(subscripts, pathPower);
+powerTable = accumarray(subscripts, pathGain);
 gainTable = accumarray(subscripts, pathGainDBW);

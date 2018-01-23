@@ -10,10 +10,10 @@ parser.addParameter('ReflectionArities', 0, @(a) isequal(fix(a), a) && all(0 <= 
 % By default, only free-space losses are computed.
 import datatypes.isfunction
 parser.addParameter('FreeGain', antennae.friisfunction, @isfunction)
-parser.addParameter('SourceGain', power.isofunction, @isfunction)
-parser.addParameter('SinkGain', power.isofunction, @isfunction)
-parser.addParameter('ReflectionGain', power.isofunction, @isfunction)
-parser.addParameter('TransmissionGain', power.isofunction, @isfunction)
+parser.addParameter('SourceGain', antennae.isopattern, @isfunction)
+parser.addParameter('SinkGain', antennae.isopattern, @isfunction)
+parser.addParameter('ReflectionGain', antennae.isopattern, @isfunction)
+parser.addParameter('TransmissionGain', antennae.isopattern, @isfunction)
 
 % Verbosity of textual output:
 % By default, a complete record of all interactions is not stored.

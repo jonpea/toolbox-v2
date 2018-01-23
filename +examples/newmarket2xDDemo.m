@@ -1,5 +1,5 @@
 %% Analysis of Building 903, Level 4, Newmarket Campus
-function yzg0012dnew(varargin)
+function newmarket2xDDemo(varargin)
 %% Introduction
 % This script mirrors the |nelib| program implemented in |yzg001.f90|.
 
@@ -13,6 +13,7 @@ parser.addParameter('Plotting', false, @islogical)
 parser.addParameter('Printing', false, @islogical)
 parser.addParameter('Scene', @scenes.Scene, @datatypes.isfunction)
 parser.addParameter('Serialize', false, @islogical)
+parser.addParameter('StudHeight', 3.0, @isscalar)
 parser.addParameter('XGrid', [], @isvector)
 parser.addParameter('YGrid', [], @isvector)
 parser.addParameter('CullDuplicateFaces', false, @islogical)
@@ -36,7 +37,10 @@ else
     warning('off', 'embreescene:DuplicateFaces')
     warning('off', 'embreescene:DuplicateVertices')
 end
+extruded = facevertex.extrude(faces, vertices, [0.0, options.StudHeight]);
+[faces, vertices] = facevertex.fv(extruded);
 scene = options.Scene(faces, vertices);
+z0 = (0.0 + options.StudHeight)/2;
 materials = struct( ...
     'TransmissionGain', materialsdata(wallmaterials, 1), ...
     'ReflectionGain', materialsdata(wallmaterials, 2));
@@ -63,11 +67,12 @@ end
 
 %% Access point
 apangle = deg2rad(200); % [rad]
-aporigin = [13.0, 6.0]; % [m]
+aporigin = [13.0, 6.0, z0]; % [m]
 source.Position = aporigin;
 source.Frame = cat(3, ...
-    funfun.pipe(@horzcat, 2, @specfun.circ2cart, apangle), ...
-    funfun.pipe(@horzcat, 2, @specfun.circ2cart, apangle + pi/2));
+    [funfun.pipe(@horzcat, 2, @specfun.circ2cart, apangle), 0.0], ...
+    [funfun.pipe(@horzcat, 2, @specfun.circ2cart, apangle + pi/2), 0.0], ...
+    [0, 0, 1]);
 frequency = 2.45d9; % [Hz]
 
 %%
@@ -80,7 +85,7 @@ source.Pattern = griddedInterpolant( ...
     deg2rad(columns.phi), specfun.todb(columns.gain));
 source.Gain = antennae.dispatch( ...
     source.Pattern, 1, ...
-    antennae.orthocontext(source.Frame, @specfun.cart2circ));
+    antennae.orthocontext(source.Frame, @specfun.cart2sphi, 1));
 
 %%
 if options.Plotting
@@ -88,7 +93,7 @@ if options.Plotting
     azimuth = linspace(0, 2*pi, 1000);
     radius = source.Gain( ...
         ones(size(azimuth)), ...
-        [cos(azimuth(:)), sin(azimuth(:))]);
+        [cos(azimuth(:)), sin(azimuth(:)), zeros(size(azimuth(:)))]);
     figure(2), clf('reset')
     polarplot(azimuth, specfun.fromdb(radius), 'LineWidth', 2.0)
     title('Antenna gain in global coordinates')
@@ -96,13 +101,13 @@ if options.Plotting
     figure(1)
     ax = gca;
     hold(ax, 'on')
-    graphics.polar(ax, ...
+    graphics.spherical(ax, ...
         @(varargin) specfun.fromdb(source.Gain(varargin{:})), ...
         source.Position, ...
         source.Frame, ...
-        'Azimuth', azimuth, ...
-        'Color', 'red')
-    graphics.axislabels(ax, 'x', 'y')
+        'EdgeAlpha', 0.1)
+    
+    graphics.axislabels(ax, 'x', 'y', 'z')
     colormap(ax, jet)
     colorbar(ax)
     axis(ax, 'equal')
@@ -126,8 +131,8 @@ else
     x = 4.0;
     y = 4.0;
 end
-[gridx, gridy] = meshgrid(x, y);
-sink.Position = points.meshpoints(gridx, gridy);
+[gridx, gridy, gridz] = meshgrid(x, y, z0);
+sink.Position = points.meshpoints(gridx, gridy, gridz);
 
 %%
 if options.Plotting
@@ -153,9 +158,14 @@ argumentlist = { % saved to file for later reference
     'Reporting', options.Reporting ...
     };
 startTime = tic;
-[downlinks, ~, trace] = power.analyze(argumentlist{:});
+[downlinks, ~, trace] = rayoptics.analyze(argumentlist{:});
 traceTime = toc(startTime);
 fprintf('============== analyze: %g sec ==============\n', traceTime)
+
+%% Power distributions
+gains = downlinks.GainComponents;
+distribution = rayoptics.distributionTable(gains);
+disp(struct2table(distribution))
 
 %% Compute gains and display table of interactions
 if options.Reporting
@@ -163,7 +173,7 @@ if options.Reporting
     fprintf('\nComputed %u paths\n\n', rayoptics.trace.numpaths(trace))
     
     startTime = tic;
-    interactionGains = power.computegain(trace);
+    interactionGains = rayoptics.trace.computegain(trace);
     powerTime = toc(startTime);
     fprintf('============== computegain: %g sec ==============\n', powerTime)
     
@@ -172,24 +182,24 @@ if options.Reporting
     disp(struct2table(rayoptics.trace.frequencies(trace)))
     
     %% Distribution of received power
-    [gainStats, powerTable] = rayoptics.trace.process(trace);
+    [gainStats, gainComponents] = rayoptics.trace.process(trace);
     disp(struct2table(gainStats))
-
+    
     %% Sanity check
-    assert(isequalfp(downlinks.GainComponents, powerTable(:, :, options.Arities + 1)))
+    import datatypes.struct.structsfun
+    assert(max(structsfun( ...
+        @(a,b) norm(a-b,inf), distribution, gainStats)) < tol)
+    assert(isequalfp( ...
+        downlinks.GainComponents, ....
+        gainComponents(:, :, options.Arities + 1)))
     disp('calculated powers do match :-)')
-
+    
     %%
     fprintf('Timing\n')
     fprintf('______\n')
     fprintf(' computing nodes: %g sec\n', traceTime)
     fprintf(' computing gains: %g sec\n', powerTime)
 end
-
-%% Power distributions
-powers = downlinks.GainComponents;
-distribution = power.reflectionstatistics(powers);
-disp(struct2table(distribution))
 
 %%
 if options.Reporting && options.Serialize
@@ -210,19 +220,19 @@ if options.Reporting && options.Serialize
 end
 
 %%
-gridp = reshape(powers, [size(gridx), size(powers, 3)]); %#ok<NASGU>
+gridp = reshape(gains, [size(gridx), size(gains, 3)]); %#ok<NASGU>
 save([mfilename, 'powers.mat'], ...
     'gridx', 'gridy', 'gridp', 'scene', ...
     'argumentlist', 'source')
 iofun.savebig([mfilename, 'trace.mat'], 'trace')
-powersum = reshape(sum(powers, 3), size(gridx));
+powersum = reshape(sum(gains, 3), size(gridx));
 
 %% Aggregate power at each receiver (field point)
 if options.Reporting
     sinkindices = find(interactionGains.InteractionType == rayoptics.NodeTypes.Sink);
     reportpower = accumarray( ...
         trace.Data.ObjectIndex(sinkindices), ...
-        interactionGains.Power(sinkindices));
+        interactionGains.TotalGain(sinkindices));
     reportpower = reshape(reportpower, size(gridx));
     assert(isequalfp(reportpower, powersum))
     disp('calculated powers do match :-)')
@@ -260,11 +270,13 @@ end
 end
 
 % -------------------------------------------------------------------------
-function tf = isequalfp(a, b, tol)
-if nargin < 3
-    tol = 1e-12;
-end
+function tf = isequalfp(a, b)
 a = a(:);
 b = b(:);
 tf = max(abs(a - b) ./ (0.5*(abs(a) + abs(b)) + 1)) < tol;
+end
+
+% -------------------------------------------------------------------------
+function tol = tol
+tol = 1e-12;
 end

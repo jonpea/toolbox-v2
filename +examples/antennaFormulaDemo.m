@@ -1,4 +1,4 @@
-function antennaeexample
+function antennaFormulaDemo
 %% ANTENNAEXAMPLE Demonstrates visualization of antennae patterns.
 
     function size = fontsize
@@ -55,7 +55,7 @@ frames = cat(3, zenith, specfun.perp(zenith, 2));
 % Associates the antenna pattern with each frame
 pattern1 = @(phi) phi/(2*pi);
 pattern2 = @(phi) 1 - phi/(2*pi);
-unitcircle = power.isofunction(1.0);
+unitcircle = antennae.isopattern(1.0);
 
 gainpatterns = antennae.dispatch( ...
     {pattern1 pattern2}, ...

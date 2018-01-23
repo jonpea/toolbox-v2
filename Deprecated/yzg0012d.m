@@ -137,7 +137,7 @@ argumentlist = { % saved to file for later reference
     'Reporting', options.Reporting ...
     };
 starttime = tic;
-[downlinks, ~, trace] = power.analyze(argumentlist{:});
+[downlinks, ~, trace] = rayoptics.analyze(argumentlist{:});
 tracetime = toc(starttime);
 fprintf('============== analyze: %g sec ==============\n', tracetime)
 
