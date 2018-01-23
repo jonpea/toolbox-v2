@@ -9,7 +9,7 @@ parser.addParameter('ReflectionArities', 0, @(a) isequal(fix(a), a) && all(0 <= 
 % Gain coefficient functions:
 % By default, only free-space losses are computed.
 import datatypes.isfunction
-parser.addParameter('FreeGain', power.friisfunction, @isfunction)
+parser.addParameter('FreeGain', antennae.friisfunction, @isfunction)
 parser.addParameter('SourceGain', power.isofunction, @isfunction)
 parser.addParameter('SinkGain', power.isofunction, @isfunction)
 parser.addParameter('ReflectionGain', power.isofunction, @isfunction)
