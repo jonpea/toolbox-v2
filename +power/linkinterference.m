@@ -1,20 +1,20 @@
-function result = linkinterference(linkgaindb, assignedsource, sourcechannel, dim)
+function result = linkinterference(linkGainDB, assignedSource, sourceChannel, dim)
 % Interference power involves distinct pairings on the same channel
 % i.e. a given source/access point does not interfere with itself
 % and there is no interference across channels
-allsources = 1 : numel(sourcechannel);
-    function c = rowcolumn(fun, a, b)
+allSources = 1 : numel(sourceChannel);
+    function c = rowColumn(fun, a, b)
         c = bsxfun(fun, a(:), b(:)');
     end
-issamesource = rowcolumn( ...
-    @eq, ...
-    assignedsource, ...
-    allsources);
-isdifferentchannel = rowcolumn( ...
-    @ne, ...
-    sourcechannel(assignedsource), ...
-    sourcechannel(allsources));
-linkgainwatts = specfun.fromdb(linkgaindb);
-linkgainwatts(issamesource | isdifferentchannel) = 0.0; % drop "non-interfering" elements
-result = sum(linkgainwatts, dim);
+isSameSource = rowColumn( ...
+    @eq, ... % "equals", ==
+    assignedSource, ...
+    allSources);
+isDifferentChannel = rowColumn( ...
+    @ne, ... % "not equals", ~=
+    sourceChannel(assignedSource), ...
+    sourceChannel(allSources));
+linkGainWatts = specfun.fromdb(linkGainDB);
+linkGainWatts(isSameSource | isDifferentChannel) = 0.0; % drop "non-interfering" elements
+result = sum(linkGainWatts, dim);
 end

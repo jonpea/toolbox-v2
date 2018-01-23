@@ -337,8 +337,8 @@ cache = struct('FBest', realmax);
             ... 'NDEBUG', true, ...
             ... 'SPMD', isscalar(parallel.currentpool), ...
             ... 'Verbosity', settings.Verbosity);
-        gain = local.downlinks.PowerDBW;
-        components = specfun.todb(local.downlinks.PowerComponentsWatts);
+        gain = local.downlinks.GainDBW;
+        components = specfun.todb(local.downlinks.GainComponents);
         save('..\compute.mat', 'local', 'gain', 'components', 'scene')
     end
 

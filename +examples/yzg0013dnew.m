@@ -156,58 +156,48 @@ argumentlist = { % saved to file for later reference
     'SinkGain', antennae.isopattern(0.0) ...
     'Reporting', options.Reporting ...
     };
-starttime = tic;
+startTime = tic;
 [downlinks, ~, trace] = power.analyze(argumentlist{:});
-tracetime = toc(starttime);
-fprintf('============== analyze: %g sec ==============\n', tracetime)
+traceTime = toc(startTime);
+fprintf('============== analyze: %g sec ==============\n', traceTime)
 
 %% Compute gains and display table of interactions
 if options.Reporting
     
-    fprintf('\nComputed %u paths\n\n', ...
-        numel(unique(trace.Data.Identifier)))
+    fprintf('\nComputed %u paths\n\n', rayoptics.trace.numpaths(trace))
     
-    starttime = tic;
-    interactiongains = power.computegain(trace);
-    powertime = toc(starttime);
-    fprintf('============== computegain: %g sec ==============\n', powertime)
-    
-    assert(datatypes.struct.tabular.istabular(interactiongains))
+    startTime = tic;
+    interactionGains = power.computegain(trace);
+    powerTime = toc(startTime);
+    fprintf('============== computegain: %g sec ==============\n', powerTime)
     
     %% Distribution of interaction nodes
     disp('From stored interaction table')
-    disp(struct2table(imagemethod.interactionstatistics(trace.Data.InteractionType)))
+    disp(struct2table(rayoptics.trace.frequencies(trace)))
     
     %% Distribution of received power
-    [gainstats, powertable] = power.gainstatistics(interactiongains);
-    disp(struct2table(gainstats))
-    
-    %%
-    issink = interactiongains.InteractionType == imagemethod.interaction.Sink;
-    assert(isequalfp( ...
-        specfun.fromdb(interactiongains.TotalGain(issink)), ...
-        interactiongains.Power(issink)))
-    
-    missingarities = setdiff(0 : max(options.Arities), options.Arities);
-    assert(all(ops.vec(powertable(:, :, missingarities + 1) == 0)))
-    assert(isequalfp(downlinks.PowerComponentsWatts, powertable(:, :, options.Arities + 1)))
+    [gainStats, powerTable] = rayoptics.trace.process(trace);
+    disp(struct2table(gainStats))
+
+    %% Sanity check
+    assert(isequalfp(downlinks.GainComponents, powerTable(:, :, options.Arities + 1)))
     disp('calculated powers do match :-)')
-    
+
     %%
     fprintf('Timing\n')
     fprintf('______\n')
-    fprintf(' computing nodes: %g sec\n', tracetime)
-    fprintf(' computing gains: %g sec\n', powertime)
+    fprintf(' computing nodes: %g sec\n', traceTime)
+    fprintf(' computing gains: %g sec\n', powerTime)
 end
 
 %% Power distributions
-powers = downlinks.PowerComponentsWatts;
+powers = downlinks.GainComponents;
 distribution = power.reflectionstatistics(powers);
 disp(struct2table(distribution))
 
 %%
 if options.Reporting && options.Serialize
-    numinteractions = datatypes.struct.tabular.height(interactiongains);
+    numinteractions = datatypes.struct.tabular.height(interactionGains);
     if 1e6 < numinteractions
         prompt = sprintf( ...
             'Proceed to save %d rows to .mat file? {yes | no} ', ...
@@ -231,12 +221,12 @@ save([mfilename, 'powers.mat'], ...
 iofun.savebig([mfilename, 'trace.mat'], 'trace')
 powersum = reshape(sum(powers, 3), size(gridx));
 
-%% Aggregate power at each receiver
+%% Aggregate power at each receiver (field point)
 if options.Reporting
-    sinkindices = find(interactiongains.InteractionType == imagemethod.interaction.Sink);
+    sinkindices = find(interactionGains.InteractionType == rayoptics.NodeTypes.Sink);
     reportpower = accumarray( ...
         trace.Data.ObjectIndex(sinkindices), ...
-        interactiongains.Power(sinkindices));
+        interactionGains.Power(sinkindices));
     reportpower = reshape(reportpower, size(gridx));
     assert(isequalfp(reportpower, powersum))
     disp('calculated powers do match :-)')

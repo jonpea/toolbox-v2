@@ -7,7 +7,11 @@ function result = numworkers(pool)
 %
 %   See also TASKINDEX, GCP.
 
-narginchk(1, 1)
+narginchk(0, 1)
+
+if nargin < 1
+    pool = gcp;
+end
 
 assert(numel(pool) <= 1)
 
