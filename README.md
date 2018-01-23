@@ -4,13 +4,51 @@
 
 ## Face-vertex representation
 
+Scenes are represented in the _face-vertex_ format supported by 
+[`patch`](https://au.mathworks.com/help/matlab/ref/patch.html).
+
+| Components | Description                                                       |
+|------------|-------------------------------------------------------------------|
+| Vertices   | Matrix with one row per vertex, entries are Cartesian coordinates |
+| Faces      | Matrix with one row per polygon, entries indexing `Vertices`      |
+
+Most toolbox functions allow `Faces` and `Vertices` to be provided as 
+separate arrays or as members of a struct.
+
+## Facet properties
+
+A vector with an entry for each row of `Faces` may be used to join faces 
+with a table of arbitrary material properties. See the tutorials for an 
+example.
+
 ## Visualization
 
-## Affine transformations
+Scenes incorporating multiple material properties may be conveniently 
+visualized with `multipatch`.
+```matlab
+>> help facevertex.multipatch
+>> edit facevertex.examples.multipatch
+```
+
+## Replication and affine transformations 
+
+```matlab
+>> help facevertex.clone
+>> edit facevertex.examples.clone
+```
+
+Affine transformations (translation, rotation, scaling, or combinations 
+thereof) are applied to the scene by appying them to the columns of the 
+`Vertices` array.
 
 ## Combining groups
 
-## Facet properties
+```matlab
+>> help facevertex.cat
+>> help facevertex.compress
+```
+
+# Parallel Computing Companion
 
 
 # Geometric Optics Toolbox
@@ -64,14 +102,18 @@ To see the index of supporting scripts:
 | `+structs`    | Efficient manipulation of tabular data            |
 | `+sx`         | Utilities relating to array singleton-expansion   |
 
+## Scene representation
+
+See documentation for Face-Vertex Tools.
+
 ## Antenna patterns
 
 Within the ray-tracing system, propagation gains are evaluated on 
-directions specified in global cartesian coordinates. 
-Any subsequent transformations are left to the client, who is able to exploit 
-symmetries in the gain pattern and thereby eliminate the overhead that would 
-be imposed by the system if directions were provided in a particular local 
-coordinate frame.
+directions specified in global Cartesian coordinates. 
+Any subsequent transformations are left to the client, who is able to 
+exploit symmetries in the gain pattern and thereby eliminate the overhead 
+that would be imposed by the system if directions were provided in a 
+particular local coordinate frame.
 
 ## Reflection points
 
@@ -89,13 +131,15 @@ hits = transmissions(obj, origins, directions, faceIndices)
 
 ## Contributors
 
-From the Radio Systems Group, Department of Electrical & Computer Engineering at the University of Auckland:
-- Jon Pearce
+From the Radio Systems Group, Department of Electrical & Computer 
+Engineering, at the University of Auckland:
 - Yuen Zhuang Goh 
 - Michael Neve
+- Jon Pearce
 
 ## Feature requests
 
+- [ ] Split git repository into modules.
 - [ ] Complete set of unit tests.
 - [ ] Profiling routines for critical functions.
 - [ ] Complete interoperability with the [Antenna Toolbox](https://au.mathworks.com/help/antenna/index.html).
