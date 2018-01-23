@@ -16,8 +16,9 @@ fprintf('Run <strong>format debug</strong> to display mex pointers\n')
 fprintf('\n<strong>Assertions</strong>\n')
 contracts.ndebug(true) % disables all assert statements
 fprintf('Run <strong>contracts.ndebug(false)</strong> to enable <strong>assert</strong>\n')
-dbstop if error
-dbstop if warning
+
+%dbstop if error
+%dbstop if warning
 
 %format short g
 %format debug

@@ -1,4 +1,4 @@
-function eucap2018refined(varargin)
+function sceneDemo(varargin)
 
 %%
 settings = parse(varargin{:});

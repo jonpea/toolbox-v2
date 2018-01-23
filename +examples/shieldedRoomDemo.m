@@ -1,5 +1,5 @@
-%% Simplest 2.5D test case with "n" rooms
-function Lrooms2dconcreteNew(varargin)
+function shieldedRoomDemo(varargin)
+%% Calculations from Yuen's IEEE TAP paper.
 
 %%
 parser = inputParser;

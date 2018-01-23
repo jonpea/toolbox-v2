@@ -14,6 +14,7 @@ radius = pattern(azimuth, inclination);
     {@sph2cart, @specfun.sphi}, ...
     azimuth, inclination, radius);
 
+figure(1), clf('reset')
 subplot(1, 2, 1)
 surf(x, y, z, 'CData', radius, ...
     'FaceColor', 'interp', 'EdgeAlpha', 0.3)
