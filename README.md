@@ -9,12 +9,13 @@
   
 - Example scripts (in progress) to demonstrate key functionality e.g.
 
-| Script                                  | Illustrates                        |
-|-----------------------------------------|------------------------------------|
-| `examples.sceneDemo`                    | Complex scene creation             |
-| `examples.antennaDemo`                  | Antenna creation and visualization |
-| `examples.interactive2`, `interactive3` | Interactive mode                   |
-| `examples.shieldedRoomDemo`             | Complete 2.5-D example (paper)     |
+| Script in `examples.*`    | Illustrates                            | 
+|---------------------------|----------------------------------------|
+| `sceneDemo`      | Complex scene creation                          |
+| `antennaDataDemo`, `antennaFormulaDemo`  | Antenna pattern creation and visualization |
+| `interactiveSmallDemo`, `interactiveMediumDemo` | Interactive mode |
+| `shieldedRoomDemo`   | Complete 2.5-D example (IEEE TAP)           |
+| `newmarket2DDemo`, `newmarket2xDDemo` | Replication of `yzg001.f`  |
 
 - Unit tests (in progress) e.g.
 
