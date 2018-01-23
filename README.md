@@ -66,45 +66,72 @@ To see the index of supporting scripts:
 
 ## Antenna patterns
 
+Within the ray-tracing system, propagation gains are evaluated on 
+directions specified in global cartesian coordinates. 
+Any subsequent transformations are left to the client, who is able to exploit 
+symmetries in the gain pattern and thereby eliminate the overhead that would 
+be imposed by the system if directions were provided in a particular local 
+coordinate frame.
+
 ## Reflection points
 
+```matlab
+[pairindices, pathPoints] = reflections(obj, sourcePoints, sinkPoints, faceIndices)
+```
+
 ## Transmission points
+
+```matlab
+hits = transmissions(obj, origins, directions, faceIndices)
+```
 
 ## Recommended practice
 
 ## Contributors
 
-From the Department of Electrical & Computer Engineering at the University of Auckland:
+From the Radio Systems Group, Department of Electrical & Computer Engineering at the University of Auckland:
 - Jon Pearce
 - Yuen Zhuang Goh 
 - Michael Neve
+
+## Feature requests
+
+- [ ] Complete set of unit tests.
+- [ ] Profiling routines for critical functions.
+- [ ] Complete interoperability with the [Antenna Toolbox](https://au.mathworks.com/help/antenna/index.html).
+
 
 ## Appendix A: Geometric primitives
 
 ### Coordinates systems
 
-|       | Name                         | Coordinates       |
------------------------------------------------------------| 
-|`cart` | Cartesian/Rectangular        | `x`, `y`, `z`     |
-|`pol`  | Polar                        | `az`, `r`, `z     |
-|`sph`  | Spherical (elevation form)   | `az`, `el`, `r`   |
-|`sphi` | Spherical (inclination form) | `az`, `inc`, `r`  |
-|`uv`   |                              |                   |
+For further details, see 
+[Antenna Coordinate System](http://mathworks.com/help/antenna/gs/antenna-coordinate-system.html) 
+of the [Antenna Toolbox](https://au.mathworks.com/help/antenna/index.html)'s 
+documentation.
+
+| Tag    | Name                         | Coordinates                     | Notes                                  |
+|--------|------------------------------|---------------------------------|----------------------------------------|
+| `cart` | Cartesian/Rectangular        | `x`, `y`, `z`                   |                                        |
+| `pol`  | Polar                        | `az`, `r`, `z`                  |                                        |
+| `sph`  | Spherical (elevation form)   | `az`/`theta`, `el`/`phi`, `r`   | `el`/`phi` is angle from `x`-`y` plane |
+| `sphi` | Spherical (inclination form) | `az`/`phi`, `inc`/`theta`, `r`  | `inc`/`theta` is angle from `z` axis   |
+| `uv`   | Normalized spherical         | `u`, `v`                        | Note currently supported               |
 
 ### Storage formats
 
 
 #### 2-D grid functions
-|            | Name         | Description                                |
---------------------------------------------------------------------------
+| Form       | Name         | Description                                |
+|------------|--------------|--------------------------------------------|
 | `f(X,Y)`   | full grid    | `X` and `Y` are matrices of identical size |
 | `f({x,y})` | grid vectors | `x` and `y` are vectors                    |
 | `f(xy)`    | unstructured | `xy` is a matrix with two columns          |
 
 #### 3-D grid functions
-|              | Name         | Description                                    |
---------------------------------------------------------------------------------
-| `f(X,Y,Z)`   | full grid    | `X`, `Y`, `Z` are 2-D arrays of identical size |
+| Form         | Name         | Description                                    |
+|--------------|--------------|------------------------------------------------|
+| `f(X,Y,Z)`   | full grid    | `X`, `Y`, `Z` are 3-D arrays of identical size |
 | `f({x,y,z})` | grid vectors | `x`, `y`, `z` are vectors                      |
 | `f(xyz)`     | unstructured | `xyz` is a matrix with three columns           |
 
