@@ -31,16 +31,16 @@ Done rayoptics.UnitTests
   - Additional resources for Part IV project student
   - Access to CST Server after January 31st
   - [Github](https://github.com) account for Michael
-  - Time with Yuen and Michael.
+  - Time with Yuen and Michael
   - Further development (e.g. Linux/Mac support)
   - Would it be interesting to look at the MathWorks' [Antenna Toolbox](https://au.mathworks.com/help/antenna/index.html)?
   
 - Proposed development work:
-  - Simple example of optimization with [`bfo`](https://sites.google.com/site/bfocode).
-  - Refinement of function to partition grid points between arbitrary rooms over multiple storeys.
-  - Further work on unit test suites.
-  - Further work on example scripts.
-  - Profiling example for [Embree](https://embree.github.io)-backed computation of transmission points.
+  - Simple example of optimization with [`bfo`](https://sites.google.com/site/bfocode)
+  - Refinement of function to partition grid points between arbitrary rooms over multiple storeys
+  - Further work on unit test suites
+  - Further work on example scripts
+  - Profiling example for [Embree](https://embree.github.io)-backed computation of transmission points
 
 _Thank you!_
 _____________________________________________________________________
