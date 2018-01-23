@@ -1,11 +1,12 @@
 # Meeting, 24 January
 
-- Extensive refactoring to improve modularity 
-  - Code base is simpler, hence easier to understand and navigate 
+- Extensive refactoring to improve modularity:
+  - Code base is simpler, hence easier to understand and navigate
   - Flexible handling of local coordinate systems (penalty-free abstraction)
   - Use of [packages](https://au.mathworks.com/help/matlab/matlab_oop/scoping-classes-with-packages.html) consistent with MATLAB's own directory structure
   - Reduced  amount of "boiler-plate" code required to configure a study
-
+  - Any functionality not transferred is accessible in the old `git` repository
+  
 - Example scripts (in progress) to demonstrate key functionality e.g.
 
 | Script                                  | Illustrates                        |
@@ -31,6 +32,8 @@ Done rayoptics.UnitTests
   - Access to CST Server after January 31st
   - [Github](https://github.com) account for Michael
   - Time with Yuen and Michael.
+  - Further development (e.g. Linux/Mac support)
+  - Would it be interesting to look at the MathWorks' [Antenna Toolbox](https://au.mathworks.com/help/antenna/index.html)?
   
 - Proposed development work:
   - Simple example of optimization with [`bfo`](https://sites.google.com/site/bfocode).
