@@ -5,7 +5,7 @@
   - Flexible handling of local coordinate systems (penalty-free abstraction)
   - Use of [packages](https://au.mathworks.com/help/matlab/matlab_oop/scoping-classes-with-packages.html) consistent with MATLAB's own directory structure
   - Reduced  amount of "boiler-plate" code required to configure a study
-  - Any functionality not transferred is accessible in the old `git` repository
+  - Any functionality not transferred is accessible in the [old `git` repository](https://github.com/jonpea/toolbox)
   
 - Example scripts (in progress) to demonstrate key functionality e.g.
 
