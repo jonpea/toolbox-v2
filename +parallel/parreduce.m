@@ -215,8 +215,8 @@ end
 % Message tags
 % * These bounds are consistent with [0, intmax('uint16')] since
 %   "Valid tags have integer values in the range 0 <= tag <= 2147483647".
-% * However, it seems that the Parallel Computing Toolbox requires them to
-%   be of type double (uint16 doesn't work in R2017b).
+% * However, it seems that the Parallel Computing Toolbox requires them 
+%   to be of type double (uint16 doesn't work in R2017b).
 function tag = readyTag
 tag = 100;
 end

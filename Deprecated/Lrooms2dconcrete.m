@@ -135,21 +135,21 @@ rotate3d on
 makepattern = @(name, varargin) ...
     data.loadpattern(fullfile('+data', name), varargin{:});
 [pattern.source, interpolant.source] = ...
-    makepattern('isotropic_one.txt', @elfun.todb);
-%makepattern('farfield_patch_centre_cavitywall_timber_extract.txt', @elfun.todb);
+    makepattern('isotropic_one.txt', @specfun.todb);
+%makepattern('farfield_patch_centre_cavitywall_timber_extract.txt', @specfun.todb);
 [pattern.reflection, interpolant.reflection] = ...
-    makepattern('Wall1_TM_refl_1GHz.txt', @elfun.todb, @specfun.wrapquadrant);
-%     makepattern('isotropic_tiny.txt', @elfun.todb, @specfun.wrapquadrant);
+    makepattern('Wall1_TM_refl_1GHz.txt', @specfun.todb, @specfun.wrapquadrant);
+%     makepattern('isotropic_tiny.txt', @specfun.todb, @specfun.wrapquadrant);
     
 [pattern.transmission, interpolant.transmission] = ...
-    makepattern('Wall1_TM_trans_1GHz.txt', @elfun.todb, @specfun.wrapquadrant);
-%     makepattern('isotropic_one.txt', @elfun.todb, @specfun.wrapquadrant);
+    makepattern('Wall1_TM_trans_1GHz.txt', @specfun.todb, @specfun.wrapquadrant);
+%     makepattern('isotropic_one.txt', @specfun.todb, @specfun.wrapquadrant);
 
 [pattern.concretereflection, interpolant.concretereflection] = ...
-    makepattern('concrete_TE_refl_1GHz.txt', @elfun.todb, @specfun.wrapquadrant);
+    makepattern('concrete_TE_refl_1GHz.txt', @specfun.todb, @specfun.wrapquadrant);
 
 [pattern.concretetransmission, interpolant.concretetransmission] = ...
-    makepattern('concrete_TE_trans_1GHz.txt', @elfun.todb, @specfun.wrapquadrant);
+    makepattern('concrete_TE_trans_1GHz.txt', @specfun.todb, @specfun.wrapquadrant);
 
 %%
 figure(2), clf
@@ -175,13 +175,13 @@ for i = 1 : numphi
     dlocal = applytranspose(sourceframe, dglobal);
     [localangles, ~] = cartesiantoangular(dlocal);
     
-    sourceradii = elfun.fromdb(pattern.source(localangles));
-    reflectionradii = elfun.fromdb(pattern.reflection(localangles));
-    transmissionradii = elfun.fromdb(pattern.transmission(localangles));
+    sourceradii = specfun.fromdb(pattern.source(localangles));
+    reflectionradii = specfun.fromdb(pattern.reflection(localangles));
+    transmissionradii = specfun.fromdb(pattern.transmission(localangles));
     
     
-    concretereflectionradii = elfun.fromdb(pattern.concretereflection(localangles));
-    concretetransmissionradii = elfun.fromdb(pattern.concretetransmission(localangles));
+    concretereflectionradii = specfun.fromdb(pattern.concretereflection(localangles));
+    concretetransmissionradii = specfun.fromdb(pattern.concretetransmission(localangles));
     
     makeplot = @(row, radii, name) {
         subplot(5, numphi, (row - 1)*numphi + i);
@@ -225,7 +225,7 @@ transmissiongains = framefunction( ...
     {pattern.transmission, pattern.concretetransmission}, ...
     scene.Frame, ...
     facetofunctionmap);
-dlinks = power.analyze( ...
+dlinks = rayoptics.analyze( ...
     @scene.reflections, ...
     @scene.transmissions, ...
     scene.NumFacets, ...
@@ -284,11 +284,7 @@ if reporting
     [gainstats, powertable] = gainstatistics(interactiongains);
     tabulardisp(gainstats)
     
-    %%
-    issink = interactiongains.InteractionType == interaction.Sink;
-    assert(isequalfp( ...
-        elfun.fromdb(interactiongains.TotalGain(issink)), ...
-        interactiongains.Power(issink)))
+    %% Sanity Check
     assert(isequalfp(powers, powertable, tol))
     disp('calculated powers do match :-)')
     
@@ -331,7 +327,7 @@ end
 %         trace.Data.ObjectIndex(sinkindices), ...
 %         interactiongains.Power(sinkindices));
 %     power = reshape(power, size(gridx));
-%     powerdb = elfun.todb(power);
+%     powerdb = specfun.todb(power);
 %     powerdbscale = max(powerdb(:)) - min(powerdb(:));
 %     
 %     % if ~inputyesno('Plot gain surface?') %#ok<UNRCH>
@@ -340,7 +336,7 @@ end
 %     
 %     %%
 %     figure(1)
-%     %contour(gridx, gridy, elfun.todb(power), 25, 'Fill', 'off', 'ShowText', 'off')
+%     %contour(gridx, gridy, specfun.todb(power), 25, 'Fill', 'off', 'ShowText', 'off')
 %     surf(gridx, gridy, powerdb, 'EdgeAlpha', 0.0, 'FaceAlpha', 1.0)
 %     set(gca, 'DataAspectRatio', [1.0, 1.0, powerdbscale]) % ** for use with meshc **
 %     %title('Gain at Receivers (dBW)')
@@ -356,14 +352,14 @@ fprintf('============ total elapsed time: %g sec ============\n', toc(t0))
 
 figure(3), clf, colormap(jet)
 numarities = numel(arities);
-powersdb = elfun.todb(powers);
+powersdb = specfun.todb(powers);
 for i = 1 : numarities + 1
     subplot(1, 1 + numarities, i), hold on
     if i <= numarities
         temp = powersdb(:, 1, i);
         titlestring = sprintf('arity %d', arities(i));
     else
-        temp = elfun.todb(sum(powers, 3));
+        temp = specfun.todb(sum(powers, 3));
         titlestring = 'total';
     end
     temp = reshape(temp, size(gridx)); % 1st transmitter only

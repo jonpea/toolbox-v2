@@ -29,35 +29,34 @@ disp(kakapo)
 
 %% Visualize received power
 figure(1), clf, axis equal
-surf(nelib.gridx, nelib.gridy, elfun.todb(nelib.total), 'EdgeAlpha', 0.1)
+surf(nelib.gridx, nelib.gridy, specfun.todb(nelib.total), 'EdgeAlpha', 0.1)
 xlabel('x'), ylabel('y')
 title('Received power (dBw)')
 rotate3d on
 
 %% Maximum relative error for each reflection arity
-relativeerror = @(actual, expected) abs(actual - expected)./abs(expected);
-errorwatts = relativeerror(kakapo.gridp, nelib.gridp);
-errordb = relativeerror(elfun.todb(kakapo.gridp), elfun.todb(nelib.gridp));
-maxover = @(x, dim) max(x, [], dim);
-maxreduce = @(x) squeeze(maxover(maxover(x, 1), 2));
-maxerrorwatts = maxreduce(errorwatts);
-maxerrordb = maxreduce(errordb);
-arity = (0 : numel(maxerrorwatts) - 1)';
+relativeError = @(actual, expected) abs(actual - expected)./abs(expected);
+errorWatts = relativeError(kakapo.gridp, nelib.gridp);
+errorDBW = relativeError(specfun.todb(kakapo.gridp), specfun.todb(nelib.gridp));
+maxOver = @(x, dim) max(x, [], dim);
+maxReduce = @(x) squeeze(maxOver(maxOver(x, 1), 2));
+maxErrorWatts = maxReduce(errorWatts);
+maxErrorDBW = maxReduce(errorDBW);
 disp(struct2table(struct( ...
-    'Reflections', arity, ...
-    'MaxRelativeErrorWatts', maxerrorwatts, ...
-    'MaxRelativeErrorDB', maxerrordb)))
+    'NumReflections', (0 : numel(maxErrorWatts) - 1)', ...
+    'MaxRelativeErrorWatts', maxErrorWatts, ...
+    'MaxRelativeErrorDB', maxErrorDBW)))
 
 %% Visualize distribution of relative errors
 figure(2), clf, axis equal
-subplot(1, 1 + size(errorwatts, 3), 1)
-surf(nelib.gridx, nelib.gridy, elfun.todb(nelib.total), 'EdgeAlpha', 0.1)
+subplot(1, 1 + size(errorWatts, 3), 1)
+surf(nelib.gridx, nelib.gridy, specfun.todb(nelib.total), 'EdgeAlpha', 0.1)
 axis tight, axis off, view(2)
 title('total')
 colorbar('Location', 'southoutside')
-for i = 1 : size(errorwatts, 3)
-    subplot(1, 1 + size(errorwatts, 3), 1 + i)
-    surf(nelib.gridx, nelib.gridy, errorwatts(:, :, i), 'EdgeAlpha', 0.1)
+for i = 1 : size(errorWatts, 3)
+    subplot(1, 1 + size(errorWatts, 3), 1 + i)
+    surf(nelib.gridx, nelib.gridy, errorWatts(:, :, i), 'EdgeAlpha', 0.1)
     colorbar('Location', 'southoutside')
     axis tight, axis off, view(2)
     title(sprintf('error@%d', i - 1))

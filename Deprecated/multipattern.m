@@ -20,16 +20,16 @@ assert(ndebug || all(cellfun(@isfunction, functions)))
 assert(ndebug || all(ismember(unique(facetofunction), 1 : numel(functions))))
 
     function gain = evaluate(faceIndices, xglobal)
-
+        
         import contracts.ndebug
         assert(ismatrix(xglobal))
         
-        % Transform global Cartesian- to local Cartesian coordinates 
+        % Transform global Cartesian- to local Cartesian coordinates
         % Squeeze out the singleton in the direction of the dot product
         xlocal = contract(frames(faceIndices, :, :), xglobal, 2);
         
         % Note to Maintainer:
-        % We face a choice between two of the three interfaces 
+        % We face a choice between two of the three interfaces
         % supported by griddedInterpolant:
         %  1. F(XY) <- "unstructured points"
         %  2. F(X,Y) <- "full grid"
@@ -41,10 +41,14 @@ assert(ndebug || all(ismember(unique(facetofunction), 1 : numel(functions))))
             functions, ...
             facetofunction(faceIndices), ...
             xlocal);
-
+        
     end
 
 evaluator = @evaluate;
 
 end
 
+function c = contract(a, b, dim)
+narginchk(3, 3)
+c = elmat.squeeze(specfun.dot(a, b, dim), dim);
+end

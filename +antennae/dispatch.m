@@ -21,6 +21,14 @@ if nargin < 3
 end
 
     function gain = evaluate(entityIdx, directions)
+        if isscalar(entityIdx)
+            % Duplicate singleton entity index over directions
+            entityIdx = repmat(entityIdx, size(directions, 1), 1);
+        end
+        if isrow(directions)
+            % Duplicate singleton direction over entities
+            directions = repmat(directions, numel(entityIdx), 1);
+        end
         gain = dispatchMulti(context, funList, ...
             entityToFunIdx(entityIdx(:)), entityIdx(:), directions);
     end

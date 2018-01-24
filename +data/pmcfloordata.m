@@ -22,7 +22,7 @@ reducers = parser.Unmatched;
 % Add default reducer
 assert(all(structfun(@isfunction, reducers))) 
 assert(~isfield(reducers, 'Mean'))
-reducers.Mean = @(a) elfun.todb(mean(elfun.fromdb(a)));
+reducers.Mean = @(a) specfun.todb(mean(specfun.fromdb(a)));
 
 % Transmitter-specific data
 txindices = options.TransmitterIndices;

@@ -13,4 +13,5 @@ assert(isfunction(fun))
 
 xyz = components(xyz);
 uvw = components(uvw);
+
 [varargout{1 : nargout}] = feval(fun, ax, xyz{:}, uvw{:}, varargin{:});

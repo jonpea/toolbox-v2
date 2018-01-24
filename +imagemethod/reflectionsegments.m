@@ -27,7 +27,10 @@ if isempty(indices)
     result2 = {[]};
 else
     % "Two surfaces to ignore on each 'interior' segment"
-    % e.g. [a, b, c] --> {a; [a b]; [b c]; c}
+    % e.g.
+    %        [a] --> {a; a}
+    %     [a, b] --> {a; [a b]; b}
+    %  [a, b, c] --> {a; [a b]; [b c]; c}
     indices = indices(:);
     result2 = [
         indices(1);

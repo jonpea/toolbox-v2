@@ -15,5 +15,5 @@ narginchk(2, 2)
 
 % Note to Maintainer:
 % This formula may improve on the finite-precision accuracy of the
-% mathematically equivalent expression todb(friis(distance,lambda)).
+% mathematically equivalent expression "todb(friis(distance,lambda))".
 g = 20*(log10(lambda) - log10(4*pi*distance));
