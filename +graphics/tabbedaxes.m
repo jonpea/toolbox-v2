@@ -1,21 +1,19 @@
 function [handle, fig] = tabbedaxes(varargin)
-%TABBEDAXES 
+%TABBEDAXES
 %   See also GRAPHICS.TABBEDFIGURE.
 
 [fig, varargin] = arguments.parsefirst( ...
     @(h) isgraphics(h, 'figure'), gcf, 0, varargin{:});
 
-% By default, hide the figure...
-fig.Visible = 'off'; 
+set(fig, ...
+    'Visible', 'off', ... % by default, hide the figure... [*]
+    varargin{:}); % (or override visility here)
 
-% The caller can override initial visibility here
-set(fig, varargin{:})
+% [*] ... until first use
+newtab = graphics.tabbedfigure(fig, 'Visible', 'on');
 
-% ... until first use
-newtab = graphics.tabbedfigure(fig, 'Visible', 'on'); 
-
-    function ax = newAxes(tabtitle)
-        ax = axes(newtab(tabtitle));
+    function ax = newAxes(tabTitle)
+        ax = axes(newtab(tabTitle));
     end
 
 handle = @newAxes;

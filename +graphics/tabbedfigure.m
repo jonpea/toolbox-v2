@@ -5,15 +5,17 @@ function [newtab, alltabs] = tabbedfigure(fig, varargin)
 % See also UITAB, UITABGROUP, FIGURE.
 
 if nargin == 0 || isempty(fig)
-    fig = gcf;
+    fig = gcf; % defaults to current figure
 end
 
-assert(isgraphics(fig))
-assert(mod(numel(varargin), 2) == 0)
+assert(isgraphics(fig, 'figure'))
+assert(mod(numel(varargin), 2) == 0, ...
+    'Optional arguments must appear in key-value pairs.')
 
+% List of tab handles; captured by the inner function
 tabs = [];
 
-    function tab = maketab(title, select)
+    function tab = makeTab(title, select)
         
         import datatypes.isfunction
 
@@ -27,16 +29,16 @@ tabs = [];
             set(fig, varargin{:});
         end
         
-        tabindex = numel(tabs.Children) + 1;
+        tabIndex = numel(tabs.Children) + 1;
         
         if nargin < 1 || isempty(title)
-            title = sprintf('Tab %d', tabindex);
+            title = sprintf('Tab %d', tabIndex);
         elseif isfunction(title)
-            title = title(tabindex);
+            title = title(tabIndex);
         end
         
         if nargin < 2 || isempty(select)
-            select = true;
+            select = true; % default value
         end
         
         assert(ischar(title) && isrow(title))
@@ -50,11 +52,11 @@ tabs = [];
         
     end
 
-    function handle = gettabs
+    function handle = getTabs
         handle = tabs;
     end
 
-newtab = @maketab;
-alltabs = @gettabs;
+newtab = @makeTab;
+alltabs = @getTabs;
 
 end

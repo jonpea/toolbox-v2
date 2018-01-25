@@ -3,7 +3,7 @@ function yzg001compare(filename)
 
 %%
 if nargin < 1 || isempty(filename)
-    filename = 'yzg0012dpowers.mat';
+    filename = 'newmarket2DDemopowers.mat';
 end
 
 fprintf('Comparing %s\n', filename)

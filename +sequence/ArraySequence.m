@@ -7,7 +7,7 @@ classdef ArraySequence < sequence.Sequence
         Offset
     end
     
-    properties (SetAccess = immutable, Hidden = true)
+    properties (SetAccess = immutable)
         Data
         Length
         Type

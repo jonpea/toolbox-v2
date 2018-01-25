@@ -1,5 +1,24 @@
 function handle = dispatch(funList, entityToFunIdx, context)
-%DISPATCH Interface for combining multiple antenna patterns.
+%DISPATCH Uniform interface to multiple functions.
+%   H = DISPATCH({F1,..,FM},MAP,CONTEXT) where 
+%      F1,..,FM are callable entities (typically function handles) with
+%         identical argument lists,
+%      MAP is an array of indices of any length, each in the range [1,M],
+%      and 
+%      CONTEXT is a function handle that accepts 
+%            an element F of F1,..,FM, 
+%            an element ID of MAP, and
+%            a matrix X of global Cartesian coordinates with each row
+%            corresponding to a single direction vector
+%         and returns the value F associates with entity ID and direction
+%         X - after appropriate coordinate transformation.
+%
+%   DISPATCH({F1,..,FM},MAP) uses @FEVAL for CONTEXT
+%   i.e. each function F1,..,FM must have signature (ID,X).
+%
+%   DISPATCH({F1}) uses MAP that is identically one.
+%
+%   DISPATCH(F1,..) is equivalent to DISPATCH({F1},..).
 %
 %   See also ISOPATTERN, MULTIPATTERN.
 
