@@ -1,5 +1,5 @@
 %% Demonstrates antenna patterns
-function pipedemo
+function pipeDemo
 
 %%
 % Two dimensions:

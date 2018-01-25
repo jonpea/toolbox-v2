@@ -142,6 +142,16 @@ Engineering, at the University of Auckland:
 - Michael Neve
 - Jon Pearce
 
+## Related software
+
+| Software                                                            |
+|---------------------------------------------------------------------|
+| [Antenna Toolbox](https://au.mathworks.com/help/antenna/index.html) | 
+| [CST MWS Asymptotic Solver](https://www.cst.com/products/cstmws/solvers/asymptoticsolver) | 
+| [Embree](https://embree.github.io)                                  |
+| [OptiX](https://developer.nvidia.com/optix)                         |
+
+
 ## Feature requests
 
 - [ ] Split git repository into modules.
@@ -191,8 +201,34 @@ documentation.
 
 ## Appendix C: Unit tests
 
+## Appendix D: Directory structure
 
-## Appendix D: Building `Embree`
+Functions are stored in whose names are chosen in accordance with those of MATLAB's standard library e.g.
+```matlab
+>> ls +specfun
+
+.               affine.m        cart2sph.m      cart2usphi.m    dot.m           perp.m          todb.m          wrapcircle.m    
+..              cart2circ.m     cart2sphi.m     circ2cart.m     elinc.m         sphi.m          usph2cart.m     wrapinterval.m  
+UnitTests.m     cart2pol.m      cart2uqsphi.m   cross.m         fromdb.m        sphi2cart.m     usphi2cart.m    wrapquadrant.m  
+
+>> which cart2sph
+C:\Matlab\R2017b\Pro\toolbox\matlab\specfun\cart2sph.m
+>> which cross
+C:\Matlab\R2017b\Pro\toolbox\matlab\specfun\cross.m
+>> which dot
+C:\Matlab\R2017b\Pro\toolbox\matlab\specfun\dot.m
+```
+In cases where function names match those of the standard library, the interface extends that of the standard library e.g. `specfun.dot` supports singleton expansion whereas `dot` does not.
+
+Each package directory contains:
+
+| Name          | Description                                               |
+|---------------|-----------------------------------------------------------|
+| `UnitTests.m` | Class definition encapsulating a suite of unit tests      |
+| `+tutorials`  | Sequence of tutorial scripts demonstrating core functions |
+
+
+## Appendix E: Building `Embree`
 
 See `mex` settings in `embree/embreebuild.m`.
 
