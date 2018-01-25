@@ -74,10 +74,13 @@ end
 
 % Lazy (non-strict) list of independent tasks to be processed, each
 % comprisng a list of facet sequences to check for reflected ray paths.
+tasks = rayoptics.taskSequence(numfacets, arities);
+%{
 tasks = sequence.NestedSequence( ...
     sequence.ArraySequence(arities), ...
     @(arity) imagemethod.FacetSequence(numfacets, arity), ...
     @(globalindex, ~, facetindices) {globalindex, facetindices});
+%}
 
 % This functions captures the instance of Sequence and adapts the 
 % Sequence interface ("hasnext() and getnext()")  to conform with 

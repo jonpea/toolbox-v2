@@ -16,183 +16,75 @@ classdef UnitTests < matlab.unittest.TestCase
         % 1. value is {>, ==, < } number of facets
         % 2. gaps appear
         % 3. values are not contiguous
-        packet = {0, 1, 2, [0 1], [2 1 0 ], [4 0 2]}
+        sequenceLengths = {0, 1, 2, [0 1], [2 1 0], [4 0 2]}
     end
     
     methods (Test, ParameterCombination = 'exhaustive')
         
         function lengthZeroTest(testCase, numFacets)
-            [numPaths, getnext] = paths(0, numFacets);
-            count = lengthZeroLoop(testCase, numFacets, getnext);
+            [numPaths, getNext] = paths(0, numFacets);
+            count = lengthZeroLoop(testCase, numFacets, getNext);
             testCase.verifyEqual(numPaths, count)
         end
         
         function lengthOneTest(testCase, numFacets)
-            [numPaths, getnext] = paths(1, numFacets);
-            % count = 0;
-            % for i = facets(numFacets)
-            %     count = count + 1;
-            %     testCase.verifyEqual(getnext(), i)
-            % end
-            count = lengthOneLoop(testCase, numFacets, getnext);
+            [numPaths, getNext] = paths(1, numFacets);
+            count = lengthOneLoop(testCase, numFacets, getNext);
             testCase.verifyEqual(numPaths, count)
         end
         
         function lengthTwoTest(testCase, numFacets, maxNumPaths)
-            [numPaths, getnext] = paths(2, numFacets);
+            [numPaths, getNext] = paths(2, numFacets);
             skipExpensiveTest(testCase, numFacets, numPaths, maxNumPaths)
-            % count = 0;
-            % [allFacets, allFacetsExcept] = facets(numFacets);
-            % for i = allFacets
-            %     for j = allFacetsExcept(i)
-            %         count = count + 1;
-            %         testCase.verifyEqual(getnext(), [i j])
-            %     end
-            % end
-            count = lengthTwoLoops(testCase, numFacets, getnext);
+            count = lengthTwoLoops(testCase, numFacets, getNext);
             testCase.verifyEqual(numPaths, count)
         end
         
         function lengthThreeTest(testCase, numFacets, maxNumPaths)
-            [numPaths, getnext] = paths(3, numFacets);
+            [numPaths, getNext] = paths(3, numFacets);
             skipExpensiveTest(testCase, numFacets, numPaths, maxNumPaths)
-            % count = 0;
-            %[allFacets, allFacetsExcept] = facets(numFacets);
-            % for i = allFacets
-            %     for j = allFacetsExcept(i)
-            %         for k = allFacetsExcept(j)
-            %             count = count + 1;
-            %             testCase.verifyEqual(getnext(), [i j k])
-            %         end
-            %     end
-            % end
-            count = lengthThreeLoops(testCase, numFacets, getnext);
+            count = lengthThreeLoops(testCase, numFacets, getNext);
             testCase.verifyEqual(numPaths, count)
         end
         
         function lengthFourTest(testCase, numFacets, maxNumPaths)
-            [numPaths, getnext] = paths(4, numFacets);
+            [numPaths, getNext] = paths(4, numFacets);
             skipExpensiveTest(testCase, numFacets, numPaths, maxNumPaths)
-            % count = 0;
-            % [allFacets, allFacetsExcept] = facets(numFacets);
-            % for i = allFacets
-            %     for j = allFacetsExcept(i)
-            %         for k = allFacetsExcept(j)
-            %             for l = allFacetsExcept(k)
-            %                 count = count + 1;
-            %                 testCase.verifyEqual(getnext(), [i j k l])
-            %             end
-            %         end
-            %     end
-            % end
-            count = lengthFourLoops(testCase, numFacets, getnext);
+            count = lengthFourLoops(testCase, numFacets, getNext);
             testCase.verifyEqual(numPaths, count)
         end
         
         function lengthFiveTest(testCase, numFacets, maxNumPaths)
-            [numPaths, getnext] = paths(5, numFacets);
+            [numPaths, getNext] = paths(5, numFacets);
             skipExpensiveTest(testCase, numFacets, numPaths, maxNumPaths)
-            % count = 0;
-            % [allFacets, allFacetsExcept] = facets(numFacets);
-            % for i = allFacets
-            %     for j = allFacetsExcept(i)
-            %         for k = allFacetsExcept(j)
-            %             for l = allFacetsExcept(k)
-            %                 for m = allFacetsExcept(l)
-            %                     count = count + 1;
-            %                     testCase.verifyEqual( ...
-            %                         getnext(), [i j k l m])
-            %                 end
-            %             end
-            %         end
-            %     end
-            % end
-            count = lengthFiveLoops(testCase, numFacets, getnext);
+            count = lengthFiveLoops(testCase, numFacets, getNext);
             testCase.verifyEqual(numPaths, count)
         end
         
         function lengthSixTest(testCase, numFacets, maxNumPaths)
-            [numPaths, getnext] = paths(6, numFacets);
+            [numPaths, getNext] = paths(6, numFacets);
             skipExpensiveTest(testCase, numFacets, numPaths, maxNumPaths)
-            % count = 0;
-            % [allFacets, allFacetsExcept] = facets(numFacets);
-            % for i = allFacets
-            %     for j = allFacetsExcept(i)
-            %         for k = allFacetsExcept(j)
-            %             for l = allFacetsExcept(k)
-            %                 for m = allFacetsExcept(l)
-            %                     for n = allFacetsExcept(m)
-            %                         count = count + 1;
-            %                         testCase.verifyEqual( ...
-            %                             getnext(), [i j k l m n])
-            %                     end
-            %                 end
-            %             end
-            %         end
-            %     end
-            % end
-            count = lengthSixLoops(testCase, numFacets, getnext);
+            count = lengthSixLoops(testCase, numFacets, getNext);
             testCase.verifyEqual(numPaths, count)
         end
         
         function lengthSevenTest(testCase, numFacets, maxNumPaths)
-            [numPaths, getnext] = paths(7, numFacets);
+            [numPaths, getNext] = paths(7, numFacets);
             skipExpensiveTest(testCase, numFacets, numPaths, maxNumPaths)
-            % count = 0;
-            % [allFacets, allFacetsExcept] = facets(numFacets);
-            % for i = allFacets
-            %     for j = allFacetsExcept(i)
-            %         for k = allFacetsExcept(j)
-            %             for l = allFacetsExcept(k)
-            %                 for m = allFacetsExcept(l)
-            %                     for n = allFacetsExcept(m)
-            %                         for o = allFacetsExcept(n)
-            %                             count = count + 1;
-            %                             testCase.verifyEqual( ...
-            %                                 getnext(), [i j k l m n o])
-            %                         end
-            %                     end
-            %                 end
-            %             end
-            %         end
-            %     end
-            % end
-            count = lengthSevenLoops(testCase, numFacets, getnext);
+            count = lengthSevenLoops(testCase, numFacets, getNext);
             testCase.verifyEqual(numPaths, count)
         end
         
         function lengthEightTest(testCase, numFacets, maxNumPaths)
-            [numPaths, getnext] = paths(8, numFacets);
+            [numPaths, getNext] = paths(8, numFacets);
             skipExpensiveTest(testCase, numFacets, numPaths, maxNumPaths)
-            % [allFacets, allFacetsExcept] = facets(numFacets);
-            % count = 0;
-            % for i = allFacets
-            %     for j = allFacetsExcept(i)
-            %         for k = allFacetsExcept(j)
-            %             for l = allFacetsExcept(k)
-            %                 for m = allFacetsExcept(l)
-            %                     for n = allFacetsExcept(m)
-            %                         for o = allFacetsExcept(n)
-            %                             for p = allFacetsExcept(o)
-            %                                 count = count + 1;
-            %                                 testCase.verifyEqual( ...
-            %                                     getnext(), ...
-            %                                     [i j k l m n o p])
-            %                             end
-            %                         end
-            %                     end
-            %                 end
-            %             end
-            %         end
-            %     end
-            % end
-            count = lengthEightLoops(testCase, numFacets, getnext);
+            count = lengthEightLoops(testCase, numFacets, getNext);
             testCase.verifyEqual(numPaths, count)
         end
         
-        function multiTest(testCase, numFacets, packet)
-            fprintf('multi\n')
-            upperSequence = sequence.ArraySequence(packet);
+        function multiTest(testCase, numFacets, sequenceLengths)
+            %{
+            upperSequence = sequence.ArraySequence(sequenceLengths);
             function sequence = generateLowerSequence(length)
                 % Input argument is current element in "upper sequence"
                 sequence = imagemethod.FacetSequence(numFacets, length);
@@ -204,6 +96,13 @@ classdef UnitTests < matlab.unittest.TestCase
                 upperSequence, ...
                 @generateLowerSequence, ...
                 @extractFromLower);
+            %}
+            allTasks = rayoptics.taskSequence(numFacets, sequenceLengths);
+            function sequence = getNext
+                task = allTasks.getnext();
+                [counter, sequence] = task{:};
+                contracts.unused(counter)
+            end
             loops = {
                 @lengthZeroLoop
                 @lengthOneLoop
@@ -215,12 +114,12 @@ classdef UnitTests < matlab.unittest.TestCase
                 @lengthSevenLoops
                 @lengthEightLoops
                 };
-            function runLoop(loopLength)
-                feval(loops{1 + loopLength}, ...
-                    testCase, numFacets, @tasks.getnext);
+            function runLoop(sequenceLength)
+                feval(loops{1 + sequenceLength}, ...
+                    testCase, numFacets, @getNext);
             end
-            arrayfun(@runLoop, packet)
-            testCase.verifyFalse(tasks.hasnext())
+            arrayfun(@runLoop, sequenceLengths)
+            testCase.verifyFalse(allTasks.hasnext())
         end
         
     end
@@ -232,16 +131,16 @@ allFacets = 1 : numFacets;
 allFacetsExcept = @(i) setdiff(allFacets, i);
 end
 
-function [numPaths, getnext] = paths(length, numFacets)
+function [numPaths, getNext] = paths(length, numFacets)
 import rayoptics.imagemethodcardinality
 import rayoptics.imagemethodsequence
 numPaths = imagemethodcardinality(numFacets, length);
 counter = 0;
-    function path = getNext
+    function path = getNextSequence
         counter = counter + 1;
         path = rayoptics.imagemethodsequence(counter, numFacets, length);
     end
-getnext = @getNext;
+getNext = @getNextSequence;
 end
 
 function skipExpensiveTest(testCase, numFacets, numPaths, maxNumPaths)
@@ -251,49 +150,49 @@ testCase.assumeLessThan(numPaths, maxNumPaths, sprintf( ...
 end
 
 % -------------------------------------------------------------------------
-function count = lengthZeroLoop(testCase, numFacets, getnext)
+function count = lengthZeroLoop(testCase, numFacets, getNext)
 % A single direct path - no facet interaction
 count = 1;
-actual = getnext();
+actual = getNext();
 expected = [];
 % Here, we treat 0x0, 0x1, and 1x0 etc. as equivalent
 testCase.verifyEqual(actual(:), expected(:));
 contracts.unused(numFacets)
 end
 
-function count = lengthOneLoop(testCase, numFacets, getnext)
+function count = lengthOneLoop(testCase, numFacets, getNext)
 count = 0;
 for i = facets(numFacets)
     count = count + 1;
-    testCase.verifyEqual(getnext(), i)
+    testCase.verifyEqual(getNext(), i)
 end
 end
 
-function count = lengthTwoLoops(testCase, numFacets, getnext)
+function count = lengthTwoLoops(testCase, numFacets, getNext)
 count = 0;
 [allFacets, allFacetsExcept] = facets(numFacets);
 for i = allFacets
     for j = allFacetsExcept(i)
         count = count + 1;
-        testCase.verifyEqual(getnext(), [i j])
+        testCase.verifyEqual(getNext(), [i j])
     end
 end
 end
 
-function count = lengthThreeLoops(testCase, numFacets, getnext)
+function count = lengthThreeLoops(testCase, numFacets, getNext)
 count = 0;
 [allFacets, allFacetsExcept] = facets(numFacets);
 for i = allFacets
     for j = allFacetsExcept(i)
         for k = allFacetsExcept(j)
             count = count + 1;
-            testCase.verifyEqual(getnext(), [i j k])
+            testCase.verifyEqual(getNext(), [i j k])
         end
     end
 end
 end
 
-function count = lengthFourLoops(testCase, numFacets, getnext)
+function count = lengthFourLoops(testCase, numFacets, getNext)
 count = 0;
 [allFacets, allFacetsExcept] = facets(numFacets);
 for i = allFacets
@@ -301,14 +200,14 @@ for i = allFacets
         for k = allFacetsExcept(j)
             for l = allFacetsExcept(k)
                 count = count + 1;
-                testCase.verifyEqual(getnext(), [i j k l])
+                testCase.verifyEqual(getNext(), [i j k l])
             end
         end
     end
 end
 end
 
-function count = lengthFiveLoops(testCase, numFacets, getnext)
+function count = lengthFiveLoops(testCase, numFacets, getNext)
 count = 0;
 [allFacets, allFacetsExcept] = facets(numFacets);
 for i = allFacets
@@ -317,7 +216,7 @@ for i = allFacets
             for l = allFacetsExcept(k)
                 for m = allFacetsExcept(l)
                     count = count + 1;
-                    testCase.verifyEqual(getnext(), [i j k l m])
+                    testCase.verifyEqual(getNext(), [i j k l m])
                 end
             end
         end
@@ -325,7 +224,7 @@ for i = allFacets
 end
 end
 
-function count = lengthSixLoops(testCase, numFacets, getnext)
+function count = lengthSixLoops(testCase, numFacets, getNext)
 count = 0;
 [allFacets, allFacetsExcept] = facets(numFacets);
 for i = allFacets
@@ -335,7 +234,7 @@ for i = allFacets
                 for m = allFacetsExcept(l)
                     for n = allFacetsExcept(m)
                         count = count + 1;
-                        testCase.verifyEqual(getnext(), [i j k l m n])
+                        testCase.verifyEqual(getNext(), [i j k l m n])
                     end
                 end
             end
@@ -344,7 +243,7 @@ for i = allFacets
 end
 end
 
-function count = lengthSevenLoops(testCase, numFacets, getnext)
+function count = lengthSevenLoops(testCase, numFacets, getNext)
 count = 0;
 [allFacets, allFacetsExcept] = facets(numFacets);
 for i = allFacets
@@ -356,7 +255,7 @@ for i = allFacets
                         for o = allFacetsExcept(n)
                             count = count + 1;
                             testCase.verifyEqual( ...
-                                getnext(), [i j k l m n o])
+                                getNext(), [i j k l m n o])
                         end
                     end
                 end
@@ -366,7 +265,7 @@ for i = allFacets
 end
 end
 
-function count = lengthEightLoops(testCase, numFacets, getnext)
+function count = lengthEightLoops(testCase, numFacets, getNext)
 count = 0;
 [allFacets, allFacetsExcept] = facets(numFacets);
 for i = allFacets
@@ -379,7 +278,7 @@ for i = allFacets
                             for p = allFacetsExcept(o)
                                 count = count + 1;
                                 testCase.verifyEqual( ...
-                                    getnext(), [i j k l m n o p])
+                                    getNext(), [i j k l m n o p])
                             end
                         end
                     end
