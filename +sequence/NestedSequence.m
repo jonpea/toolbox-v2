@@ -9,7 +9,7 @@ classdef NestedSequence < sequence.Sequence
     end
     
     properties (SetAccess = private)
-        Counter
+        Counter % purely for the benefit of clients
         LowerSequence
         LowerElement
         UpperElement
@@ -19,7 +19,7 @@ classdef NestedSequence < sequence.Sequence
         function obj = NestedSequence(upper, lowergen, extractor)
             narginchk(2, 3)
             if nargin < 3
-                extractor = @deal; 
+                extractor = @deal;
             end
             assert(issequence(upper))
             assert(datatypes.isfunction(lowergen))
@@ -28,28 +28,30 @@ classdef NestedSequence < sequence.Sequence
             obj.Extractor = extractor;
             obj.Counter = 0;
             if hasnext(upper)
-                obj.advance
+                obj.prepareNextLower
             end
         end
         
         function tf = hasnext(obj)
-            if ~issequence(obj.LowerSequence)
-                % If UpperSequence was initially empty, then 
-                % LowerSequence would not have been instantiated
+            if hasnext(obj.LowerSequence)
+                % Elements remain in nested sequence
+                tf = true;
+            elseif ~hasnext(obj.UpperSequence)
+                % Both sequences are exhausted
                 tf = false;
-                return 
+            else
+                % Upper sequence is not exhausted
+                obj.prepareNextLower
+                tf = hasnext(obj); % recusive call
             end
-            tf = hasnext(obj.UpperSequence) || hasnext(obj.LowerSequence);
+            
         end
         
         function element = getnext(obj)
             assert(hasnext(obj))
-            if ~hasnext(obj.LowerSequence)
-                obj.advance
-            end
-            obj.Counter = obj.Counter + 1;
+            obj.Counter = obj.Counter + 1; % must come first... [*]
             element = obj.Extractor( ...
-                obj.Counter, ...
+                obj.Counter, ... % ... before next use [*]
                 obj.UpperElement, ...
                 getnext(obj.LowerSequence));
         end
@@ -57,10 +59,22 @@ classdef NestedSequence < sequence.Sequence
     end
     
     methods (Access = private)
-        function advance(obj)
+        function prepareNextLower(obj)
             obj.UpperElement = getnext(obj.UpperSequence);
             obj.LowerSequence = obj.LowerSequenceGenerator(obj.UpperElement);
-            assert(issequence(obj.LowerSequence))
+            assert(issequence(obj.LowerSequence), ...
+                'Generator must return an instance of Sequence.')
+            if ~hasnext(obj.LowerSequence)
+                if hasnext(obj.UpperSequence)
+                    obj.prepareNextLower % recursive call
+                end
+            end
+            % Postcondition:
+            % "Either we are ready to return the next lower
+            % element or the nested sequence is exhausted".
+            assert( ...
+                hasnext(obj.LowerSequence) || ...
+                ~hasnext(obj.UpperSequence))
         end
     end
     
