@@ -1,3 +1,58 @@
+# Notes for FRDF Report
+
+## Objectives
+ 
+> The current version of the WyFy tool exists as both a MATLAB and a FORTRAN2008
+implementation. The MATLAB implementation is only capable of line-of-sight (LOS)
+propagation, but is able to account for any number of intervening wall attenuations. 
+
+The new tool supports propatation through an arbitrary number of reflections.
+
+> It is also capable of *dynamic performance visualization*, in which the users can drag
+access point locations on screen and immediately see the effects on system
+performance ... 
+
+The new tool also provides an interactive mode for 2D scenes. The speed of the new code might make the interactive mode feasible on 3D configurations of limited size: While this possibility has not been investigated, the static visualization capabilities (discussed [below](#objective-3-dynamic-visualization-capabilities)) are far easier to work with than those of the Fortran implementation, especially because the user develop a visualisation incrementally from the MATLAB command prompt.
+
+> This implementation is however *slow* (especially when large numbers of walls are considered) ...  and for this reason the FORTRAN2008 version was developed. This version can handle up to second-order reflections, is significantly faster than the MATLAB implementation, but lacks dynamic visualization capability.
+
+While the API is implemented in MATLAB, computer-intensive bottleneck routines are implemented in C++ Mex functions, which are comparable with Fortran in speed. While MATLAB does support a Mex gateway for Fortran, only [Intel's Fortran compiler](https://software.intel.com/en-us/fortran-compilers) is [currently supported](https://mathworks.com/support/compilers.html); these compilers are not freely available on the Windows platform. In contrast, high quality Mex-compliant C++ compilers are freely available on all popular platforms.
+
+The new tool exploits the MATLAB [Parallel Computing Toolbox](https://au.mathworks.com/products/parallel-computing.html) -- a high-level message passing interface -- to exploit the independence between distinct ray sequences, and thereby extract maximum benefit from the Radio Systems Group's new server.
+
+### Objective 1: Ability to model 3D geometries
+
+The new framework supports both 2D and 3D geometries, adopting the face-vertex layout already employed by MATLAB for representation of polygonal meshes in 2D and 3D.
+
+### Objective 2: Realistic (complex) wall models
+
+The new framework supports arbitrarily complex wall models.
+
+The system dictates no particular local coordinate systems.
+* Known symmetries in gain patterns may be completely exploited by the user i.e. there is no abstraction penalty.
+* The user is free to define patterns any any convenient system of coordinates.
+
+### Objective 3: Dynamic visualization capabilities
+
+Users are able to exploit MATLAB's built-in routines to visualize arbitrarily complex scenes and fields. To this end, the new library offers the following specialised routines:
+
+* Visualization of scene geometry and material assignments in 2D or 3D.
+* Visualization of antenna patterns in 2D or 3D.
+* Visualization of SINR thresholds in 2D or 3D via "oriented" isosurfaces.
+* Visualization of reflected rays and transmission points.
+* Labelling of arbitrary entities in 2D and 3D.
+
+The system provides several new visualisation functions specific to its domain.
+
+### Objective 4: Open Application Programming Interface (API)
+ 
+At this point, we employ only scenes composed of rectangular facets (embedded in 3D, but not necessarily aligned with global coordinate axes); this reflects our current needs, but is not a restriction: more specialised axis-aligned quadrilaterals or general polygons would not be difficult to incorporate in future releases.
+ 
+> We aim to make WyFy available to anyone in our activity sphere
+
+The source repository, complete with an installation script, datasets, and scripts illustrating usage, is accessible via [GitHub](https://github.com).
+
+_____________________________________________________________________
 # Meeting, 24 January
 
 - Extensive refactoring to improve modularity:

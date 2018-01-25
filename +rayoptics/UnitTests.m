@@ -187,6 +187,7 @@ classdef UnitTests < matlab.unittest.TestCase
             upperSequence = sequence.ArraySequence(packet);
             function sequence = generateLowerSequence(length)
                 % Input argument is current element in "upper sequence"
+                fprintf('    new sequence of length = %u\n', length)
                 sequence = imagemethod.FacetSequence(numFacets, length);
             end
             function sequence = extractFromLower(counter, length, sequence)
@@ -198,6 +199,11 @@ classdef UnitTests < matlab.unittest.TestCase
                 upperSequence, ...
                 @generateLowerSequence, ...
                 @extractFromLower);
+            %%%
+            while tasks.hasnext()
+                tasks.getnext()
+            end
+            %%%
             loops = {
                 @lengthZeroLoop
                 @lengthOneLoop
