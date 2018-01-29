@@ -1,4 +1,4 @@
-function sceneDemo(varargin)
+function eucapDemo(varargin)
 
 %%
 settings = parse(varargin{:});

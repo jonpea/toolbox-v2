@@ -1,4 +1,4 @@
-function butterworthexamplebfoanchorgrid(varargin)
+function butterworthDemo(varargin)
 % Optimization of anchor calcuations to correct angle-dependent attenuation
 % coefficients (calculated from plane waves in CST Studio) with constant
 % offsets to reduce mismatch with a small numbe rof empirical measurements.
