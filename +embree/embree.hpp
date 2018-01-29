@@ -1,7 +1,16 @@
+//
+// embree.hpp
+// Part of a MATLAB Mex interface to Intel's Embree
+//      https://embree.github.io/api.html
+// ray-tracing library.
+//
+
 #ifndef INCLUDED_EMBREE_HPP
 #define INCLUDED_EMBREE_HPP
 
-#include <mex.h> //////////////////////////////////// TEMPORARY ///////////
+#ifdef VERBOSE
+#include <mex.h> // for mexPrintf
+#endif
 
 #pragma warning(push)
 #pragma warning(disable: 4290)
@@ -16,6 +25,7 @@
 
 namespace embree {
 
+// Common types.
 typedef ::std::size_t size_type;
 typedef ::std::uint32_t index_type; // see embree::QuadMesh::Quad::v
 typedef float real_type;
@@ -24,12 +34,14 @@ typedef float real_type;
 // "For the callback RTCFilterFuncN ... (0 means invalid and -1 means valid)."
 enum ray_state: int { invalid = 0, valid = -1 };
 
+// Augments Embree's internal ray data structure with its current size.
 struct ray_buffers_container
 {
     RTCRayNp pointers;
     size_type size;
 };
 
+// Initializes Embree's internal buffers.
 inline ray_buffers_container set_ray_buffers(
         // Ray data
         real_type * origins,    // 0 (3 columns)
@@ -73,9 +85,11 @@ inline ray_buffers_container set_ray_buffers(
 
     // Initialize buffers
     {
+        // Fill mask array with integer identifiers
         index_type count = 1u; // NB: Never use zero mask as ray index
         std::generate_n(pointers.mask, num_rays, [&count]
-        {
+        {   // Embree's use of "mask" is a perhaps misleading:
+            // In fact, these are indices, not boolean values.
             return count++;
         });
         const auto fill = [num_rays](auto begin, auto value) -> void
@@ -95,6 +109,7 @@ inline ray_buffers_container set_ray_buffers(
     return buffers;
 }
 
+// Encapsulates a stream of ray-facet hits.
 struct hit_buffers_container
 {
     typedef index_type * index_pointer;
@@ -134,6 +149,8 @@ inline hit_buffers_container set_hit_buffers(
     return pointers;
 }
 
+// Encapsulates filter function user-data, 
+// extracted via RTCIntersectContext::userRayExt.
 struct filter_data_container
 {
     hit_buffers_container & hit_buffers;
@@ -152,22 +169,27 @@ struct filter_data_container
     { }
 };
 
+// Embree-compatible filter function 
 inline void filter_function(
         int * valid,
         void * /*userDataPtr*/, // using context->userRayExt instead
         const RTCIntersectContext * context,
-        RTCRayN * rays, // not required for "any-hit"
+        RTCRayN * rays, // not required for "any-hit" (cf. "all-hit" or "any")
         const RTCHitN * hits,
         const size_t num_hits) /* throw(std::runtime_error) */
 {
+	// Retrieve user-data
     auto & filter_data = 
             *static_cast<filter_data_container *>(context->userRayExt);
     const auto num_faces = filter_data.num_faces;
     auto & buffer = filter_data.hit_buffers;
             
+	// Check buffer capacity		
     if (buffer.capacity < buffer.size + num_hits)
         throw ::std::length_error("Embree output buffer has insufficient capacity");
     
+	// Returns true if a hit (face-ray pairing) has already 
+	// been registered, so as to filter out duplicate hits.
     const auto registered = 
             [&filter_data](auto face_index, auto ray_index) -> bool
     {
@@ -182,7 +204,7 @@ inline void filter_function(
         // Reference to element of face-ray registry
         bool & entry = filter_data.face_ray_register[index];        
         const bool old_value = entry; // copy of current value
-        entry = true; // register this hit
+        entry = true; // register this hit (no change if already registered)
         
         return old_value;
     };
@@ -203,11 +225,14 @@ inline void filter_function(
         mexPrintf("face_coordinates[0] = %g\n", RTCHitN_u(hits, num_hits, hit_index));
         mexPrintf("face_coordinates[1] = %g\n", RTCHitN_v(hits, num_hits, hit_index));
 #endif
+		// Skip hits marked "invalid"
         if (valid[hit_index] != ray_state::valid) continue;
         
         const auto face_index = RTCHitN_primID(hits, num_hits, hit_index);
         const auto ray_index = RTCRayN_mask(rays, num_hits, hit_index);
         
+		// Skip hits on marked facets
+		// e.g. some hits might be known reflection points.
         if (!filter_data.face_masks[face_index]) 
         {
 #ifdef VERBOSE
@@ -216,6 +241,8 @@ inline void filter_function(
             continue; // hits on this face are to be ignored
         }
         
+		// Ignore hits that have already been registered
+		// since Embree doesn't guaranteed uniqueness
         if (registered(face_index, ray_index)) 
         {
 #ifdef VERBOSE
@@ -224,7 +251,7 @@ inline void filter_function(
             continue; // this hit/pairing has already been registered
         }
         
-        // For "all-hits" (cf. "any-hit" or "first-hit")
+        // For "all-hits" userRayExt
         valid[hit_index] = ray_state::invalid;
 
         const size_t
@@ -235,6 +262,7 @@ inline void filter_function(
         mexPrintf("       buffer_index = %u\n", buffer_index); 
 #endif
                 
+		// Record/register the current hit		
         buffer.face_index[buffer_index] = face_index + 1; // convert base-0 to base-1
         buffer.ray_index[buffer_index] = ray_index; // already base-1
         buffer.mesh_index[buffer_index] = RTCHitN_geomID(hits, num_hits, hit_index);
@@ -247,6 +275,7 @@ inline void filter_function(
         ++valid_hit_counter;
     }
 
+	// Record the number of new hits added to the buffer
     buffer.size += valid_hit_counter;
 #ifdef VERBOSE
     mexPrintf("Increased buffer size by %d to %d\n", 
@@ -254,6 +283,7 @@ inline void filter_function(
 #endif
 }
 
+// Returns the name of the enumeration associated an Embree error code.
 inline std::string error_string(const RTCError code)
 {
     switch (code)
@@ -268,6 +298,9 @@ inline std::string error_string(const RTCError code)
     }
 }
 
+// Embree-compatible error handling call-back: 
+// Throws an exception whose message points to the 
+// appropriate part of Embree's documentation.
 inline void error_handler(
         void * /*userPtr*/,
         const RTCError code,
@@ -294,17 +327,23 @@ public:
     embree_interface_type() /* throw(std::runtime_error) */
     : total_num_faces(0u), is_scene_committed(false)
     {
+		// Instantiate Embree device
         this->device = rtcNewDevice(nullptr); // "verbose = 1"
 
+		// Register compatible error handler
         error_handler(nullptr, rtcDeviceGetError(this->device));
         rtcDeviceSetErrorFunction2(
                 this->device,
                 error_handler,
                 nullptr);
 
+	    // Ensure that Embree was not build with back-face culling enabled:
+		// In that case intersections would only be registered on rays
+		// impinging on one side of a given facet.
         if (rtcDeviceGetParameter1i(this->device, RTC_CONFIG_BACKFACE_CULLING))
             throw std::runtime_error("Embree was built with EMBREE_BACKFACE_CULLING");
 
+		// Instantiate Embree scene
         this->scene = rtcDeviceNewScene(
                 this->device,
                 RTC_SCENE_STATIC | RTC_SCENE_INCOHERENT,
@@ -319,8 +358,10 @@ public:
         rtcDeleteDevice(this->device);
     }
 
+	// Default copy constructor
     embree_interface_type(embree_interface_type &&) = default;
 
+	// Add quadrilateral facets to Embree scene
     index_type add_quadrilaterals(
             index_type const* quads,
             const size_type num_faces,
@@ -369,6 +410,7 @@ public:
         return geometry_id;
     }
 
+	// Calculate all intersections of given rays with scene facets.
     size_type intersect(
             ray_buffers_container & rays,
             hit_buffers_container & hits, 

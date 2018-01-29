@@ -5,7 +5,7 @@ upperSequence = sequence.ArraySequence(lengths);
         sequence = imagemethod.FacetSequence(numFacets, length);
     end
     function task = extractFromLower(counter, length, sequence)
-        contracts.unused(length)
+        arguments.unused(length)
         task = {
             counter ... % global step counter
             sequence ... % candidate face indices

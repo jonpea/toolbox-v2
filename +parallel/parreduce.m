@@ -1,6 +1,8 @@
 function varargout = parreduce(fun, numout, getnext, varargin)
 %PARREDUCE Parallel accumulation.
-
+%   [C1,C2,..,CN] = PARREDUCE(FUN,N,GETNEXT,C1,C2,...,CN)
+%
+%   See also ACCUMARRAY, ARRAYFUN, CELLFUN.
 %
 % Note to Maintainer
 % ------------------
