@@ -66,8 +66,8 @@ apangle = deg2rad(200); % [rad]
 aporigin = [13.0, 6.0]; % [m]
 source.Position = aporigin;
 source.Frame = cat(3, ...
-    funfun.pipe(@horzcat, 2, @specfun.circ2cart, apangle), ...
-    funfun.pipe(@horzcat, 2, @specfun.circ2cart, apangle + pi/2));
+    funfun.pipe(@horzcat, 2, @specfun.upol2cart, apangle), ...
+    funfun.pipe(@horzcat, 2, @specfun.upol2cart, apangle + pi/2));
 frequency = 2.45d9; % [Hz]
 
 %%
@@ -80,7 +80,7 @@ source.Pattern = griddedInterpolant( ...
     deg2rad(columns.phi), specfun.todb(columns.gain));
 source.Gain = antennae.dispatch( ...
     source.Pattern, 1, ...
-    antennae.orthocontext(source.Frame, @specfun.cart2circ));
+    antennae.orthocontext(source.Frame, @specfun.cart2upol));
 
 %%
 if options.Plotting

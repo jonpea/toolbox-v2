@@ -1,38 +1,63 @@
-function antennae
 
-%% Specification of antennae and attenuators
-% We'll refer to antennae and walls - or anything that is not
-% electromagnetically transparent - as _entities_.
-%
-% A complete specification of an entity requires:
-%
-% # A location in global Cartesian coordinates; a facet also requires a
-% normal vector.
-% # A function mapping directions (in global Cartesian coordinates) to
-% _gain_ in dBW.
-%
-% Multiple entities may share a single such gain function: To maximize
-% computational efficiency, the function is called only once; its first
-% argument specifies which entity each direction vector refers, while
-% global Cartesian coordinates of the direction vectors are stored in the
-% rows of the second argument.
-%
-% The specification is provided in the form of a function handle that
-% conforms to the interface of the following example:
-    function dBW = isotropicPattern(index, directions) %#ok<DEFNU>
-        assert(all(ismember(index, 1 : 2))) % "two antennae"
-        assert(numel(index) == size(directions, 1)) % "one : one"
-        arguments.unused(directions) % "isotropic"
-        dBW = zeros(size(index)); % preallocate output
-        dBW(index == 1) = -10; % gain for "dry walls"
-        dBW(index == 2) = -50; % gain "concrete walls"
-    end
+
+%% Prepare workspace and figure
+clear % workspace
+newAxes = graphics.tabbedaxes( ...
+    clf(figure(1), 'reset'), ...
+    'Name', mfilename, ...
+    'NumberTitle', 'off');
+
+%% Define a local coordinate system
+% The local coordinate axes and origin are expressed in global Cartesian
+% coordinates
+axis1 = matfun.unit([ 1  1  1]);
+axis2 = matfun.unit([-1  1  0]);
+axis3 = specfun.cross(axis1, axis2);
+frame = [axis1; axis2; axis3];
+origin = [1 -1 1]; % "local origin"
+zero = [0 0 0]; % "global origin"
+
+%% Gain patterns
+gain = @(az, inc) sin(inc).*exp(cos(3*az))/3;
+
+%% Patterns in local coordinates
+[az, inc] = sx.meshgrid( ...
+    linspace(0, 1.5*pi), ...
+    linspace(0, pi));
+[u, v, w] = specfun.sphi2cart(az, inc, gain(az, inc));
+
+ax = newAxes('Local coordinates');
+hold(ax, 'on')
+surf(ax, u, v, w, 'EdgeAlpha', 0.1, 'FaceAlpha', 1.0)
+points.quiver(ax, zero, [1 0 0], 0, 'Color', 'red')
+points.quiver(ax, zero, [0 1 0], 0, 'Color', 'green')
+points.quiver(ax, zero, [0 0 1], 0, 'Color', 'blue')
+graphics.axislabels(ax, 'u', 'v', 'w')
+axis(ax, 'equal')
+grid(ax, 'on')
+view(ax, 35, 35)
 
 %%
-% The definition above would be suitable for a pair of isotropic antennae;
-% note that the matrix of |directions| is unused.
-axis1 = [ -1  0; -1  0];
-axis2 = [  0  1;  0  1];
-frame = cat(3, axis1, axis2);
+ax = newAxes('Global coordinates');
+hold(ax, 'on')
 
-end
+
+% points.quiver(ax, zero, origin, 'Color', graphics.rgb.magenta)
+% points.quiver(ax, origin, xyz, 'Color', graphics.rgb.gray)
+% return
+points.quiver(ax, zero, origin, 0, 'Color', 'black')
+points.quiver(ax, origin, axis1, 0, 'Color', 'red')
+points.quiver(ax, origin, axis2, 0, 'Color', 'green')
+points.quiver(ax, origin, axis3, 0, 'Color', 'blue')
+graphics.axislabels(ax, 'x', 'y', 'z')
+axis(ax, 'equal')
+grid(ax, 'on')
+view(ax, 3)
+
+points.text(ax, origin + axis1, 'e_1')
+points.text(ax, origin + axis2, 'e_2')
+points.text(ax, origin + axis3, 'e_3')
+
+[x, y, z] = elmat.local2global(origin, frame, u, v, w);
+mesh(ax, x, y, z)
+

@@ -7,7 +7,7 @@ pattern = @(azimuth, inclination, ~) sx.expand(sin(inclination), azimuth);
     linspace(0, pi, 15), ....
     1.0);
 
-[azimuth, inclination] = sx.ndgrid(azimuth, inclination);
+%[azimuth, inclination] = sx.ndgrid(azimuth, inclination);
 radius = pattern(azimuth, inclination);
 
 [x, y, z] = funfun.pipe( ...

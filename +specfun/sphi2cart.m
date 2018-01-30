@@ -14,11 +14,6 @@ function [x, y, z] = sphi2cart(azimuth, inclination, radius)
 %
 %   See also CART2SPHI, SPH2CART, CART2SPH, CART2POL, POL2CART.
 
-narginchk(2, 3)
-
-if nargin < 3
-    radius = ones('like', azimuth);
-end
-
+narginchk(3, 3)
 elevation = specfun.elinc(inclination);
 [x, y, z] = sph2cart(azimuth, elevation, radius);

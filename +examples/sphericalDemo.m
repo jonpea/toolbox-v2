@@ -1,21 +1,26 @@
-clear
+%% Demonstrates antennae pattern definition and visualization.
 
-[azimuth, inclination] = sx.meshgrid( ...
-    linspace(0, pi/2, 5), ...
-    linspace(0, pi/2, 5));
+%% Prepare workspace and figure
+clear % workspace
+newaxes = graphics.tabbedaxes( ...
+    clf(figure(1), 'reset'), ...
+    'Name', mfilename, ...
+    'NumberTitle', 'off');
 
+%% Define a local coordinate system
 axis1 = matfun.unit([ 1  1  1]);
 axis2 = matfun.unit([-1  1  0]);
 axis3 = specfun.cross(axis1, axis2);
 frame = cat(3, axis1, axis2, axis3);
-origin = [1 1 1];
-zero = [0 0 0];
+origin = [1 1 1]; % "local origin"
+zero = [0 0 0]; % "global origin"
 
+%% Sampling points specified in local Cartesian coordinates
+[azimuth, inclination] = sx.meshgrid( ...
+    linspace(0, pi/2, 5), ...
+    linspace(0, pi/2, 5));
 [u, v, w] = specfun.usphi2cart(azimuth, inclination);
 uvw = points.meshpoints(u, v, w);
-
-newaxes = graphics.tabbedaxes( ...
-    clf(figure(1), 'reset'), 'Name', mfilename, 'NumberTitle', 'off');
 
 %%
 ax = newaxes('Local coordinates');
@@ -26,16 +31,17 @@ axis(ax, 'equal')
 grid(ax, 'on')
 view(ax, 3)
 
-%%
+%% Calculate corresponding global Cartesian directions
 xyz = points.cart.local2global(frame, uvw);
 
 %%
 ax = newaxes('Global coordinates');
 hold(ax, 'on')
-points.quiver(ax, zero, xyz, 'k')
-points.quiver(ax, zero, axis1, 'r')
-points.quiver(ax, zero, axis2, 'g')
-points.quiver(ax, zero, axis3, 'b')
+points.quiver(ax, zero, origin, 'Color', graphics.rgb.magenta)
+points.quiver(ax, origin, xyz, 'Color', graphics.rgb.gray)
+points.quiver(ax, origin, axis1, 'r')
+points.quiver(ax, origin, axis2, 'g')
+points.quiver(ax, origin, axis3, 'b')
 graphics.axislabels(ax, 'x', 'y', 'z')
 axis(ax, 'equal')
 grid(ax, 'on')
