@@ -209,11 +209,15 @@ Engineering, at the University of Auckland:
 
 ## Feature requests
 
+- [ ] Support for diffration.
+- [ ] Support for surface waves.
+- [ ] Complete interoperability with the MathWorks' [Antenna Toolbox](https://au.mathworks.com/help/antenna/index.html).
+
+## Infrastructural TODO list
+
 - [ ] Split git repository into modules.
 - [ ] Complete set of unit tests.
 - [ ] Profiling routines for critical functions.
-- [ ] Complete interoperability with the MathWorks' [Antenna Toolbox](https://au.mathworks.com/help/antenna/index.html).
-
 
 ## Appendix A: Geometric primitives
 

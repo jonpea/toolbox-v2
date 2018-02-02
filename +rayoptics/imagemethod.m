@@ -1,7 +1,24 @@
-function [indices, points] = imagemethod( ...
-    intersect, mirror, sequence, xfirst, xlast)
+function [indices, points] = imagemethod(intersect, mirror, sequence, xfirst, xlast)
 %IMAGEMETHOD Reflection path through specified facet sequence.
-% [INDICES,POINTS] = IMAGEMETHOD(@INTERSECT,@MIRROR,SEQ,XFIRST,XLAST).
+%   [INDICES,POINTS] = IMAGEMETHOD(INTERSECT,MIRROR,SEQ,XFIRST,XLAST)
+%   computes reflection points on a list of facets indexed by SEQ between
+%   a candidate source locations XFIRST(K,:) and sink locations XLAST(K,:)
+%   where K = 1,...,SIZE(XFIRST,1);
+%   function handle INTERSECT that computes ray-scene transmission points;
+%   function handle MIRROR computes mirror images.
+%
+%   HITS = INTERSECT(ORIGIN,DIRECTION,ID), where matrices ORIGIN and
+%   DIRECTION encode one ray in each corresponding pair of rows and ID
+%   is a scalar face index, returns a struct HITS for which
+%      HITS.FaceIndex is an array of indices of scene facets;
+%      HITS.RayIndex is an array of row indices into ORIGIN and DIRECTION;
+%      HITS.Point.
+%
+%   XM = MIRROR(X,FACEID), where X is a matrix encoding one point in each
+%   row and FACEID is a scalar facet index, returns matrix XM where XM(K,:)
+%   is the mirror image of X(K,:) through face FACEID.
+%
+%   See also IMAGEMETHODCARDINALITY, IMAGEMETHODSEQUENCE.
 
 import contracts.ndebug
 import datatypes.isfunction
@@ -54,22 +71,22 @@ next = xlast;
 for i = numfaces : -1 : 1
     
     % Compute intersection point at current facet
-    interactions = intersect( ...
+    hits = intersect( ...
         previous, ... % ray origin
         next - previous, ... % ray direction
         sequence(i)); % face index
-    assert(ndebug || all(interactions.FaceIndex == sequence(i))) % invariant
-    rayid = interactions.RayIndex;
-    selected{i} = rayid;
     
-    assert(ndebug || ~any(structfun(@(a) any(isnan(a(:))), interactions)))
+    assert(ndebug || all(hits.FaceIndex == sequence(i))) % invariant
+    assert(ndebug || ~any(structfun(@(a) any(isnan(a(:))), hits)))
+    
+    selected{i} = hits.RayIndex;
     
     % Note: It is possible to break early here if no intersections
     % exist, but doing appears to require a slightly more complex
     % implemenation without providing a meaningful reduction in work.
     
     % Store computed reflection points
-    points{i} = interactions.Point;
+    points{i} = hits.Point;
     
     % Reject complement of selected rays
     filter = filter(selected{i});
@@ -98,13 +115,12 @@ for i = 2 : numfaces
 end
 
 % Convert from "{facet}(path,:)" to "(path,:,facet)"
-points = cat(3, ... 
+points = cat(3, ...
     xfirst(indices, :), ...
     points{:}, ...
     xlast(indices, :));
 
+% Post-conditions
 assert(size(points, 1) == numel(indices))
 assert(size(points, 2) == size(xfirst, 2))
 assert(size(points, 3) == numel(sequence) + 2) % "+2" for source & target
-
-end

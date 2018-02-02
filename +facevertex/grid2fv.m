@@ -1,4 +1,4 @@
-function [faces, vertices] = gridtofv(varargin)
+function [faces, vertices] = grid2fv(varargin)
 %GRIDTOFV Face-vertex representation of gridded surface
 
 if size(varargin{1}, 3) == 1
@@ -21,7 +21,7 @@ assert(ismatrix(varargin{1}))
 shape = size(varargin{1});
 indices = reshape(1 : prod(shape), shape);
     function result = vertexindices(i, j)
-        result = vec(indices(i, j));
+        result = ops.vec(indices(i, j));
     end
 
 lo = @(i) 1 : shape(i) - 1;
@@ -74,7 +74,7 @@ alldims = 1 : shape(dim);
 faces = cell2mat(arrayfun(@slice, alldims(:), 'UniformOutput', false));
 
     function faces = slice(i)
-        corner = @(varargin) vec(vertexindices(i, varargin{:}));
+        corner = @(varargin) ops.vec(vertexindices(i, varargin{:}));
         faces = [
             corner(lo, lo) ... % "bottom left"
             corner(hi, lo) ... % "bottom right"

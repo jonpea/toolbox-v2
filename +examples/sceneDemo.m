@@ -212,9 +212,15 @@ allFloors = arrayfun( ...
 allFloors = facevertex.cat(allFloors{:});
 %%
 drawScene(newAxes, materialData, allFloors, 'Multistorey')
+drawnow
 %%
 % Naturally, examples (I) and (II) could be combined to produce a
 % multiblock-multistorey complex.
+
+%% 
+
+%% 
+% Thank you!
 
 %% Appendix: Definition of |drawScene|
 % This helper is used to visualize all 3-D scenes in the script,
