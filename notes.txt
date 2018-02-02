@@ -16,8 +16,9 @@ Key concepts
 
 Demos
 =====
-- Extruding plans & transforming scenes
+* Extruding plans & transforming scenes
 - Reading Butterworth data
+- Generalised fractional programming
 
 Utilities
 =========
