@@ -53,6 +53,31 @@ At this point, we employ only scenes composed of rectangular facets (embedded in
 The source repository, complete with an installation script, datasets, and scripts illustrating usage, is accessible via [GitHub](https://github.com).
 
 _____________________________________________________________________
+# Notes for Part 4 Project
+
+1. Purchase a hardcover project logbook in which to document your thoughts. Get into the habit of (briefly!) documenting each nugget of thought relating to the project in this book to help you recall progress/pitfalls and thereby help your advisors help you. 
+
+2. Select a document preparation system for your final report: Probably Microsoft Word or [LaTeX](https://en.wikibooks.org/wiki/LaTeX). 
+   You'll need a copy of this application on your own computer.
+   If you choose LaTeX and are new to it, the excellent [Wikibooks LaTeX book](https://en.wikibooks.org/wiki/LaTeX) provides a [nice introduction](https://en.wikibooks.org/wiki/LaTeX/Introduction) and a comprehensive reference. Set up a project template that you can add to each week and, hence, gradually build a mental picture of your work.
+
+3. Set up a bibliographic database for your project work:
+   - [RefWorks](https://www.library.auckland.ac.nz/refworks/) for Word.
+   - [BibTeX](https://en.wikibooks.org/wiki/LaTeX/Bibliography_Management) for LaTeX.
+
+   Update your bibliography each time your consult a new reference.
+
+4. Consider purchasing a Student license for MATLAB so that you can work on your own computer. 
+   If you have MATLAB on your own PC, also install a copy of Git.
+
+5. Select a Git tutorial (e.g. [Learn Git](https://www.atlassian.com/git/tutorials/learn-git-with-bitbucket-cloud)) and work through it to master the following essential commands:
+ `clone`, `status`, `diff`, `commit`, `pull`, `push`
+
+6. Clone the [Geometric Optics Toolbox](https://github.com/jonpea/toolbox-v2).
+
+7. Work through the tutorials in sequence and contact Jon, Michael, & Yuen if you have any queries.
+
+_____________________________________________________________________
 # Meeting, 24 January
 
 - Extensive refactoring to improve modularity:
