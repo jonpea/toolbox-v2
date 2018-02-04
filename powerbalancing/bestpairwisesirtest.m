@@ -57,9 +57,18 @@ minmaxsirdbs = min(max(sirdbs));
 upper = minmaxsirdbs + 2;
 lower = minmaxsirdbs - 1;
 delta = 0.05;
-maxiter = (log(delta/(upper - lower))/log(0.5))
+
+% Number of iterations to reduce width of initial interval 
+% "upper - lower" to "delta" if width is halved with each step:
+%    i.e. (upper - lower)*0.5^N == delta
+%   -> log(upper - lower) + N*log(0.5) == log(delta)
+%   -> N = (log(delta) - log(upper - lower))/log(0.5)
+%        = log(delta/(upper - lower))/log(0.5)
+maxiter = (log(delta/(upper - lower))/log(0.5));
 
 for i = 1 : ceil(maxiter)
+    
+    fprintf('iteration %u...\n', i)
     
     if upper - lower < tolfun
         fprintf('** Converged after %u iterations ** \n', i)
