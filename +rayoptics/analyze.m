@@ -1,7 +1,11 @@
 function [dlinks, ulinks, hits, durations] = ...
-    analyze(reflect, transmit, numfacets, origins, targets, varargin)
+    ... %analyze(reflect, transmit, numfacets, ...
+    analyze(scene, origins, targets, varargin)
 
-[traceoptions, unmatched] = imagemethod.tracesceneSettings(varargin{:});
+narginchk(3, nargin)
+assert(isa(scene, 'scenes.Scene'))
+
+[traceOptions, unmatched] = imagemethod.tracesceneSettings(varargin{:});
 
 % Augment optional settings
 parser = inputParser;
@@ -18,7 +22,11 @@ linkoptions = parser.Results;
 
 [downlinkGainComponents, uplinkGainComponents, hits, durations] = ...
     rayoptics.tracescene( ...
-    reflect, transmit, numfacets, origins, targets, traceoptions);
+    ...reflect, transmit, numfacets, ...
+    @scene.reflections, ...
+    @scene.transmissions, ...
+    scene.NumFacets, ...
+    origins, targets, traceOptions);
 
 % Received gain (in dBW): Rows for access points, columns for mobiles
 downlinkGainDBW = specfun.todb(sum(downlinkGainComponents, 3));

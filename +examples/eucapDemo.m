@@ -14,19 +14,19 @@ settings = parse(varargin{:});
 perturb = @(a) a + 1e-3*(rand(size(a)) - 0.5);
 
 %%
-dbtype +examples/panel.m
+dbtype +examples/Materials.m
 
 %% Scene geometry and material properties
-import examples.panel
+import examples.Materials
 facets = datatypes.cell2table({
-    'Material'     'Gain'   'FaceAlpha'   'FaceColor'            'LineWidth'
-    panel.Steel     -3       0.1           graphics.rgb.black     2
-    panel.Wood      -3       0.1           graphics.rgb.salmon    2
-    panel.Concrete  -20      0.1           graphics.rgb.red       5
-    panel.Gib       -3       0.1           graphics.rgb.magenta   2
-    panel.Glass     -3       0.1           graphics.rgb.cyan      2
-    panel.Ceiling   -3       0.05          graphics.rgb.blue      1
-    panel.Floor     -3       0.1           graphics.rgb.green     1
+    'Material'         'Gain'   'FaceAlpha'   'FaceColor'            'LineWidth'
+    Materials.Steel     -3       0.1           graphics.rgb.black     2
+    Materials.Wood      -3       0.1           graphics.rgb.salmon    2
+    Materials.Concrete  -20      0.1           graphics.rgb.red       5
+    Materials.Gib       -3       0.1           graphics.rgb.magenta   2
+    Materials.Glass     -3       0.1           graphics.rgb.cyan      2
+    Materials.Ceiling   -3       0.05          graphics.rgb.blue      1
+    Materials.Floor     -3       0.1           graphics.rgb.green     1
     });
 facets.EdgeColor = facets.FaceColor;
 
@@ -36,16 +36,16 @@ height.Stud = 3.0;
 height.Door = 2.0;
 faceData2D = datatypes.cell2table({
     'ID'  'VertexIndices'           'ZSpan'          'Material'
-    1          [1 2]     [height.Floor height.Stud]  panel.Gib
-    2          [2 3]     [height.Floor height.Stud]  panel.Concrete
-    3          [4 5]     [height.Floor height.Stud]  panel.Gib
-    4          [5 6]     [height.Floor height.Stud]  panel.Concrete
-    5          [1 4]     [height.Floor height.Stud]  panel.Gib
-    6          [3 6]     [height.Floor height.Stud]  panel.Concrete
-    7          [2 7]     [height.Floor height.Stud]  panel.Concrete
-    8          [5 8]     [height.Floor height.Stud]  panel.Concrete
-    9          [7 8]     [height.Floor height.Door]  panel.Wood
-    10         [7 8]     [height.Door  height.Stud]  panel.Glass
+    1          [1 2]     [height.Floor height.Stud]  Materials.Gib
+    2          [2 3]     [height.Floor height.Stud]  Materials.Concrete
+    3          [4 5]     [height.Floor height.Stud]  Materials.Gib
+    4          [5 6]     [height.Floor height.Stud]  Materials.Concrete
+    5          [1 4]     [height.Floor height.Stud]  Materials.Gib
+    6          [3 6]     [height.Floor height.Stud]  Materials.Concrete
+    7          [2 7]     [height.Floor height.Stud]  Materials.Concrete
+    8          [5 8]     [height.Floor height.Stud]  Materials.Concrete
+    9          [7 8]     [height.Floor height.Door]  Materials.Wood
+    10         [7 8]     [height.Door  height.Stud]  Materials.Glass
     });
 
 %%
@@ -112,11 +112,11 @@ draw(ax, scene3D)
 %%
 floorface = facevertex.cap(@min, 3, scene3D) %#ok<NOPRT>
 scene3D.Faces(end + 1, :) = floorface;
-scene3D.Material(end + 1, :) = panel.Floor;
+scene3D.Material(end + 1, :) = Materials.Floor;
 
 ceilingface = facevertex.cap(@max, 3, scene3D) %#ok<NOPRT>
 scene3D.Faces(end + 1, :) = ceilingface;
-scene3D.Material(end + 1, :) = panel.Ceiling;
+scene3D.Material(end + 1, :) = Materials.Ceiling;
 
 ax = settings.Axes('3-D Scene');
 draw(ax, scene3D)

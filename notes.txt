@@ -1,6 +1,7 @@
 TODO
 ====
 - Decompose tracescene.m and provide a detailed supporting document.
+- Higher-level interface to analyze.m that requires a Scene but no function handles
 
 Key Modules to Document
 =======================
