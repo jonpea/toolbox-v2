@@ -1,5 +1,5 @@
 %% Definition of gain patterns
-function antennModels
+function gainPatterns
 
 %% Overview
 % The gain pattern functionality was designed to satisfy the following
@@ -83,10 +83,10 @@ showSceneWithGain(0)
 % system, this is not a restriction, as demonstrated in *Vertion #2*,
 % below.
 gains = {
-    @(angle) repmat(0.25, size(angle, 1), 1);
-    @(angle) repmat(0.5, size(angle, 1), 1);
     @(angle) angle/(2*pi);
-    @(angle) abs(cos(angle));
+    @(angle) abs(cos(1*angle));
+    @(angle) 1 - angle/(2*pi);
+    @(angle) abs(cos(2*angle));
     };
 
 %% Version #1: Implemented from scratch
