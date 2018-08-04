@@ -18,7 +18,7 @@ ashape = size(a);
 if nargin < 2
     dim = find(ashape == 2, 1, 'first');
     if isempty(dim)
-        error(msgid(mfilename, 'InvalidDim'), ...
+        error(contracts.msgid(mfilename, 'InvalidDim'), ...
             'A must have at least one dimension of length 2.')
     end
 end
@@ -26,7 +26,7 @@ end
 assert(isscalar(dim) && isnumeric(dim) && 1 <= dim)
 
 if size(a, dim) ~= 2
-    error(msgid(mfilename, 'InvalidDimForPerp'), ...
+    error(contracts.msgid(mfilename, 'InvalidDimForPerp'), ...
         'A must be of length 2 in the dimension in which the complement is taken.')
 end
 

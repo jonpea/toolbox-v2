@@ -28,5 +28,5 @@ if isgraphics(xyz) % patch |
     return
 end
 
-error(msgid(mfilename, 'UnsupportedType'), ...
+error(contracts.msgid(mfilename, 'UnsupportedType'), ...
     'Arguments of type %s are not currently supported.', class(xyz))
