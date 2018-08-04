@@ -10,15 +10,16 @@ assert(isfunction(fun))
 [faces, vertices, varargin] = parseFaceVertexPair(varargin{:});
 
 facepoints = reshape( ...
-    vertices(faces', :), ...
-    size(faces, 2), ...    % one row per vertex in each face
+    vertices(faces', :)', ...
     size(vertices, 2), ... % one column per dimension
+    size(faces, 2), ...    % one row per vertex in each face
     []);                   % one slice per face
+facepoints = permute(facepoints, [2 1 3]);
 
 % By default, the function is applied along the
 % first dimension, consistent with mean/min/max
 rowaggregate = fun(facepoints, varargin{:});
-rowaggregate = reshape(rowaggregate, [], size(vertices, 2));
+rowaggregate = reshape(rowaggregate, [], size(faces, 1))';
 
 % Post-conditions
 assert(ndebug || size(rowaggregate, 1) == size(faces, 1))
