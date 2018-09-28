@@ -52,10 +52,21 @@ faceIndex = fun(faceIndices(:, dim));
 localFace = localFaces(faceIndex, :);
 localVertices = extremevertices(localFace, :);
 
-[found, face] = ismember(localVertices, allvertices, 'rows');
-assert(all(found), ...
-    'Boundaries of convex hull of %s-points in dimension %u are not axis-aligned.', ...
-    func2str(fun), dim)
-face = face(:)'; % return as row vector
+% We've been tripped up by rounding error here
+%[found, face] = ismember(localVertices, allvertices, 'rows');
+% assert(all(found), ...
+%     'Boundaries of convex hull of %s-points in dimension %u are not axis-aligned.', ...
+%     func2str(fun), dim)
+% face = face(:)'; % return as row vector
+
+tolerance = 1e-10*max(abs(allvertices(:)));
+face = zeros(1, size(localVertices, 1)); % row vector
+for i = 1 : size(localVertices, 1)
+    index = find(all(abs(allvertices - localVertices(i, :)) < tolerance, 2), 1, 'first');
+    if isempty(index)
+        error('Boundaries of convex hull of %s-points in dimension %u are not axis-aligned.', func2str(fun), dim)
+    end
+    face(i) = index;
+end
 
 end

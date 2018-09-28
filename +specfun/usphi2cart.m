@@ -12,5 +12,5 @@ radius = ones('like', azimuth);
 [x, y, z] = specfun.sphi2cart(azimuth, inclination, radius);
 
 % Since "z" has the shape of "elevation", explicit expansion is required.
-% This is less expansive than expanding "radius" before call to sph2cart.
+% This is less expensive than expanding "radius" before call to sph2cart.
 z = sx.expand(z, x, y);

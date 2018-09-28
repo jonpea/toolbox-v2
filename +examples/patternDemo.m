@@ -1,4 +1,4 @@
-clear
+    clear
 
 pattern = @(azimuth, inclination, ~) sx.expand(sin(inclination), azimuth);
 

@@ -24,20 +24,20 @@ doorheight = floorheight + options.DoorHeight;
 ceilingheight = floorheight + options.StudHeight;
 
 % Extrude plan
-model = extrudeplan(wallfaces, vertices, floorheight, ceilingheight);
+model = facevertex.extrude(wallfaces, vertices, [floorheight, ceilingheight]);
 if options.WithDoors
-    doormodel = extrudeplan(doorfaces, vertices, doorheight, ceilingheight);
-    model = catfacevertex(model, doormodel);
+    doormodel = facevertex.extrude(doorfaces, vertices, [doorheight, ceilingheight]);
+    model = facevertex.cat(model, doormodel);
     types = vertcat(types(:), doortypes(:));
 end
 
 if options.WithFloor
-    model = capfacevertex(model, true, false);
+    model.Faces(end + 1, :) = facevertex.cap(@min, 3, model.Vertices);
     types(end + 1, 1) = 3;
 end
    
 if options.WithCeiling
-    model = capfacevertex(model, false, true);
+    model.Faces(end + 1, :) = facevertex.cap(@max, 3, model.Vertices);
     types(end + 1, 1) = 4;
 end
 
@@ -54,7 +54,7 @@ end
 assert(ischar(convention))
 
 % Specify source plan
-[wallfaces, vertices, wallgains] = engineeringtower8data;
+[wallfaces, vertices, wallgains] = data.engineeringtower8data;
 
 % Additional vertices for doors
 vertices = [
@@ -109,7 +109,7 @@ switch validatestring(convention, {'butterworth', 'neve', 'pais', 'wyfy'})
         rotor = 1;
     case 'pais'
         offset = max(vertices(:, 1 : 2), [], 1);
-        rotor = rotor2d(pi); 
+        rotor = elmat.rotor2(pi); 
 end
 vertices = vertices*rotor + offset;
 
