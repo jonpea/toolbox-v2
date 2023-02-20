@@ -1,4 +1,4 @@
-# Notes for FRDF Report
+# Ray Tracing Toolbox
 
 ## Objectives
  
